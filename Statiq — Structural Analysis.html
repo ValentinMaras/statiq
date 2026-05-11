@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<!-- saved from url=(0048)file:///Users/valentinmaras/Downloads/index.html -->
+<html lang="de"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statiq — Structural Analysis</title>
+  <meta name="description" content="Structural analysis app for civil engineering students — calculate shear forces, bending moments and section properties.">
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link href="./Statiq — Structural Analysis_files/css2" rel="stylesheet">
+  <script src="./Statiq — Structural Analysis_files/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #f0efe9;
+      --border: #e0dfd8;
+      --text: #1a1a18;
+      --text2: #6b6a65;
+      --text3: #a8a7a2;
+      --accent: #1a4fd6;
+      --accent-bg: #eef1fd;
+      --green: #0f6e56;
+      --green-bg: #e8f5f1;
+      --blue: #185fa5;
+      --blue-bg: #e6f1fb;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 3rem;
+    }
+
+    /* Header */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--accent); }
+    .version {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Nav tabs */
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 0 1rem;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav-tab {
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      border: none;
+      background: none;
+      cursor: pointer;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .nav-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Main */
+    .main { padding: 1rem; max-width: 480px; margin: 0 auto; }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 12px;
+    }
+
+    /* Fields */
+    .field { margin-bottom: 10px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      font-size: 13px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 5px;
+    }
+    .field label .unit {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+    }
+    .field input {
+      width: 100%;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* Toggle */
+    .toggle-row { display: flex; gap: 6px; margin-bottom: 12px; }
+    .toggle-btn {
+      flex: 1;
+      padding: 7px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .toggle-btn.active {
+      background: var(--accent-bg);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Beam visualisation */
+    .beam-svg-wrap {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .beam-svg-wrap svg { width: 100%; height: auto; display: block; }
+
+    /* Calc button */
+    .calc-btn {
+      width: 100%;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      margin-bottom: 0.75rem;
+      transition: all 0.15s;
+      letter-spacing: -0.2px;
+    }
+    .calc-btn:hover { background: #1540b0; }
+    .calc-btn:active { transform: scale(0.98); }
+
+    /* Results */
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 0.75rem;
+    }
+    .metric {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+    }
+    .metric .m-label { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+    .metric .m-value { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1.1; }
+    .metric .m-unit { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+    /* Charts */
+    .chart-block { margin-bottom: 1rem; }
+    .chart-block:last-child { margin-bottom: 0; }
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .chart-title { font-size: 12px; font-weight: 600; color: var(--text2); }
+    .chart-badge {
+      font-size: 10px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text3);
+    }
+    .chart-wrap { position: relative; height: 150px; }
+    .chart-divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+    /* Hidden */
+    .hidden { display: none; }
+
+    /* Coming soon */
+    .coming-soon {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text3);
+    }
+    .coming-soon .icon { font-size: 32px; margin-bottom: 0.75rem; }
+    .coming-soon h3 { font-size: 16px; font-weight: 500; color: var(--text2); margin-bottom: 0.5rem; }
+    .coming-soon p { font-size: 13px; line-height: 1.6; }
+
+    /* Footer note */
+    .footnote {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="logo">Stati<span>q</span></div>
+    <div class="version">v0.1.0</div>
+  </header>
+
+  <nav class="nav">
+    <button class="nav-tab active" onclick="showTab(&#39;beam&#39;)">Simply Supported Beam</button>
+    <button class="nav-tab" onclick="showTab(&#39;cantilever&#39;)">Cantilever</button>
+    <button class="nav-tab" onclick="showTab(&#39;sections&#39;)">Sections</button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TAB: Simply Supported Beam             -->
+  <!-- ═══════════════════════════════════════ -->
+  <main class="main" id="tab-beam">
+
+    <div class="card">
+      <div class="card-title">System</div>
+      <div class="beam-svg-wrap">
+        <svg id="beam-svg" viewBox="0 0 320 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+            <polygon points="0,0 5,2.5 0,5" fill="#185fa5"></polygon>
+          </marker>
+          <marker id="arr-red" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+            <polygon points="0,0 5,2.5 0,5" fill="#d85a30"></polygon>
+          </marker>
+        </defs>
+        <line x1="30" y1="18" x2="30" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="62.5" y1="18" x2="62.5" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="95" y1="18" x2="95" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="127.5" y1="18" x2="127.5" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="160" y1="18" x2="160" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="192.5" y1="18" x2="192.5" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="225" y1="18" x2="225" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="257.5" y1="18" x2="257.5" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="290" y1="18" x2="290" y2="60" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"></line><line x1="30" y1="18" x2="290" y2="18" stroke="#185fa5" stroke-width="1.2"></line><text x="160" y="12" text-anchor="middle" font-size="9" fill="#185fa5" font-family="DM Mono,monospace">q = 5 kN/m</text><rect x="30" y="62" width="260" height="8" rx="2" fill="#1a1a18"></rect><line x1="160" y1="20" x2="160" y2="60" stroke="#d85a30" stroke-width="2" marker-end="url(#arr-red)"></line><text x="160" y="16" text-anchor="middle" font-size="9" fill="#d85a30" font-family="DM Mono,monospace">F=10kN</text><polygon points="30,70 22,82 38,82" fill="#1a1a18"></polygon><text x="30" y="90" text-anchor="middle" font-size="9" fill="#6b6a65">A</text><polygon points="290,70 282,82 298,82" fill="#1a1a18"></polygon><circle cx="290" cy="84" r="3" fill="none" stroke="#1a1a18" stroke-width="1.2"></circle><text x="290" y="94" text-anchor="middle" font-size="9" fill="#6b6a65">B</text><line x1="30" y1="98" x2="290" y2="98" stroke="#a8a7a2" stroke-width="0.8"></line><text x="160" y="107" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = 5 m</text></svg>
+      </div>
+      <div class="field">
+        <label>Span L <span class="unit">m</span></label>
+        <input type="number" id="L" value="5" step="0.1" min="0.1" oninput="drawBeam()">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Point Load</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="btn-el-on" onclick="toggleLoad(&#39;el&#39;,true)">On</button>
+        <button class="toggle-btn" id="btn-el-off" onclick="toggleLoad(&#39;el&#39;,false)">Off</button>
+      </div>
+      <div id="el-fields">
+        <div class="field-row">
+          <div class="field">
+            <label>F <span class="unit">kN</span></label>
+            <input type="number" id="F" value="10" step="0.5" oninput="drawBeam()">
+          </div>
+          <div class="field">
+            <label>a <span class="unit">m</span></label>
+            <input type="number" id="a" value="2.5" step="0.1" oninput="drawBeam()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Distributed Load</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="btn-ql-on" onclick="toggleLoad(&#39;ql&#39;,true)">On</button>
+        <button class="toggle-btn" id="btn-ql-off" onclick="toggleLoad(&#39;ql&#39;,false)">Off</button>
+      </div>
+      <div id="ql-fields">
+        <div class="field">
+          <label>q <span class="unit">kN/m</span></label>
+          <input type="number" id="q" value="5" step="0.5" oninput="drawBeam()">
+        </div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">Calculate</button>
+
+    <div id="results" class="hidden">
+      <div class="results-grid">
+        <div class="metric">
+          <div class="m-label">Reaction A</div>
+          <div class="m-value" id="res-A">—</div>
+          <div class="m-unit">kN</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Reaction B</div>
+          <div class="m-value" id="res-B">—</div>
+          <div class="m-unit">kN</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">M<sub>max</sub></div>
+          <div class="m-value" id="res-Mmax">—</div>
+          <div class="m-unit">kNm</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Q<sub>max</sub></div>
+          <div class="m-value" id="res-Qmax">—</div>
+          <div class="m-unit">kN</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="chart-block">
+          <div class="chart-header">
+            <div class="chart-title">Shear Force Q(x)</div>
+            <div class="chart-badge">kN</div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartQ"></canvas></div>
+        </div>
+        <div class="chart-divider"></div>
+        <div class="chart-block">
+          <div class="chart-header">
+            <div class="chart-title">Bending Moment M(x)</div>
+            <div class="chart-badge">kNm · tension bottom</div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartM"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnote">Statiq v0.1 · Simply Supported Beam</div>
+  </main>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TAB: Cantilever (coming soon)          -->
+  <!-- ═══════════════════════════════════════ -->
+  <main class="main hidden" id="tab-cantilever">
+    <div class="coming-soon">
+      <div class="icon">🏗️</div>
+      <h3>Cantilever — coming soon</h3>
+      <p>Kragarm-Berechnung mit Einzellast und Streckenlast.<br>In der nächsten Version verfügbar.</p>
+    </div>
+  </main>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- TAB: Sections (coming soon)            -->
+  <!-- ═══════════════════════════════════════ -->
+  <main class="main hidden" id="tab-sections">
+    <div class="coming-soon">
+      <div class="icon">📐</div>
+      <h3>Section Properties — coming soon</h3>
+      <p>IPE, HEA, HEB Profiles und benutzerdefinierte Querschnitte.<br>In der nächsten Version verfügbar.</p>
+    </div>
+  </main>
+
+  <script>
+    let elActive = true, qlActive = true;
+    let chartQ = null, chartM = null;
+
+    // ── Tab navigation ──────────────────────
+    function showTab(name) {
+      ['beam','cantilever','sections'].forEach(t => {
+        document.getElementById('tab-'+t).classList.toggle('hidden', t !== name);
+      });
+      document.querySelectorAll('.nav-tab').forEach((btn, i) => {
+        btn.classList.toggle('active', ['beam','cantilever','sections'][i] === name);
+      });
+      if(name === 'beam') drawBeam();
+    }
+
+    // ── Toggle loads ────────────────────────
+    function toggleLoad(type, on) {
+      if(type === 'el') {
+        elActive = on;
+        document.getElementById('btn-el-on').className = 'toggle-btn' + (on ? ' active' : '');
+        document.getElementById('btn-el-off').className = 'toggle-btn' + (!on ? ' active' : '');
+        document.getElementById('el-fields').style.opacity = on ? '1' : '0.3';
+      } else {
+        qlActive = on;
+        document.getElementById('btn-ql-on').className = 'toggle-btn' + (on ? ' active' : '');
+        document.getElementById('btn-ql-off').className = 'toggle-btn' + (!on ? ' active' : '');
+        document.getElementById('ql-fields').style.opacity = on ? '1' : '0.3';
+      }
+      drawBeam();
+    }
+
+    // ── Draw beam SVG ────────────────────────
+    function drawBeam() {
+      const svg = document.getElementById('beam-svg');
+      const L = parseFloat(document.getElementById('L').value) || 5;
+      const F = parseFloat(document.getElementById('F').value) || 0;
+      const a = parseFloat(document.getElementById('a').value) || 0;
+      const q = parseFloat(document.getElementById('q').value) || 0;
+
+      const W = 320, H = 90;
+      const x0 = 30, x1 = 290, bY = 62;
+      const bW = x1 - x0;
+      const ax = x0 + (a / L) * bW;
+
+      let html = '';
+
+      // Distributed load arrows
+      if(qlActive && q > 0) {
+        const n = 8;
+        for(let i = 0; i <= n; i++) {
+          const xi = x0 + (i/n)*bW;
+          html += `<line x1="${xi}" y1="18" x2="${xi}" y2="${bY-2}" stroke="#185fa5" stroke-width="1.2" marker-end="url(#arr)"/>`;
+        }
+        html += `<line x1="${x0}" y1="18" x2="${x1}" y2="18" stroke="#185fa5" stroke-width="1.2"/>`;
+        html += `<text x="${(x0+x1)/2}" y="12" text-anchor="middle" font-size="9" fill="#185fa5" font-family="DM Mono,monospace">q = ${q} kN/m</text>`;
+      }
+
+      // Beam
+      html += `<rect x="${x0}" y="${bY}" width="${bW}" height="8" rx="2" fill="#1a1a18"/>`;
+
+      // Point load arrow
+      if(elActive && F > 0 && a >= 0 && a <= L) {
+        html += `<line x1="${ax}" y1="20" x2="${ax}" y2="${bY-2}" stroke="#d85a30" stroke-width="2" marker-end="url(#arr-red)"/>`;
+        html += `<text x="${ax}" y="16" text-anchor="middle" font-size="9" fill="#d85a30" font-family="DM Mono,monospace">F=${F}kN</text>`;
+      }
+
+      // Support A (pin)
+      html += `<polygon points="${x0},${bY+8} ${x0-8},${bY+20} ${x0+8},${bY+20}" fill="#1a1a18"/>`;
+      html += `<text x="${x0}" y="${bY+28}" text-anchor="middle" font-size="9" fill="#6b6a65">A</text>`;
+
+      // Support B (roller)
+      html += `<polygon points="${x1},${bY+8} ${x1-8},${bY+20} ${x1+8},${bY+20}" fill="#1a1a18"/>`;
+      html += `<circle cx="${x1}" cy="${bY+22}" r="3" fill="none" stroke="#1a1a18" stroke-width="1.2"/>`;
+      html += `<text x="${x1}" y="${bY+32}" text-anchor="middle" font-size="9" fill="#6b6a65">B</text>`;
+
+      // L label
+      html += `<line x1="${x0}" y1="${bY+36}" x2="${x1}" y2="${bY+36}" stroke="#a8a7a2" stroke-width="0.8"/>`;
+      html += `<text x="${(x0+x1)/2}" y="${bY+45}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
+
+      svg.innerHTML = `
+        <defs>
+          <marker id="arr" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+            <polygon points="0,0 5,2.5 0,5" fill="#185fa5"/>
+          </marker>
+          <marker id="arr-red" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+            <polygon points="0,0 5,2.5 0,5" fill="#d85a30"/>
+          </marker>
+        </defs>
+        ${html}`;
+    }
+
+    // ── Calculate ────────────────────────────
+    function calculate() {
+      const L = parseFloat(document.getElementById('L').value);
+      const F = elActive ? parseFloat(document.getElementById('F').value) : 0;
+      const a = elActive ? parseFloat(document.getElementById('a').value) : 0;
+      const q = qlActive ? parseFloat(document.getElementById('q').value) : 0;
+      const b = L - a;
+
+      if(isNaN(L) || L <= 0) { alert('Please enter a valid span L.'); return; }
+      if(elActive && (isNaN(a) || a < 0 || a > L)) { alert('Position a must be between 0 and L.'); return; }
+
+      const A = (elActive ? F*b/L : 0) + q*L/2;
+      const B = (elActive ? F*a/L : 0) + q*L/2;
+
+      const n = 300;
+      const xs = [], Qv = [], Mv = [];
+      for(let i = 0; i <= n; i++) {
+        const x = (i/n)*L;
+        xs.push(parseFloat(x.toFixed(3)));
+        const Qx = A - q*x - (elActive && x >= a ? F : 0);
+        const Mx = A*x - q*x*x/2 - (elActive && x >= a ? F*(x-a) : 0);
+        Qv.push(parseFloat(Qx.toFixed(3)));
+        Mv.push(parseFloat((-Mx).toFixed(3)));
+      }
+
+      const Mmax = Math.max(...Mv.map(Math.abs));
+      const Qmax = Math.max(...Qv.map(Math.abs));
+
+      document.getElementById('res-A').textContent = A.toFixed(2);
+      document.getElementById('res-B').textContent = B.toFixed(2);
+      document.getElementById('res-Mmax').textContent = Mmax.toFixed(2);
+      document.getElementById('res-Qmax').textContent = Qmax.toFixed(2);
+      document.getElementById('results').classList.remove('hidden');
+
+      const opts = (color, colorBg) => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 350 },
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => Math.abs(ctx.parsed.y).toFixed(2) }
+        }},
+        scales: {
+          x: {
+            ticks: { maxTicksLimit: 6, color: '#a8a7a2', font: { size: 10, family: 'DM Mono' } },
+            grid: { color: '#e0dfd8' }, border: { color: '#e0dfd8' }
+          },
+          y: {
+            ticks: { maxTicksLimit: 5, color: '#a8a7a2', font: { size: 10, family: 'DM Mono' },
+              callback: v => Math.abs(v).toFixed(1)
+            },
+            grid: { color: '#e0dfd8' }, border: { color: '#e0dfd8' }
+          }
+        },
+        elements: { point: { radius: 0 }, line: { borderWidth: 2 } }
+      });
+
+      if(chartQ) chartQ.destroy();
+      if(chartM) chartM.destroy();
+
+      chartQ = new Chart(document.getElementById('chartQ'), {
+        type: 'line',
+        data: { labels: xs, datasets: [{ data: Qv, borderColor: '#185fa5', backgroundColor: 'rgba(24,95,165,0.08)', fill: true, tension: 0 }]},
+        options: opts('#185fa5', 'rgba(24,95,165,0.08)')
+      });
+
+      chartM = new Chart(document.getElementById('chartM'), {
+        type: 'line',
+        data: { labels: xs, datasets: [{ data: Mv, borderColor: '#0f6e56', backgroundColor: 'rgba(15,110,86,0.08)', fill: true, tension: 0 }]},
+        options: opts('#0f6e56', 'rgba(15,110,86,0.08)')
+      });
+    }
+
+    // Init
+    drawBeam();
+  </script>
+
+
+</body></html>
