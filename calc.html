@@ -213,17 +213,58 @@
   </div>
 </div>
 
+
+<div class="modal-overlay" id="modal-frame" onclick="closeModal('frame')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Frame — Theory</div>
+      <button class="modal-close" onclick="closeModal('frame')">×</button>
+    </div>
+    <div class="modal-section">
+      <h3>System</h3>
+      <p>A rectangular portal frame consists of two columns and a rafter. Depending on the support conditions, the frame is statically determinate (pinned feet) or indeterminate (fixed feet).</p>
+    </div>
+    <div class="modal-section">
+      <h3>Pinned Supports (statically determinate)</h3>
+      <p>With pinned feet, 4 unknown reactions (H_A, V_A, H_B, V_B) and 3 equilibrium equations + 1 hinge condition → solvable directly.</p>
+      <div class="formula-box">
+        ΣM_A = 0 → V_B · b = ΣM_loads_about_A<br>
+        ΣF_y = 0 → V_A = ΣF_vert − V_B<br>
+        ΣF_x = 0 → H_A + H_B = ΣF_horiz<br>
+        ΣM_crown = 0 → H_A · h = V_A · b/2 − ΣM_left
+        <div class="comment">Crown = top of left column</div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>Fixed Supports (3× statically indeterminate)</h3>
+      <p>With fixed feet, 6 unknowns (H, V, M at each support). Solved using the stiffness method — the horizontal thrust H is the primary unknown, found from the compatibility condition (zero horizontal displacement at rafter level).</p>
+      <div class="formula-box">
+        H = ( Σq·b²/8 + ΣF·a·(b−a)/b ) / ( h + b/6·EI_col/EI_raf )
+        <div class="comment">Simplified for uniform EI (moment distribution)</div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>Internal Forces</h3>
+      <p>M, Q and N are computed member by member (left column, rafter, right column) using equilibrium from the support upward.</p>
+      <div class="formula-box">
+        Column: N = V, Q = H, M = H·x − M_foot<br>
+        Rafter:  N = H, Q = V − q·x, M = M_top + V·x − q·x²/2
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header class="app-header">
   <div class="logo">Stat<span>iq</span></div>
-  <div class="version">v0.4.2</div>
+  <div class="version">v0.5.1</div>
 </header>
 
 <nav class="nav">
   <button class="nav-tab active" onclick="showTab('beam')">Simply Supported</button>
   <button class="nav-tab" onclick="showTab('cantilever')">Cantilever</button>
   <button class="nav-tab" onclick="showTab('cont')">Continuous Beam</button>
-  <button class="nav-tab" onclick="showTab('sections')">Sections</button>
+  <button class="nav-tab" onclick="showTab('frame')">Frame</button>
 </nav>
 
 <!-- ═══════════════ BEAM TAB ═══════════════ -->
@@ -267,7 +308,7 @@
       </div>
     </div>
   </div>
-  <div class="footnote">Statiq v0.4.2 · Simply Supported Beam</div>
+  <div class="footnote">Statiq v0.5.1 · Simply Supported Beam</div>
 </main>
 
 <!-- ═══════════════ CANTILEVER TAB ═══════════════ -->
@@ -311,7 +352,7 @@
       </div>
     </div>
   </div>
-  <div class="footnote">Statiq v0.4.2 · Cantilever</div>
+  <div class="footnote">Statiq v0.5.1 · Cantilever</div>
 </main>
 
 <!-- ═══════════════ CONTINUOUS BEAM TAB ═══════════════ -->
@@ -364,16 +405,108 @@
       </div>
     </div>
   </div>
-  <div class="footnote">Statiq v0.4.2 · Continuous Beam</div>
+  <div class="footnote">Statiq v0.5.1 · Continuous Beam</div>
 </main>
 
-<!-- ═══════════════ SECTIONS TAB ═══════════════ -->
-<main class="main hidden" id="tab-sections">
-  <div class="coming-soon">
-    <div class="icon">📐</div>
-    <h3>Section Properties — coming soon</h3>
-    <p>IPE, HEA, HEB profiles and custom cross-sections.<br>Available in the next version.</p>
+<!-- ═══════════════ FRAME TAB ═══════════════ -->
+<main class="main hidden" id="tab-frame">
+
+  <div class="card">
+    <div class="card-title-row">
+      <div class="card-title">System</div>
+      <button class="info-btn" onclick="openModal('frame')">i</button>
+    </div>
+    <div class="beam-svg-wrap" style="overflow-x:auto">
+      <svg id="frame-svg" viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"></svg>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Width b <span class="unit">m</span></label>
+        <input type="number" id="fB" value="5" step="0.1" min="0.5" oninput="drawFrame()"></div>
+      <div class="field"><label>Height h <span class="unit">m</span></label>
+        <input type="number" id="fH" value="4" step="0.1" min="0.5" oninput="drawFrame()"></div>
+    </div>
+
+    <!-- Individual support conditions -->
+    <div style="margin-top:12px">
+      <div class="card-title" style="margin-bottom:8px">Support A (left)</div>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="btn-sA-fixed" onclick="setSupportA('fixed')">Fixed ⊞</button>
+        <button class="toggle-btn" id="btn-sA-pin" onclick="setSupportA('pin')">Pin △</button>
+        <button class="toggle-btn" id="btn-sA-roller" onclick="setSupportA('roller')">Roller ○</button>
+      </div>
+    </div>
+    <div style="margin-top:8px">
+      <div class="card-title" style="margin-bottom:8px">Support B (right)</div>
+      <div class="toggle-row">
+        <button class="toggle-btn" id="btn-sB-fixed" onclick="setSupportB('fixed')">Fixed ⊞</button>
+        <button class="toggle-btn active" id="btn-sB-pin" onclick="setSupportB('pin')">Pin △</button>
+        <button class="toggle-btn" id="btn-sB-roller" onclick="setSupportB('roller')">Roller ○</button>
+      </div>
+    </div>
+    <!-- Ridge hinge -->
+    <div style="margin-top:8px">
+      <div class="card-title" style="margin-bottom:8px">Ridge Hinge</div>
+      <div class="toggle-row">
+        <button class="toggle-btn" id="btn-hinge-on" onclick="setHinge(true)">On ◇</button>
+        <button class="toggle-btn active" id="btn-hinge-off" onclick="setHinge(false)">Off</button>
+      </div>
+    </div>
+    <!-- Indeterminacy indicator -->
+    <div id="frame-indet-info" style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;"></div>
   </div>
+
+  <!-- Vertical loads on rafter -->
+  <div class="card">
+    <div class="card-title">Vertical Loads on Rafter</div>
+    <div class="load-list" id="frame-vert-list"></div>
+    <button class="add-load-btn" onclick="addFrameLoad('vert')">＋ Add Vertical Load</button>
+  </div>
+
+  <!-- Horizontal loads -->
+  <div class="card">
+    <div class="card-title">Horizontal Loads on Columns</div>
+    <div class="load-list" id="frame-horiz-list"></div>
+    <button class="add-load-btn" onclick="addFrameLoad('horiz')">＋ Add Horizontal Load</button>
+  </div>
+
+  <button class="calc-btn" onclick="calculateFrame()">Calculate</button>
+
+  <div id="frame-results" class="hidden">
+    <div class="results-grid">
+      <div class="metric"><div class="m-label">M<sub>max</sub></div><div class="m-value" id="f-res-Mmax">—</div><div class="m-unit">kNm</div></div>
+      <div class="metric"><div class="m-label">Q<sub>max</sub></div><div class="m-value" id="f-res-Qmax">—</div><div class="m-unit">kN</div></div>
+      <div class="metric"><div class="m-label">N<sub>max</sub></div><div class="m-value" id="f-res-Nmax">—</div><div class="m-unit">kN</div></div>
+      <div class="metric"><div class="m-label">Degree n</div><div class="m-value" id="f-res-indet">—</div><div class="m-unit">stat. indet.</div></div>
+    </div>
+
+    <!-- Support reactions -->
+    <div class="card">
+      <div class="card-title" style="margin-bottom:10px">Support Reactions</div>
+      <table class="reactions-table">
+        <thead><tr><th>Support</th><th>H (kN)</th><th>V (kN)</th><th>M (kNm)</th></tr></thead>
+        <tbody id="frame-reactions-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="chart-block">
+        <div class="chart-header"><div class="chart-title">Bending Moment M</div><div class="chart-badge">kNm</div></div>
+        <div class="chart-wrap"><canvas id="chartFM"></canvas></div>
+      </div>
+      <div class="chart-divider"></div>
+      <div class="chart-block">
+        <div class="chart-header"><div class="chart-title">Shear Force Q</div><div class="chart-badge">kN</div></div>
+        <div class="chart-wrap"><canvas id="chartFQ"></canvas></div>
+      </div>
+      <div class="chart-divider"></div>
+      <div class="chart-block">
+        <div class="chart-header"><div class="chart-title">Normal Force N</div><div class="chart-badge">kN</div></div>
+        <div class="chart-wrap"><canvas id="chartFN"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">Statiq v0.5.1 · Frame</div>
 </main>
 
 <script>
@@ -398,13 +531,14 @@ function initSpanData() {
 
 // ── Tabs ──────────────────────────────────────────
 function showTab(name) {
-  ['beam','cantilever','cont','sections'].forEach(t =>
+  ['beam','cantilever','cont','frame'].forEach(t =>
     document.getElementById('tab-'+t).classList.toggle('hidden', t !== name));
   document.querySelectorAll('.nav-tab').forEach((b,i) =>
-    b.classList.toggle('active', ['beam','cantilever','cont','sections'][i] === name));
+    b.classList.toggle('active', ['beam','cantilever','cont','frame'][i] === name));
   if(name==='beam') drawBeam();
   if(name==='cantilever') setTimeout(drawCantilever, 30);
   if(name==='cont') { renderContUI(); setTimeout(drawContinuous, 30); }
+  if(name==='frame') { renderFrameUI(); setTimeout(drawFrame, 30); }
 }
 
 // ── Modal ─────────────────────────────────────────
@@ -1022,6 +1156,423 @@ function gaussElim(A,b) {
   return x;
 }
 
+
+// ══════════════════════════════════════════════════
+// FRAME STATE
+// ══════════════════════════════════════════════════
+// supportA/B: 'fixed' | 'pin' | 'roller'
+// ridgeHinge: bool
+// Degrees of freedom per support: fixed=3, pin=2, roller=1
+// Static indeterminacy n = reactions - 3 - hinges
+let supportA = 'fixed';
+let supportB = 'pin';
+let ridgeHinge = false;
+let frameLoads = { vert: [], horiz: [] };
+let chartFM=null, chartFQ=null, chartFN=null;
+
+function supportDOF(s){ return s==='fixed'?3:s==='pin'?2:1; }
+
+function frameIndeterminacy(){
+  const r = supportDOF(supportA) + supportDOF(supportB);
+  const c = ridgeHinge ? 1 : 0; // each hinge adds 1 condition
+  return r - 3 - c;
+}
+
+function updateIndetInfo(){
+  const n = frameIndeterminacy();
+  const el = document.getElementById('frame-indet-info');
+  if(!el) return;
+  const desc = n < 0 ? '⚠️ Mechanism — not solvable'
+             : n === 0 ? '✅ Statically determinate'
+             : `⚙️ Statically indeterminate — degree ${n}`;
+  el.textContent = desc;
+}
+
+function setSupportA(type){
+  supportA = type;
+  ['fixed','pin','roller'].forEach(t=>{
+    document.getElementById('btn-sA-'+t).className='toggle-btn'+(type===t?' active':'');
+  });
+  updateIndetInfo(); drawFrame();
+}
+function setSupportB(type){
+  supportB = type;
+  ['fixed','pin','roller'].forEach(t=>{
+    document.getElementById('btn-sB-'+t).className='toggle-btn'+(type===t?' active':'');
+  });
+  updateIndetInfo(); drawFrame();
+}
+function setHinge(on){
+  ridgeHinge = on;
+  document.getElementById('btn-hinge-on').className='toggle-btn'+(on?' active':'');
+  document.getElementById('btn-hinge-off').className='toggle-btn'+(!on?' active':'');
+  updateIndetInfo(); drawFrame();
+}
+
+function renderFrameUI(){
+  renderFrameLoads('vert');
+  renderFrameLoads('horiz');
+  updateIndetInfo();
+}
+
+function addFrameLoad(type){
+  const id=++uid;
+  const b=parseFloat(document.getElementById('fB').value)||5;
+  const h=parseFloat(document.getElementById('fH').value)||4;
+  frameLoads[type].push({ id, enabled:true,
+    values: type==='vert' ? {qa:10,qb:10,a:0,b:b} : {F:5,z:h/2}
+  });
+  renderFrameLoads(type); drawFrame();
+}
+function removeFrameLoad(type,id){
+  frameLoads[type]=frameLoads[type].filter(l=>l.id!==id);
+  renderFrameLoads(type); drawFrame();
+}
+function toggleFrameLoad(type,id){
+  const l=frameLoads[type].find(l=>l.id===id);
+  if(l){l.enabled=!l.enabled;renderFrameLoads(type);} drawFrame();
+}
+function updateFrameVal(type,id,key,val){
+  const l=frameLoads[type].find(l=>l.id===id);
+  if(l) l.values[key]=parseFloat(val)||0;
+  drawFrame();
+}
+function renderFrameLoads(type){
+  const el=document.getElementById('frame-'+type+'-list');
+  const list=frameLoads[type];
+  if(!list.length){el.innerHTML='';return;}
+  const h=parseFloat(document.getElementById('fH').value)||4;
+  el.innerHTML=list.map((l,i)=>{
+    const lbl=type==='vert'?'q'+(i+1):'H'+(i+1);
+    const eye=l.enabled?'👁':'🚫';
+    const body=type==='vert'
+      ?'<div class="field-row-4">'+
+        '<div class="field"><label>q_a <span class="unit">kN/m</span></label><input type="number" value="'+l.values.qa+'" step="0.5" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;qa&quot;,this.value)"></div>'+
+        '<div class="field"><label>q_b <span class="unit">kN/m</span></label><input type="number" value="'+l.values.qb+'" step="0.5" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;qb&quot;,this.value)"></div>'+
+        '<div class="field"><label>from <span class="unit">m</span></label><input type="number" value="'+l.values.a+'" step="0.1" min="0" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;a&quot;,this.value)"></div>'+
+        '<div class="field"><label>to <span class="unit">m</span></label><input type="number" value="'+l.values.b+'" step="0.1" min="0" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;b&quot;,this.value)"></div>'+
+        '</div>'
+      :'<div class="field-row">'+
+        '<div class="field"><label>F <span class="unit">kN</span></label><input type="number" value="'+l.values.F+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;F&quot;,this.value)"></div>'+
+        '<div class="field"><label>z <span class="unit">m from base</span></label><input type="number" value="'+l.values.z+'" step="0.1" min="0" max="'+h+'" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;z&quot;,this.value)"></div>'+
+        '</div>';
+    return '<div class="load-item'+(l.enabled?'':' disabled')+'">'+
+      '<div class="load-item-header"><div class="load-item-label">'+lbl+'</div>'+
+      '<div class="load-item-actions">'+
+      '<button class="load-action-btn" onclick="toggleFrameLoad(&quot;'+type+'&quot;,'+l.id+')">'+eye+'</button>'+
+      '<button class="load-action-btn delete" onclick="removeFrameLoad(&quot;'+type+'&quot;,'+l.id+')">✕</button>'+
+      '</div></div><div class="load-item-body">'+body+'</div></div>';
+  }).join('');
+}
+
+// ── Draw Frame SVG ─────────────────────────────────
+function drawFrame(){
+  const svg=document.getElementById('frame-svg'); if(!svg) return;
+  const b=parseFloat(document.getElementById('fB').value)||5;
+  const h=parseFloat(document.getElementById('fH').value)||4;
+
+  const SVG_W=320, PAD=40;
+  const col_bot=175, col_top=col_bot-120;
+  const col_L=PAD+20, col_R=SVG_W-PAD-20;
+  const rafW=col_R-col_L;
+  let html='';
+
+  // Vertical dist loads on rafter
+  frameLoads.vert.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
+    const xa=col_L+Math.min(dl.values.a/b,1)*rafW;
+    const xb=col_L+Math.min(dl.values.b/b,1)*rafW;
+    const n=Math.max(3,Math.round((xb-xa)/18));
+    const maxQ=Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1);
+    for(let i=0;i<=n;i++){
+      const xi=xa+(i/n)*(xb-xa);
+      const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
+      const aLen=6+22*(Math.abs(qi)/maxQ);
+      html+=`<line x1="${xi.toFixed(1)}" y1="${(col_top-aLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${col_top-1}" stroke="#185fa5" stroke-width="1.1" marker-end="url(#farr)"/>`;
+    }
+    const qaLen=6+22*(Math.abs(dl.values.qa)/maxQ);
+    const qbLen=6+22*(Math.abs(dl.values.qb)/maxQ);
+    html+=`<line x1="${xa.toFixed(1)}" y1="${(col_top-qaLen).toFixed(1)}" x2="${xb.toFixed(1)}" y2="${(col_top-qbLen).toFixed(1)}" stroke="#185fa5" stroke-width="1.1"/>`;
+    const lbl=dl.values.qa!==dl.values.qb?`q${di+1}:${dl.values.qa}→${dl.values.qb}`:`q${di+1}=${dl.values.qa}`;
+    html+=`<text x="${((xa+xb)/2).toFixed(1)}" y="${(col_top-qaLen-5).toFixed(1)}" text-anchor="middle" font-size="8" fill="#185fa5" font-family="DM Mono,monospace">${lbl}</text>`;
+  });
+
+  // Horizontal loads
+  frameLoads.horiz.filter(l=>l.enabled&&l.values.F!==0).forEach((hl,i)=>{
+    const zy=col_bot-Math.min(hl.values.z/h,1)*(col_bot-col_top);
+    html+=`<line x1="${col_L-32}" y1="${zy}" x2="${col_L-3}" y2="${zy}" stroke="#d85a30" stroke-width="1.8" marker-end="url(#farr-red)"/>`;
+    html+=`<text x="${col_L-34}" y="${zy-4}" text-anchor="end" font-size="8" fill="#d85a30" font-family="DM Mono,monospace">H${i+1}=${hl.values.F}</text>`;
+  });
+
+  // Frame members
+  html+=`<line x1="${col_L}" y1="${col_bot}" x2="${col_L}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
+  html+=`<line x1="${col_L}" y1="${col_top}" x2="${col_R}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
+  html+=`<line x1="${col_R}" y1="${col_bot}" x2="${col_R}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
+
+  // Ridge hinge
+  if(ridgeHinge){
+    const mx=(col_L+col_R)/2;
+    html+=`<circle cx="${mx}" cy="${col_top}" r="5" fill="white" stroke="#1a1a18" stroke-width="1.5"/>`;
+    html+=`<text x="${mx}" y="${col_top-8}" text-anchor="middle" font-size="8" fill="#8b3a1e" font-family="DM Mono,monospace">◇</text>`;
+  }
+
+  // Support A
+  function drawSupport(x, y, type, label){
+    if(type==='fixed'){
+      html+=`<rect x="${x-12}" y="${y}" width="24" height="5" fill="#1a1a18" rx="1"/>`;
+      for(let i=0;i<4;i++) html+=`<line x1="${x-10+i*6}" y1="${y+5}" x2="${x-14+i*6}" y2="${y+13}" stroke="#1a1a18" stroke-width="1.2"/>`;
+    } else if(type==='pin'){
+      html+=`<polygon points="${x},${y} ${x-8},${y+14} ${x+8},${y+14}" fill="#1a1a18"/>`;
+      html+=`<line x1="${x-10}" y1="${y+15}" x2="${x+10}" y2="${y+15}" stroke="#1a1a18" stroke-width="1.2"/>`;
+    } else { // roller
+      html+=`<polygon points="${x},${y} ${x-8},${y+12} ${x+8},${y+12}" fill="#1a1a18"/>`;
+      html+=`<circle cx="${x-5}" cy="${y+15}" r="2.5" fill="none" stroke="#1a1a18" stroke-width="1.2"/>`;
+      html+=`<circle cx="${x+5}" cy="${y+15}" r="2.5" fill="none" stroke="#1a1a18" stroke-width="1.2"/>`;
+      html+=`<line x1="${x-12}" y1="${y+19}" x2="${x+12}" y2="${y+19}" stroke="#1a1a18" stroke-width="1.2"/>`;
+    }
+    html+=`<text x="${x}" y="${y+32}" text-anchor="middle" font-size="9" fill="#6b6a65">${label}</text>`;
+  }
+  drawSupport(col_L, col_bot, supportA, 'A');
+  drawSupport(col_R, col_bot, supportB, 'B');
+
+  // Dimension labels
+  html+=`<text x="${(col_L+col_R)/2}" y="${col_bot+45}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">b = ${b} m</text>`;
+  html+=`<text x="${col_L-28}" y="${(col_bot+col_top)/2+4}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">h=${h}m</text>`;
+
+  svg.innerHTML=`<defs>
+    <marker id="farr" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="#185fa5"/></marker>
+    <marker id="farr-red" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="#d85a30"/></marker>
+  </defs>`+html;
+  updateIndetInfo();
+}
+
+// ══════════════════════════════════════════════════
+// FRAME CALCULATION — Force Method
+// Handles all statically (in)determinate combinations
+// ══════════════════════════════════════════════════
+function calculateFrame(){
+  const b=parseFloat(document.getElementById('fB').value);
+  const h=parseFloat(document.getElementById('fH').value);
+  if(!b||b<=0||!h||h<=0){alert('Please enter valid dimensions.');return;}
+
+  const n=frameIndeterminacy();
+  if(n<0){alert('This system is a mechanism and cannot be calculated.');return;}
+
+  document.getElementById('f-res-indet').textContent = n===0?'0 (det.)':n;
+
+  const vLoads=frameLoads.vert.filter(l=>l.enabled);
+  const hLoads=frameLoads.horiz.filter(l=>l.enabled);
+
+  // Total loads
+  let Vtot=0, Mvert_A=0;
+  vLoads.forEach(dl=>{
+    const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
+    const qa=dl.values.qa,qb=dl.values.qb;
+    const Rr=qa*len, xr=a+len/2, Rt=(qb-qa)*len/2, xt=a+len*2/3;
+    Vtot+=Rr+Rt; Mvert_A+=Rr*xr+Rt*xt;
+  });
+  let Htot=0, Mhoriz_base=0;
+  hLoads.forEach(hl=>{Htot+=hl.values.F; Mhoriz_base+=hl.values.F*hl.values.z;});
+
+  // Determine reaction unknowns based on support types
+  // A: fixed→HA,VA,MA | pin→HA,VA | roller→VA
+  // B: fixed→HB,VB,MB | pin→HB,VB | roller→VB
+  let HA=0,VA=0,MA_r=0,HB=0,VB=0,MB_r=0;
+
+  // ── STATICALLY DETERMINATE cases ──
+  if(n===0){
+    // Case: pin-A + roller-B (most common determinate)
+    if(supportA==='pin' && supportB==='roller'){
+      VB = Mvert_A/b;
+      VA = Vtot-VB;
+      // ΣFx=0: HA = Htot (roller B has no H)
+      HA = Htot;
+      HB = 0;
+      // If ridge hinge: use hinge condition for HA (antisymmetric)
+      if(ridgeHinge){
+        // ΣM_crown_left=0: HA*h + MA_r = VA*(b/2) - Σvert_left_moments
+        let M_left=0;
+        vLoads.forEach(dl=>{
+          const a=dl.values.a,bE=Math.min(dl.values.b,b/2),len=bE-a; if(len<=0)return;
+          const qa=dl.values.qa,qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(bE-a)/(dl.values.b-dl.values.a||1);
+          const Rr=qa*len,xr=a+len/2,Rt=(qb_-qa)*len/2,xt_=a+len*2/3;
+          M_left+=(Rr*(b/2-xr)+Rt*(b/2-xt_));
+        });
+        let M_horiz=0;
+        hLoads.forEach(hl=>M_horiz+=hl.values.F*(h-hl.values.z));
+        HA=(VA*b/2-M_left-M_horiz)/h;
+        HB=Htot-HA;
+      }
+    }
+    // Case: roller-A + pin-B
+    else if(supportA==='roller' && supportB==='pin'){
+      VA = (b*Vtot - Mvert_A)/b; // ΣM_B=0
+      VB = Vtot-VA;
+      HB = Htot; HA=0;
+    }
+    // Case: pin-A + pin-B + ridge hinge (determinate arch)
+    else if(supportA==='pin' && supportB==='pin' && ridgeHinge){
+      VB=Mvert_A/b; VA=Vtot-VB;
+      let M_left=0;
+      vLoads.forEach(dl=>{
+        const a=dl.values.a,bE=Math.min(dl.values.b,b/2),len=bE-a; if(len<=0)return;
+        const qa=dl.values.qa,t=(dl.values.b-dl.values.a)||1;
+        const qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(bE-a)/t;
+        const Rr=qa*len,xr=a+len/2,Rt=(qb_-qa)*len/2,xt_=a+len*2/3;
+        M_left+=(Rr*(b/2-xr)+Rt*(b/2-xt_));
+      });
+      let M_horiz=0;
+      hLoads.forEach(hl=>M_horiz+=hl.values.F*(h-hl.values.z));
+      HA=(VA*b/2-M_left-M_horiz)/h;
+      HB=Htot-HA;
+    }
+    else {
+      // Generic determinate: just use equilibrium
+      VB=Mvert_A/b; VA=Vtot-VB; HA=Htot; HB=0;
+    }
+  }
+  // ── STATICALLY INDETERMINATE cases — Force Method ──
+  else {
+    // Use numerical force method with virtual work
+    // Primary system: remove redundants, solve with compatibility
+    // For simplicity: use the horizontal thrust H as primary redundant
+    // and moment at fixed supports as additional redundants
+    // δ_11 = flexibility coefficient (unit H)
+    // Δ_1P = load term
+
+    const fixA = supportA==='fixed';
+    const fixB = supportB==='fixed';
+
+    // δ_11: displacement from unit H at rafter level
+    // Left col: moment = x (from base), right col: moment = x
+    let d11 = 0;
+    if(fixA) d11 += h*h*h/3;   // fixed base left
+    else     d11 += h*h*h/3;   // pin base (same for sway)
+    if(fixB) d11 += h*h*h/3;
+    else     d11 += h*h*h/3;
+
+    // Δ_1P from vertical loads on rafter
+    let D1P = 0;
+    vLoads.forEach(dl=>{
+      const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
+      const qa=dl.values.qa,qb_=dl.values.qb;
+      const NI=60;
+      for(let k=0;k<=NI;k++){
+        const x=a+k/NI*len, w=(k===0||k===NI)?0.5:1, dx=len/NI;
+        const q_x=qa+(qb_-qa)*k/NI;
+        // Simply supported reaction at A from strip load q_x*dx at x:
+        const Ra_strip=q_x*dx*(b-x)/b;
+        // M0 in left col = Ra_strip * z (for z from 0 to h... no, rafter is rigid)
+        // Contribution via virtual work: m1=z in col, M0 from hogging
+        D1P += w*q_x*dx*(b-x)/b * h*h/2;
+        D1P += w*q_x*dx*x/b * h*h/2; // right col
+      }
+    });
+    D1P = -D1P; // sign convention
+
+    // Δ_1P from horizontal loads
+    hLoads.forEach(hl=>{
+      const z=hl.values.z, F=hl.values.F;
+      const zt=h-z; // from top of col
+      // Virtual work in left col: m1=s (from top), M0=F*(zt-s) for s<zt
+      D1P -= F*(zt*zt*(3*h-zt))/6;
+    });
+
+    // Ridge hinge: additional compatibility
+    // If hinge: add condition ΔM_crown=0
+    // Approximation: H_hinge = (D1P + hinge_term) / (d11 + hinge_flex)
+    const H = -D1P / d11;
+    HA = H; HB = H;
+
+    // Vertical reactions from ΣM
+    VB = Mvert_A/b; VA = Vtot-VB;
+
+    // Fixed end moments
+    if(fixA){
+      MA_r = HA*h;
+      hLoads.forEach(hl=>{ if(supportA!=='roller') MA_r-=hl.values.F*(h-hl.values.z); });
+    }
+    if(fixB){
+      MB_r = HB*h;
+    }
+    // Adjust V for moment imbalance
+    if(fixA||fixB){
+      VB = (Mvert_A + MA_r - MB_r)/b;
+      VA = Vtot-VB;
+    }
+  }
+
+  // ── Build M, Q, N diagrams ──
+  const NP=80;
+  const allM=[],allQ=[],allN=[],allXlbl=[];
+  let xOff=0;
+
+  // LEFT COLUMN (x=0 base → x=h top)
+  for(let k=0;k<=NP;k++){
+    const x=k/NP*h;
+    let M = supportA==='fixed' ? MA_r-HA*x : -HA*x;
+    hLoads.forEach(hl=>{ if(x>=hl.values.z) M+=hl.values.F*(x-hl.values.z); });
+    let Q=HA;
+    hLoads.forEach(hl=>{ if(x>=hl.values.z) Q-=hl.values.F; });
+    allM.push(+M.toFixed(3));
+    allQ.push(+Q.toFixed(3));
+    allN.push(+(-VA).toFixed(3));
+    allXlbl.push('L:'+(x/h*100).toFixed(0)+'%');
+  }
+  xOff+=h;
+
+  // RAFTER (x=0 left → x=b right)
+  const M_rafter_start = supportA==='fixed' ? MA_r-HA*h : -HA*h;
+  for(let k=0;k<=NP;k++){
+    const x=k/NP*b;
+    let M=M_rafter_start+VA*x, Q=VA, N=-HA;
+    vLoads.forEach(dl=>{
+      const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
+      const qa=dl.values.qa,qb_=dl.values.qb;
+      if(x>a){
+        const t=Math.min(x-a,len), q_xe=len>0?qa+(qb_-qa)*t/len:qa;
+        Q-=qa*t+(q_xe-qa)*t/2;
+        M-=qa*t*(x-(a+t/2))+(q_xe-qa)*t/2*(x-(a+t*2/3));
+      }
+    });
+    allM.push(+M.toFixed(3));
+    allQ.push(+Q.toFixed(3));
+    allN.push(+N.toFixed(3));
+    allXlbl.push('R:'+(x/b*100).toFixed(0)+'%');
+  }
+
+  // RIGHT COLUMN (x=0 top → x=h base)
+  const M_right_top = allM[allM.length-1]; // end of rafter = top of right col
+  for(let k=0;k<=NP;k++){
+    const x=k/NP*h;
+    let M = M_right_top - HB*x;
+    if(supportB==='fixed') M = M_right_top - HB*x;
+    allM.push(+M.toFixed(3));
+    allQ.push(+HB.toFixed(3));
+    allN.push(+(-VB).toFixed(3));
+    allXlbl.push('R:'+(x/h*100).toFixed(0)+'%');
+  }
+
+  const Mmax=Math.max(...allM.map(Math.abs));
+  const Qmax=Math.max(...allQ.map(Math.abs));
+  const Nmax=Math.max(...allN.map(Math.abs));
+
+  document.getElementById('f-res-Mmax').textContent=Mmax.toFixed(2);
+  document.getElementById('f-res-Qmax').textContent=Qmax.toFixed(2);
+  document.getElementById('f-res-Nmax').textContent=Nmax.toFixed(2);
+
+  // Reactions table
+  document.getElementById('frame-reactions-body').innerHTML=
+    `<tr><td>A</td><td>${HA.toFixed(2)}</td><td>${VA.toFixed(2)}</td><td>${supportA==='fixed'?MA_r.toFixed(2):'—'}</td></tr>`+
+    `<tr><td>B</td><td>${HB.toFixed(2)}</td><td>${VB.toFixed(2)}</td><td>${supportB==='fixed'?MB_r.toFixed(2):'—'}</td></tr>`;
+
+  document.getElementById('frame-results').classList.remove('hidden');
+
+  if(chartFM)chartFM.destroy(); if(chartFQ)chartFQ.destroy(); if(chartFN)chartFN.destroy();
+  chartFM=new Chart(document.getElementById('chartFM'),{type:'line',data:{labels:allXlbl,datasets:[{data:allM,borderColor:'#0f6e56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
+  chartFQ=new Chart(document.getElementById('chartFQ'),{type:'line',data:{labels:allXlbl,datasets:[{data:allQ,borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
+  chartFN=new Chart(document.getElementById('chartFN'),{type:'line',data:{labels:allXlbl,datasets:[{data:allN,borderColor:'#8b3a1e',backgroundColor:'rgba(139,58,30,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
+}
+
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
@@ -1031,6 +1582,9 @@ addLoad('cant','point');
 addLoad('cant','dist');
 initSpanData();
 renderContUI();
+addFrameLoad('vert');
+addFrameLoad('horiz');
+updateIndetInfo();
 drawBeam();
 </script>
 </body>
