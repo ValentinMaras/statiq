@@ -19,7 +19,7 @@
     }
     body { font-family:DM Sans, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; }
 
-    .app-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .app-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; overflow: visible; }
     .logo { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
     .logo span { color: var(--accent); }
     .version { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; }
@@ -267,11 +267,12 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header class="app-header">
   <a class="logo" href="index.html" style="text-decoration:none;color:inherit;">Stat<span>iq</span></a>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div class="lang-switcher" id="calcLangSwitcher">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="version">v0.5.5</div>
+    <div style="position:relative;" id="calcLangSwitcher">
       <button class="lang-btn-calc" onclick="toggleCalcLang()">
         <span id="calc-flag">🇬🇧</span>
-        <span style="font-size:10px;color:var(--text3)">▾</span>
+        <span style="font-size:9px;color:var(--text3);">▾</span>
       </button>
       <div class="lang-dd" id="calc-lang-dd">
         <div class="lang-dd-opt active" onclick="setCalcLang('en')">🇬🇧 &nbsp;English</div>
@@ -280,7 +281,6 @@
         <div class="lang-dd-opt" onclick="setCalcLang('es')">🇪🇸 &nbsp;Español</div>
       </div>
     </div>
-    <div class="version">v0.5.5</div>
   </div>
 </header>
 
