@@ -2215,7 +2215,7 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
     for(let i=0;i<=n;i++){
       const t=i/n;
       const bx=mem.x0+t*dx, by=mem.y0+t*dy;
-      const offset=wVals[i]*SCALE;
+      const offset=-wVals[i]*SCALE; // flip: positive deflection = downward in SVG
       pts_fwd.push([bx+offset*nx, by+offset*ny]);
       pts_back.push([bx,by]);
     }
