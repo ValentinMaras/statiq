@@ -267,7 +267,21 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header class="app-header">
   <a class="logo" href="index.html" style="text-decoration:none;color:inherit;">Stat<span>iq</span></a>
-  <div class="version">v0.5.5</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="lang-switcher" id="calcLangSwitcher">
+      <button class="lang-btn-calc" onclick="toggleCalcLang()">
+        <span id="calc-flag">🇬🇧</span>
+        <span style="font-size:10px;color:var(--text3)">▾</span>
+      </button>
+      <div class="lang-dd" id="calc-lang-dd">
+        <div class="lang-dd-opt active" onclick="setCalcLang('en')">🇬🇧 &nbsp;English</div>
+        <div class="lang-dd-opt" onclick="setCalcLang('de')">🇩🇪 &nbsp;Deutsch</div>
+        <div class="lang-dd-opt" onclick="setCalcLang('fr')">🇫🇷 &nbsp;Français</div>
+        <div class="lang-dd-opt" onclick="setCalcLang('es')">🇪🇸 &nbsp;Español</div>
+      </div>
+    </div>
+    <div class="version">v0.5.5</div>
+  </div>
 </header>
 
 <nav class="nav">
@@ -707,20 +721,28 @@ function renderLoads(sys,type) {
     const lbl=type==='point'?`F${i+1}`:type==='horiz'?`H/Me${i+1}`:`q${i+1}`;
     const eye=l.enabled?'👁':'🚫';
     const body=type==='point'
-      ?`<div class="field-row-4">
+      ?`<div class="field-row">
           <div class="field"><label>F <span class="unit">kN</span></label><input type="number" value="${l.values.F}" step="0.5" oninput="updateVal('${sys}','point',${l.id},'F',this.value)"></div>
-          <div class="field"><label>a <span class="unit">m</span></label><input type="number" value="${l.values.a}" step="0.1" min="0" oninput="updateVal('${sys}','point',${l.id},'a',this.value)"></div>
           <div class="field"><label>α <span class="unit">°</span></label><input type="number" value="${l.values.alpha||0}" step="1" min="-90" max="90" oninput="updateVal('${sys}','point',${l.id},'alpha',this.value)"></div>
+        </div>
+        <div class="field">
+          <label>a <span class="unit">m from A</span></label>
+          <input type="number" value="${l.values.a}" step="0.1" min="0" oninput="updateVal('${sys}','point',${l.id},'a',this.value)">
         </div>`
       :type==='horiz'
-      ?`<div class="field-row-3">
+      ?`<div class="field-row">
           <div class="field"><label>H <span class="unit">kN</span></label><input type="number" value="${l.values.H||0}" step="0.5" oninput="updateVal('${sys}','horiz',${l.id},'H',this.value)"></div>
           <div class="field"><label>M<sub>e</sub> <span class="unit">kNm</span></label><input type="number" value="${l.values.Me||0}" step="0.5" oninput="updateVal('${sys}','horiz',${l.id},'Me',this.value)"></div>
-          <div class="field"><label>a <span class="unit">m</span></label><input type="number" value="${l.values.a||0}" step="0.1" min="0" oninput="updateVal('${sys}','horiz',${l.id},'a',this.value)"></div>
+        </div>
+        <div class="field">
+          <label>a <span class="unit">m</span></label>
+          <input type="number" value="${l.values.a||0}" step="0.1" min="0" oninput="updateVal('${sys}','horiz',${l.id},'a',this.value)">
         </div>`
-      :`<div class="field-row-4">
+      :`<div class="field-row">
           <div class="field"><label>q_a <span class="unit">kN/m</span></label><input type="number" value="${l.values.qa}" step="0.5" oninput="updateVal('${sys}','dist',${l.id},'qa',this.value)"></div>
           <div class="field"><label>q_b <span class="unit">kN/m</span></label><input type="number" value="${l.values.qb}" step="0.5" oninput="updateVal('${sys}','dist',${l.id},'qb',this.value)"></div>
+        </div>
+        <div class="field-row">
           <div class="field"><label>from <span class="unit">m</span></label><input type="number" value="${l.values.a}" step="0.1" min="0" oninput="updateVal('${sys}','dist',${l.id},'a',this.value)"></div>
           <div class="field"><label>to <span class="unit">m</span></label><input type="number" value="${l.values.b}" step="0.1" min="0" oninput="updateVal('${sys}','dist',${l.id},'b',this.value)"></div>
         </div>`;
@@ -1571,21 +1593,27 @@ function renderFrameLoads(type){
       '<option value="right"'+(mem==='right'?' selected':'')+'>Right col</option>'+
       '</select></div>';
     const body=type==='vert'
-      ?'<div class="field-row">'+memSel+
-        '<div class="field"><label>from <span class="unit">m</span></label><input type="number" value="'+l.values.a+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;a&quot;,this.value)"></div>'+
-        '</div>'+
-        '<div class="field-row" style="margin-top:6px">'+
+      // Zeile 1: q_a | q_b
+      // Zeile 2: from | to
+      // Zeile 3: Member (full width)
+      ?'<div class="field-row">'+
         '<div class="field"><label>q_a <span class="unit">kN/m</span></label><input type="number" value="'+l.values.qa+'" step="0.5" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;qa&quot;,this.value)"></div>'+
         '<div class="field"><label>q_b <span class="unit">kN/m</span></label><input type="number" value="'+l.values.qb+'" step="0.5" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;qb&quot;,this.value)"></div>'+
-        '<div class="field"><label>to <span class="unit">m</span></label><input type="number" value="'+l.values.b+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;b&quot;,this.value)"></div>'+
-        '</div>'
-      :'<div class="field-row">'+memSel+
-        '<div class="field"><label>pos <span class="unit">m</span></label><input type="number" value="'+(l.values.z||0)+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;z&quot;,this.value)"></div>'+
         '</div>'+
         '<div class="field-row" style="margin-top:6px">'+
-        '<div class="field"><label>F <span class="unit">kN (⊥ member)</span></label><input type="number" value="'+(l.values.F||0)+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;F&quot;,this.value)"></div>'+
-        '<div class="field"><label>H <span class="unit">kN (∥ horiz)</span></label><input type="number" value="'+(l.values.H||0)+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;H&quot;,this.value)"></div>'+
-        '</div>';
+        '<div class="field"><label>from <span class="unit">m</span></label><input type="number" value="'+l.values.a+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;a&quot;,this.value)"></div>'+
+        '<div class="field"><label>to <span class="unit">m</span></label><input type="number" value="'+l.values.b+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;b&quot;,this.value)"></div>'+
+        '</div>'+
+        '<div style="margin-top:6px">'+memSel+'</div>'
+      // Zeile 1: F | H
+      // Zeile 2: pos (full width)
+      // Zeile 3: Member (full width)
+      :'<div class="field-row">'+
+        '<div class="field"><label>F <span class="unit">kN ⊥</span></label><input type="number" value="'+(l.values.F||0)+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;F&quot;,this.value)"></div>'+
+        '<div class="field"><label>H <span class="unit">kN ∥</span></label><input type="number" value="'+(l.values.H||0)+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;H&quot;,this.value)"></div>'+
+        '</div>'+
+        '<div style="margin-top:6px"><div class="field"><label>pos <span class="unit">m</span></label><input type="number" value="'+(l.values.z||0)+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;z&quot;,this.value)"></div></div>'+
+        '<div style="margin-top:6px">'+memSel+'</div>';
     return '<div class="load-item'+(l.enabled?'':' disabled')+'">'+
       '<div class="load-item-header"><div class="load-item-label">'+lbl+'</div>'+
       '<div class="load-item-actions">'+
@@ -2377,6 +2405,232 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB){
   diagData['frame'] = data;
   renderDiagram('frame', data);
 }
+
+// ══════════════════════════════════════════════════
+// LANGUAGE SYSTEM
+// ══════════════════════════════════════════════════
+const calcFlags = { en:'🇬🇧', de:'🇩🇪', fr:'🇫🇷', es:'🇪🇸' };
+let calcLang = localStorage.getItem('statiq-lang') || 'en';
+
+const calcTranslations = {
+  en: {
+    tabs: ['Simply Supported', 'Cantilever', 'Continuous Beam', 'Frame'],
+    system: 'System', span: 'Span L', length: 'Length L',
+    pointLoads: 'Point Loads', distLoads: 'Distributed Loads',
+    horizLoads: 'Horizontal Loads & Moments',
+    addPoint: '＋ Add Point Load', addDist: '＋ Add Distributed Load',
+    addHoriz: '＋ Add H / Mₑ', calculate: 'Calculate',
+    reactionA: 'Reaction A', reactionB: 'Reaction B',
+    reactionVA: 'Reaction Vₐ', reactionVB: 'Reaction V_B',
+    reactionHA: 'Reaction Hₐ', momentMA: 'Moment Mₐ',
+    Mmax: 'M max', Qmax: 'Q max', Nmax: 'N max',
+    shearForce: 'Shear Force Q(x)', bendingMoment: 'Bending Moment M(x)',
+    normalForce: 'Normal Force N(x)', deflection: 'Deflection w — mm',
+    tensionBottom: 'tension bottom', tensionTop: 'tension top',
+    diagramOnStructure: 'Diagram on Structure',
+    supportReactions: 'Support Reactions',
+    supportA: 'Support A (left)', supportB: 'Support B (right)',
+    internalHinges: 'Internal Hinges', addHinge: '＋ Add Hinge',
+    vertLoads: 'Distributed Loads', horizLoadsCols: 'Point & Horizontal Loads',
+    addVertLoad: '＋ Add Distributed Load', addHorizLoad: '＋ Add Point / H Load',
+    width: 'Width b', height: 'Height h',
+    free: 'free', degree: 'stat. indet.',
+    from: 'from', to: 'to', member: 'Member',
+    rafter: 'Rafter', leftCol: 'Left column', rightCol: 'Right column',
+    spans: 'Spans', addSpan: '＋', removeSpan: '−',
+  },
+  de: {
+    tabs: ['Einfeldträger', 'Kragarm', 'Durchlaufträger', 'Rahmen'],
+    system: 'System', span: 'Stützweite L', length: 'Länge L',
+    pointLoads: 'Einzellasten', distLoads: 'Streckenlasten',
+    horizLoads: 'Horizontallasten & Momente',
+    addPoint: '＋ Einzellast hinzufügen', addDist: '＋ Streckenlast hinzufügen',
+    addHoriz: '＋ H / Mₑ hinzufügen', calculate: 'Berechnen',
+    reactionA: 'Auflagerkraft A', reactionB: 'Auflagerkraft B',
+    reactionVA: 'Auflagerkraft Vₐ', reactionVB: 'Auflagerkraft V_B',
+    reactionHA: 'Auflagerkraft Hₐ', momentMA: 'Einspannmoment Mₐ',
+    Mmax: 'M max', Qmax: 'Q max', Nmax: 'N max',
+    shearForce: 'Querkraftverlauf Q(x)', bendingMoment: 'Momentenverlauf M(x)',
+    normalForce: 'Normalkraftverlauf N(x)', deflection: 'Durchbiegung w — mm',
+    tensionBottom: 'Zugfaser unten', tensionTop: 'Zugfaser oben',
+    diagramOnStructure: 'Schnittgrößen am Tragwerk',
+    supportReactions: 'Auflagerkräfte',
+    supportA: 'Lager A (links)', supportB: 'Lager B (rechts)',
+    internalHinges: 'Gelenke', addHinge: '＋ Gelenk hinzufügen',
+    vertLoads: 'Streckenlasten', horizLoadsCols: 'Einzellasten & Horizontallasten',
+    addVertLoad: '＋ Streckenlast hinzufügen', addHorizLoad: '＋ Einzellast / H hinzufügen',
+    width: 'Breite b', height: 'Höhe h',
+    free: 'frei', degree: 'stat. Ungrd.',
+    from: 'von', to: 'bis', member: 'Stab',
+    rafter: 'Riegel', leftCol: 'Linker Stiel', rightCol: 'Rechter Stiel',
+    spans: 'Felder', addSpan: '＋', removeSpan: '−',
+  },
+  fr: {
+    tabs: ['Poutre Simple', 'Console', 'Poutre Continue', 'Portique'],
+    system: 'Système', span: 'Portée L', length: 'Longueur L',
+    pointLoads: 'Charges Ponctuelles', distLoads: 'Charges Réparties',
+    horizLoads: 'Charges Horizontales & Moments',
+    addPoint: '＋ Ajouter charge ponctuelle', addDist: '＋ Ajouter charge répartie',
+    addHoriz: '＋ Ajouter H / Mₑ', calculate: 'Calculer',
+    reactionA: 'Réaction A', reactionB: 'Réaction B',
+    reactionVA: 'Réaction Vₐ', reactionVB: 'Réaction V_B',
+    reactionHA: 'Réaction Hₐ', momentMA: 'Moment Mₐ',
+    Mmax: 'M max', Qmax: 'Q max', Nmax: 'N max',
+    shearForce: 'Effort Tranchant T(x)', bendingMoment: 'Moment Fléchissant M(x)',
+    normalForce: 'Effort Normal N(x)', deflection: 'Flèche w — mm',
+    tensionBottom: 'traction en bas', tensionTop: 'traction en haut',
+    diagramOnStructure: 'Diagramme sur Structure',
+    supportReactions: 'Réactions aux Appuis',
+    supportA: 'Appui A (gauche)', supportB: 'Appui B (droite)',
+    internalHinges: 'Rotules', addHinge: '＋ Ajouter rotule',
+    vertLoads: 'Charges Réparties', horizLoadsCols: 'Charges Ponctuelles & Horizontales',
+    addVertLoad: '＋ Ajouter charge répartie', addHorizLoad: '＋ Ajouter charge / H',
+    width: 'Largeur b', height: 'Hauteur h',
+    free: 'libre', degree: 'hyperstat.',
+    from: 'de', to: 'à', member: 'Barre',
+    rafter: 'Traverse', leftCol: 'Poteau gauche', rightCol: 'Poteau droit',
+    spans: 'Travées', addSpan: '＋', removeSpan: '−',
+  },
+  es: {
+    tabs: ['Viga Biapoyada', 'Ménsula', 'Viga Continua', 'Pórtico'],
+    system: 'Sistema', span: 'Luz L', length: 'Longitud L',
+    pointLoads: 'Cargas Puntuales', distLoads: 'Cargas Distribuidas',
+    horizLoads: 'Cargas Horizontales & Momentos',
+    addPoint: '＋ Añadir carga puntual', addDist: '＋ Añadir carga distribuida',
+    addHoriz: '＋ Añadir H / Mₑ', calculate: 'Calcular',
+    reactionA: 'Reacción A', reactionB: 'Reacción B',
+    reactionVA: 'Reacción Vₐ', reactionVB: 'Reacción V_B',
+    reactionHA: 'Reacción Hₐ', momentMA: 'Momento Mₐ',
+    Mmax: 'M máx', Qmax: 'Q máx', Nmax: 'N máx',
+    shearForce: 'Fuerza Cortante Q(x)', bendingMoment: 'Momento Flector M(x)',
+    normalForce: 'Fuerza Normal N(x)', deflection: 'Flecha w — mm',
+    tensionBottom: 'tracción abajo', tensionTop: 'tracción arriba',
+    diagramOnStructure: 'Diagrama en Estructura',
+    supportReactions: 'Reacciones en Apoyos',
+    supportA: 'Apoyo A (izquierda)', supportB: 'Apoyo B (derecha)',
+    internalHinges: 'Rótulas', addHinge: '＋ Añadir rótula',
+    vertLoads: 'Cargas Distribuidas', horizLoadsCols: 'Cargas Puntuales & Horizontales',
+    addVertLoad: '＋ Añadir carga distribuida', addHorizLoad: '＋ Añadir carga / H',
+    width: 'Ancho b', height: 'Altura h',
+    free: 'libre', degree: 'hiperestat.',
+    from: 'desde', to: 'hasta', member: 'Barra',
+    rafter: 'Viga', leftCol: 'Pilar izquierdo', rightCol: 'Pilar derecho',
+    spans: 'Vanos', addSpan: '＋', removeSpan: '−',
+  }
+};
+
+function toggleCalcLang(){
+  document.getElementById('calc-lang-dd').classList.toggle('open');
+}
+document.addEventListener('click', e=>{
+  const sw = document.getElementById('calcLangSwitcher');
+  if(sw && !sw.contains(e.target)) document.getElementById('calc-lang-dd').classList.remove('open');
+});
+
+function setCalcLang(lang){
+  calcLang = lang;
+  localStorage.setItem('statiq-lang', lang);
+  document.getElementById('calc-flag').textContent = calcFlags[lang];
+  document.getElementById('calc-lang-dd').classList.remove('open');
+  document.querySelectorAll('.lang-dd-opt').forEach(o=>{
+    o.classList.toggle('active', o.onclick?.toString().includes(`'${lang}'`));
+  });
+  applyCalcTranslations();
+}
+
+function applyCalcTranslations(){
+  const t = calcTranslations[calcLang] || calcTranslations.en;
+
+  // Nav tabs
+  const tabs = document.querySelectorAll('.nav-tab');
+  t.tabs.forEach((label,i)=>{ if(tabs[i]) tabs[i].textContent=label; });
+
+  // Calc buttons
+  document.querySelectorAll('.calc-btn').forEach(b=>b.textContent=t.calculate);
+
+  // System card titles
+  const allCardTitles = document.querySelectorAll('.card-title');
+  allCardTitles.forEach(ct=>{
+    const txt = ct.textContent.trim();
+    if(txt==='System') ct.textContent=t.system;
+    else if(txt==='Point Loads'||txt==='Einzellasten'||txt==='Charges Ponctuelles'||txt==='Cargas Puntuales') ct.textContent=t.pointLoads;
+    else if(txt==='Distributed Loads'||txt==='Streckenlasten'||txt==='Charges Réparties'||txt==='Cargas Distribuidas') ct.textContent=t.distLoads;
+    else if(txt.startsWith('Horizontal')||txt.startsWith('Horizontal')||txt.startsWith('Charges Horiz')||txt.startsWith('Cargas Horiz')) ct.textContent=t.horizLoads;
+    else if(txt==='Internal Hinges'||txt==='Gelenke'||txt==='Rotules'||txt==='Rótulas') ct.textContent=t.internalHinges;
+    else if(txt==='Support Reactions'||txt==='Auflagerkräfte'||txt==='Réactions aux Appuis'||txt==='Reacciones en Apoyos') ct.textContent=t.supportReactions;
+    else if(txt==='Diagram on Structure'||txt==='Schnittgrößen am Tragwerk'||txt==='Diagramme sur Structure'||txt==='Diagrama en Estructura') ct.textContent=t.diagramOnStructure;
+  });
+
+  // Add load buttons
+  document.querySelectorAll('.add-load-btn').forEach(b=>{
+    const txt=b.textContent.trim();
+    if(txt.includes('Point Load')||txt.includes('Einzellast')||txt.includes('ponctuelle')||txt.includes('puntual')) b.textContent=t.addPoint;
+    else if(txt.includes('Distributed')||txt.includes('Streckenlast')||txt.includes('répartie')||txt.includes('distribuida')) b.textContent=t.addDist;
+    else if(txt.includes('H / M')||txt.includes('Horizontal')) b.textContent=t.addHoriz;
+    else if(txt.includes('Hinge')||txt.includes('Gelenk')||txt.includes('rotule')||txt.includes('rótula')) b.textContent=t.addHinge;
+  });
+
+  // Span label
+  const spanLabel = document.getElementById('span-count-display');
+  if(spanLabel){
+    const row = spanLabel.closest('.span-controls');
+    if(row){
+      const lbl = row.querySelector('.span-count-label');
+      if(lbl) lbl.innerHTML = t.spans+': <span class="span-count-num" id="span-count-display">'+numSpans+'</span>';
+    }
+  }
+
+  // Chart titles
+  document.querySelectorAll('.chart-title').forEach(ct=>{
+    const txt=ct.textContent.trim();
+    if(txt.startsWith('Shear')||txt.startsWith('Querkraft')||txt.startsWith('Effort')||txt.startsWith('Fuerza Cort')) ct.textContent=t.shearForce;
+    else if(txt.startsWith('Bending')||txt.startsWith('Momenten')||txt.startsWith('Moment Fléch')||txt.startsWith('Momento Flect')) ct.textContent=t.bendingMoment;
+    else if(txt.startsWith('Normal')||txt.startsWith('Normalkraft')||txt.startsWith('Effort Normal')||txt.startsWith('Fuerza Normal')) ct.textContent=t.normalForce;
+  });
+
+  // Chart badges (tension bottom/top)
+  document.querySelectorAll('.chart-badge').forEach(cb=>{
+    if(cb.textContent.includes('tension bottom')||cb.textContent.includes('Zugfaser unten')||cb.textContent.includes('traction en bas')||cb.textContent.includes('tracción abajo')) cb.textContent='kNm · '+t.tensionBottom;
+    else if(cb.textContent.includes('tension top')||cb.textContent.includes('Zugfaser oben')||cb.textContent.includes('traction en haut')||cb.textContent.includes('tracción arriba')) cb.textContent='kNm · '+t.tensionTop;
+  });
+
+  // Support labels
+  document.querySelectorAll('.card-title').forEach(ct=>{
+    if(ct.textContent.includes('Support A')||ct.textContent.includes('Lager A')||ct.textContent.includes('Appui A')||ct.textContent.includes('Apoyo A')) ct.textContent=t.supportA;
+    else if(ct.textContent.includes('Support B')||ct.textContent.includes('Lager B')||ct.textContent.includes('Appui B')||ct.textContent.includes('Apoyo B')) ct.textContent=t.supportB;
+  });
+
+  // Field labels - span and length
+  document.querySelectorAll('label').forEach(lbl=>{
+    const txt=lbl.childNodes[0]?.textContent?.trim();
+    if(txt==='Span L'||txt==='Stützweite L'||txt==='Portée L'||txt==='Luz L') lbl.childNodes[0].textContent=t.span+' ';
+    else if(txt==='Length L'||txt==='Länge L'||txt==='Longueur L'||txt==='Longitud L') lbl.childNodes[0].textContent=t.length+' ';
+    else if(txt==='Width b'||txt==='Breite b'||txt==='Largeur b'||txt==='Ancho b') lbl.childNodes[0].textContent=t.width+' ';
+    else if(txt==='Height h'||txt==='Höhe h'||txt==='Hauteur h'||txt==='Altura h') lbl.childNodes[0].textContent=t.height+' ';
+  });
+
+  // Footnotes
+  document.querySelectorAll('.footnote').forEach(fn=>{
+    const tab = ['Simply Supported','Cantilever','Continuous Beam','Frame'];
+    const tabDE = ['Einfeldträger','Kragarm','Durchlaufträger','Rahmen'];
+    const tabFR = ['Poutre Simple','Console','Poutre Continue','Portique'];
+    const tabES = ['Viga Biapoyada','Ménsula','Viga Continua','Pórtico'];
+    [...tab,...tabDE,...tabFR,...tabES].forEach((name,i)=>{
+      if(fn.textContent.includes(name)){
+        fn.textContent = `Statiq v0.5.5 · ${t.tabs[i%4]}`;
+      }
+    });
+  });
+}
+
+// ── Init language ──────────────────────────────────
+window.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('calc-flag').textContent = calcFlags[calcLang];
+  if(calcLang !== 'en') applyCalcTranslations();
+  document.querySelectorAll('.lang-dd-opt').forEach(o=>{
+    o.classList.toggle('active', o.onclick?.toString().includes(`'${calcLang}'`));
+  });
+});
 
 // ══════════════════════════════════════════════════
 // INIT

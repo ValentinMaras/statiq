@@ -540,7 +540,17 @@ const translations = {
 };
 
 const flags = { en:'🇬🇧', de:'🇩🇪', fr:'🇫🇷', es:'🇪🇸' };
-let currentLang = 'en';
+let currentLang = localStorage.getItem('statiq-lang') || 'en';
+
+// Auto-apply saved language on load
+window.addEventListener('DOMContentLoaded', () => {
+  if(currentLang !== 'en') setLang(currentLang);
+  // Update active state in dropdown
+  document.querySelectorAll('.lang-option').forEach(opt => {
+    opt.classList.toggle('active', opt.onclick?.toString().includes(`'${currentLang}'`));
+  });
+  document.getElementById('current-flag').textContent = flags[currentLang];
+});
 
 function toggleLang(){
   const dd = document.getElementById('lang-dropdown');
@@ -556,10 +566,10 @@ document.addEventListener('click', e => {
 
 function setLang(lang){
   currentLang = lang;
+  localStorage.setItem('statiq-lang', lang); // persist across pages
   const t = translations[lang];
   document.getElementById('lang-dropdown').classList.remove('open');
   document.getElementById('current-flag').textContent = flags[lang];
-  document.getElementById('current-lang-label').textContent = lang.toUpperCase();
 
   // Update all text
   document.querySelector('.eyebrow').textContent = t.eyebrow;
