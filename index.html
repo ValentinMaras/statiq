@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Statiq — Structural Intelligence</title>
+  <meta name="description" content="Statiq — structural analysis tools for civil engineering students. Calculate, reference, and design." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --border: #e0dfd8;
+      --text: #1a1a18;
+      --text2: #6b6a65;
+      --text3: #a8a7a2;
+      --accent: #1a4fd6;
+      --accent2: #0f6e56;
+      --accent3: #8b3a1e;
+      --radius: 16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem 1.5rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle grid background */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* Accent blob */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -80px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(26,79,214,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Logo */
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards;
+    }
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      background: var(--text);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-mark svg { width: 20px; height: 20px; }
+    .logo-text {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    .logo-text span { color: var(--accent); }
+
+    /* Eyebrow */
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.1s ease forwards;
+    }
+
+    /* Headline */
+    .headline {
+      font-size: clamp(36px, 9vw, 52px);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s ease forwards;
+    }
+    .headline em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--accent);
+    }
+
+    /* Subline */
+    .subline {
+      font-size: 15px;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 340px;
+      margin-bottom: 3rem;
+      font-weight: 400;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.3s ease forwards;
+    }
+
+    /* Scroll cue */
+    .scroll-cue {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.5s ease forwards;
+    }
+    .scroll-cue-line {
+      width: 32px;
+      height: 1px;
+      background: var(--text3);
+    }
+
+    /* ── MODULES ── */
+    .modules {
+      padding: 1.5rem 1.5rem 5rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .modules-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      margin-bottom: 1.25rem;
+      padding-left: 2px;
+    }
+
+    .module-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      opacity: 0;
+    }
+    .module-card:nth-child(2) { animation: fadeUp 0.5s 0.05s ease forwards; }
+    .module-card:nth-child(3) { animation: fadeUp 0.5s 0.12s ease forwards; }
+    .module-card:nth-child(4) { animation: fadeUp 0.5s 0.19s ease forwards; }
+
+    .module-card.active {
+      cursor: pointer;
+    }
+    .module-card.active:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+      border-color: var(--card-accent);
+    }
+    .module-card.inactive {
+      cursor: default;
+    }
+
+    /* Accent bar */
+    .module-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--card-accent);
+      border-radius: 3px 0 0 3px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .module-card.active:hover::before { opacity: 1; }
+
+    /* Card top row */
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .card-name {
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'DM Mono', monospace;
+      color: var(--card-accent);
+      letter-spacing: 0.2px;
+    }
+    .card-badge {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.3px;
+    }
+    .badge-live {
+      background: #e8f5f1;
+      color: #0f6e56;
+      border: 1px solid #c5e8df;
+    }
+    .badge-soon {
+      background: var(--bg);
+      color: var(--text3);
+      border: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+    .card-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    /* Feature pills */
+    .card-features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .feature-pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--bg);
+      color: var(--text2);
+      border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* Arrow */
+    .card-arrow {
+      position: absolute;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--card-accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .module-card.active:hover .card-arrow { opacity: 1; }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      border-top: 1px solid var(--border);
+    }
+    .footer span { color: var(--accent); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-inner">
+
+    <div class="logo-wrap">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="13" width="16" height="2.5" rx="1" fill="white"/>
+          <rect x="9" y="4" width="2" height="9" rx="1" fill="white"/>
+          <polygon points="10,2 13.5,7 6.5,7" fill="white"/>
+        </svg>
+      </div>
+      <div class="logo-text">Stat<span>iq</span></div>
+    </div>
+
+    <div class="eyebrow">Structural Intelligence</div>
+
+    <h1 class="headline">
+      Tools built for<br>
+      <em>engineering</em><br>
+      students.
+    </h1>
+
+    <p class="subline">
+      Calculate internal forces, look up theory and design tables,
+      and dimension cross-sections — all in one place.
+    </p>
+
+    <div class="scroll-cue">
+      <div class="scroll-cue-line"></div>
+      explore modules
+    </div>
+
+  </div>
+</section>
+
+<section class="modules">
+  <div class="modules-label">Modules</div>
+
+  <!-- calc -->
+  <a class="module-card active" href="calc.html"
+     style="--card-accent: #1a4fd6;">
+    <div class="card-top">
+      <div class="card-name">statiq·calc</div>
+      <div class="card-badge badge-live">● Live</div>
+    </div>
+    <div class="card-title">Internal Forces</div>
+    <div class="card-desc">
+      Calculate shear forces, bending moments, and reactions for beams and frames. Visualise Q and M diagrams instantly.
+    </div>
+    <div class="card-features">
+      <span class="feature-pill">Simply Supported</span>
+      <span class="feature-pill">Cantilever</span>
+      <span class="feature-pill">Continuous Beam</span>
+      <span class="feature-pill">Point & Dist. Loads</span>
+      <span class="feature-pill">Trapez Load</span>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+
+
+  <!-- ref -->
+  <div class="module-card inactive"
+       style="--card-accent: #0f6e56;">
+    <div class="card-top">
+      <div class="card-name">statiq·ref</div>
+      <div class="card-badge badge-soon">Coming soon</div>
+    </div>
+    <div class="card-title">Theory & Tables</div>
+    <div class="card-desc">
+      Design tables, section properties, material parameters, and structural theory — your digital reference handbook.
+    </div>
+    <div class="card-features">
+      <span class="feature-pill">IPE / HEA / HEB</span>
+      <span class="feature-pill">Material Values</span>
+      <span class="feature-pill">Formulas</span>
+      <span class="feature-pill">Norm Tables</span>
+    </div>
+  </div>
+
+
+</section>
+
+<section class="modules">
+  <div class="modules-label">Modules</div>
+
+  <!-- calc -->
+  <a class="module-card active" href="calc.html"
+     style="--card-accent: #1a4fd6;">
+    <div class="card-top">
+      <div class="card-name">statiq·calc</div>
+      <div class="card-badge badge-live">● Live</div>
+    </div>
+    <div class="card-title">Internal Forces</div>
+    <div class="card-desc">
+      Calculate shear forces, bending moments, and reactions for beams and frames. Visualise Q and M diagrams instantly.
+    </div>
+    <div class="card-features">
+      <span class="feature-pill">Simply Supported</span>
+      <span class="feature-pill">Cantilever</span>
+      <span class="feature-pill">Continuous Beam</span>
+      <span class="feature-pill">Point & Dist. Loads</span>
+      <span class="feature-pill">Trapez Load</span>
+    </div>
+    <div class="card-arrow">→</div>
+  </a>
+
+  <!-- ref -->
+  <div class="module-card inactive"
+       style="--card-accent: #0f6e56;">
+    <div class="card-top">
+      <div class="card-name">statiq·ref</div>
+      <div class="card-badge badge-soon">Coming soon</div>
+    </div>
+    <div class="card-title">Theory & Tables</div>
+    <div class="card-desc">
+      Design tables, section properties, material parameters, and structural theory — your digital reference handbook.
+    </div>
+    <div class="card-features">
+      <span class="feature-pill">IPE / HEA / HEB</span>
+      <span class="feature-pill">Material Values</span>
+      <span class="feature-pill">Formulas</span>
+      <span class="feature-pill">Norm Tables</span>
+    </div>
+  </div>
+
+  <!-- size -->
+  <div class="module-card inactive"
+       style="--card-accent: #8b3a1e;">
+    <div class="card-top">
+      <div class="card-name">statiq·size</div>
+      <div class="card-badge badge-soon">Coming soon</div>
+    </div>
+    <div class="card-title">Design & Sizing</div>
+    <div class="card-desc">
+      Dimension cross-sections and connections according to Eurocode. Steel, reinforced concrete, and timber.
+    </div>
+    <div class="card-features">
+      <span class="feature-pill">Reinforced Concrete</span>
+      <span class="feature-pill">Steel Sections</span>
+      <span class="feature-pill">Connections</span>
+      <span class="feature-pill">Eurocode</span>
+    </div>
+  </div>
+
+</section>
+
+<footer class="footer">
+  Stat<span>iq</span> · Structural Intelligence · v0.4.2
+</footer>
+
+</body>
+</html>
