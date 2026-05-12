@@ -267,21 +267,7 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header class="app-header">
   <a class="logo" href="index.html" style="text-decoration:none;color:inherit;">Stat<span>iq</span></a>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <div class="version">v0.5.5</div>
-    <div style="position:relative;" id="calcLangSwitcher">
-      <button class="lang-btn-calc" onclick="toggleCalcLang()">
-        <span id="calc-flag">🇬🇧</span>
-        <span style="font-size:9px;color:var(--text3);">▾</span>
-      </button>
-      <div class="lang-dd" id="calc-lang-dd">
-        <div class="lang-dd-opt active" onclick="setCalcLang('en')">🇬🇧 &nbsp;English</div>
-        <div class="lang-dd-opt" onclick="setCalcLang('de')">🇩🇪 &nbsp;Deutsch</div>
-        <div class="lang-dd-opt" onclick="setCalcLang('fr')">🇫🇷 &nbsp;Français</div>
-        <div class="lang-dd-opt" onclick="setCalcLang('es')">🇪🇸 &nbsp;Español</div>
-      </div>
-    </div>
-  </div>
+  <div class="version">v0.5.5</div>
 </header>
 
 <nav class="nav">
@@ -2519,24 +2505,7 @@ const calcTranslations = {
   }
 };
 
-function toggleCalcLang(){
-  document.getElementById('calc-lang-dd').classList.toggle('open');
-}
-document.addEventListener('click', e=>{
-  const sw = document.getElementById('calcLangSwitcher');
-  if(sw && !sw.contains(e.target)) document.getElementById('calc-lang-dd').classList.remove('open');
-});
 
-function setCalcLang(lang){
-  calcLang = lang;
-  localStorage.setItem('statiq-lang', lang);
-  document.getElementById('calc-flag').textContent = calcFlags[lang];
-  document.getElementById('calc-lang-dd').classList.remove('open');
-  document.querySelectorAll('.lang-dd-opt').forEach(o=>{
-    o.classList.toggle('active', o.onclick?.toString().includes(`'${lang}'`));
-  });
-  applyCalcTranslations();
-}
 
 function applyCalcTranslations(){
   const t = calcTranslations[calcLang] || calcTranslations.en;
@@ -2625,11 +2594,7 @@ function applyCalcTranslations(){
 
 // ── Init language ──────────────────────────────────
 window.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('calc-flag').textContent = calcFlags[calcLang];
   if(calcLang !== 'en') applyCalcTranslations();
-  document.querySelectorAll('.lang-dd-opt').forEach(o=>{
-    o.classList.toggle('active', o.onclick?.toString().includes(`'${calcLang}'`));
-  });
 });
 
 // ══════════════════════════════════════════════════
