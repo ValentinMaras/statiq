@@ -17,30 +17,30 @@
       --red: #d85a30; --blue: #185fa5; --green: #0f6e56;
       --radius: 12px; --radius-sm: 8px;
     }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; }
+    body { font-family:DM Sans, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; }
 
     .app-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
     .logo { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
     .logo span { color: var(--accent); }
-    .version { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+    .version { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; }
 
     .nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; scrollbar-width: none; padding: 0 1rem; }
     .nav::-webkit-scrollbar { display: none; }
-    .nav-tab { padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--text2); border: none; background: none; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+    .nav-tab { padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--text2); border: none; background: none; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s; font-family:DM Sans, sans-serif; }
     .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
     .main { padding: 1rem; max-width: 480px; margin: 0 auto; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
     .card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .card-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; }
-    .info-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; color: var(--text3); font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+    .info-btn { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; color: var(--text3); font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family:DM Sans, sans-serif; }
     .info-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 
     .field { margin-bottom: 10px; }
     .field:last-child { margin-bottom: 0; }
     .field label { font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
-    .field label .unit { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
-    .field input { width: 100%; padding: 9px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); transition: border-color 0.15s; }
+    .field label .unit { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; }
+    .field input { width: 100%; padding: 9px 12px; font-size: 14px; font-family:DM Sans, sans-serif; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); transition: border-color 0.15s; }
     .field input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -50,20 +50,20 @@
     .load-item { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: opacity 0.2s; }
     .load-item.disabled { opacity: 0.4; }
     .load-item-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--surface2); }
-    .load-item-label { font-size: 12px; font-weight: 600; color: var(--text2); font-family: 'DM Mono', monospace; }
+    .load-item-label { font-size: 12px; font-weight: 600; color: var(--text2); font-family:DM Mono, monospace; }
     .load-item-actions { display: flex; gap: 5px; }
     .load-action-btn { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: background 0.15s; color: var(--text2); }
     .load-action-btn:hover { background: var(--border); }
     .load-action-btn.delete { color: var(--red); }
     .load-item-body { padding: 10px; background: var(--surface); }
 
-    .add-load-btn { width: 100%; padding: 9px; font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif; border: 1px dashed var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--text3); cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+    .add-load-btn { width: 100%; padding: 9px; font-size: 13px; font-weight: 500; font-family:DM Sans, sans-serif; border: 1px dashed var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--text3); cursor: pointer; transition: all 0.15s; margin-top: 8px; }
     .add-load-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
 
     .beam-svg-wrap { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.75rem; overflow-x: auto; }
     .beam-svg-wrap svg { height: auto; display: block; }
 
-    .calc-btn { width: 100%; padding: 13px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 0.75rem; transition: all 0.15s; letter-spacing: -0.2px; }
+    .calc-btn { width: 100%; padding: 13px; font-size: 15px; font-weight: 600; font-family:DM Sans, sans-serif; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 0.75rem; transition: all 0.15s; letter-spacing: -0.2px; }
     .calc-btn:hover { background: #1540b0; }
     .calc-btn:active { transform: scale(0.98); }
 
@@ -71,25 +71,25 @@
     .metric { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; }
     .metric .m-label { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
     .metric .m-value { font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.1; }
-    .metric .m-unit { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 2px; }
+    .metric .m-unit { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; margin-top: 2px; }
 
     /* Reactions table */
     .reactions-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 0.75rem; }
     .reactions-table th { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); }
-    .reactions-table td { padding: 8px 10px; border-bottom: 1px solid var(--surface2); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; }
+    .reactions-table td { padding: 8px 10px; border-bottom: 1px solid var(--surface2); color: var(--text); font-family:DM Mono, monospace; font-size: 13px; }
     .reactions-table tr:last-child td { border-bottom: none; }
 
     .chart-block { margin-bottom: 1rem; }
     .chart-block:last-child { margin-bottom: 0; }
     .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .chart-title { font-size: 12px; font-weight: 600; color: var(--text2); }
-    .chart-badge { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); }
+    .chart-badge { font-size: 10px; font-family:DM Mono, monospace; color: var(--text3); }
     .chart-wrap { position: relative; height: 150px; }
     .chart-divider { height: 1px; background: var(--border); margin: 1rem 0; }
 
     /* Span controls */
     .span-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-    .span-count-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: 'DM Sans', sans-serif; line-height: 1; }
+    .span-count-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family:DM Sans, sans-serif; line-height: 1; }
     .span-count-btn:hover { border-color: var(--accent); color: var(--accent); }
     .span-count-btn:disabled { opacity: 0.3; cursor: default; }
     .span-count-label { font-size: 13px; color: var(--text2); flex: 1; }
@@ -97,7 +97,7 @@
 
     /* Span cards */
     .span-card { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; overflow: hidden; }
-    .span-card-header { background: var(--surface2); padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text2); font-family: 'DM Mono', monospace; }
+    .span-card-header { background: var(--surface2); padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text2); font-family:DM Mono, monospace; }
     .span-card-body { padding: 10px 12px; background: var(--surface); }
 
     /* Modal */
@@ -111,7 +111,7 @@
     .modal-section { margin-bottom: 1.25rem; }
     .modal-section h3 { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
     .modal-section p { font-size: 13px; color: var(--text2); line-height: 1.65; }
-    .formula-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin: 8px 0; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); line-height: 1.9; }
+    .formula-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin: 8px 0; font-family:DM Mono, monospace; font-size: 12px; color: var(--text); line-height: 1.9; }
     .formula-box .comment { color: var(--text3); font-size: 11px; }
 
     .hidden { display: none; }
@@ -123,13 +123,13 @@
 
     /* Diagram on structure */
     .diagram-toggle-row { display: flex; gap: 6px; margin-bottom: 10px; }
-    .diagram-toggle-btn { flex: 1; padding: 7px; font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s; }
+    .diagram-toggle-btn { flex: 1; padding: 7px; font-size: 12px; font-weight: 600; font-family:DM Mono, monospace; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--text2); cursor: pointer; transition: all 0.15s; }
     .diagram-toggle-btn.active-M { background: #e8f5f1; color: #0f6e56; border-color: #0f6e56; }
     .diagram-toggle-btn.active-Q { background: #e6f1fb; color: #185fa5; border-color: #185fa5; }
     .diagram-toggle-btn.active-N { background: #f5ede9; color: #8b3a1e; border-color: #8b3a1e; }
     .diagram-svg-wrap { background: var(--surface2); border-radius: var(--radius-sm); overflow: auto; }
     .diagram-svg-wrap svg { display: block; }
-    .diagram-label { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; text-align: center; margin-top: 6px; }
+    .diagram-label { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; text-align: center; margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -267,7 +267,7 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header class="app-header">
   <a class="logo" href="index.html" style="text-decoration:none;color:inherit;">Stat<span>iq</span></a>
-  <div class="version">v0.5.3</div>
+  <div class="version">v0.5.5</div>
 </header>
 
 <nav class="nav">
@@ -338,6 +338,15 @@
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-beam" onclick="setDiagMode('beam','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-beam" onclick="setDiagMode('beam','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-beam" onclick="setDiagMode('beam','N')">N</button>
+        <button class="diagram-toggle-btn" id="diag-btn-W-beam" onclick="setDiagMode('beam','W')">w</button>
+      </div>
+      <div id="ei-input-beam" style="display:none;margin-bottom:8px;">
+        <div class="field-row">
+          <div class="field"><label>E <span class="unit">kN/m²</span></label>
+            <input type="number" id="beam-E" value="210000000" step="1000000" oninput="if(diagData['beam'])renderDiagram('beam',diagData['beam'])"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
+            <input type="number" id="beam-Iy" value="10000" step="100" oninput="if(diagData['beam'])renderDiagram('beam',diagData['beam'])"></div>
+        </div>
       </div>
       <div class="diagram-svg-wrap">
         <svg id="diag-svg-beam" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg>
@@ -345,7 +354,7 @@
       <div class="diagram-label" id="diag-label-beam">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.3 · Simply Supported Beam</div>
+  <div class="footnote">Statiq v0.5.5 · Simply Supported Beam</div>
 </main>
 
 <!-- ═══════════════ CANTILEVER TAB ═══════════════ -->
@@ -409,6 +418,15 @@
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-cant" onclick="setDiagMode('cant','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-cant" onclick="setDiagMode('cant','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-cant" onclick="setDiagMode('cant','N')">N</button>
+        <button class="diagram-toggle-btn" id="diag-btn-W-cant" onclick="setDiagMode('cant','W')">w</button>
+      </div>
+      <div id="ei-input-cant" style="display:none;margin-bottom:8px;">
+        <div class="field-row">
+          <div class="field"><label>E <span class="unit">kN/m²</span></label>
+            <input type="number" id="cant-E" value="210000000" step="1000000" oninput="if(diagData['cant'])renderDiagram('cant',diagData['cant'])"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
+            <input type="number" id="cant-Iy" value="10000" step="100" oninput="if(diagData['cant'])renderDiagram('cant',diagData['cant'])"></div>
+        </div>
       </div>
       <div class="diagram-svg-wrap">
         <svg id="diag-svg-cant" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg>
@@ -416,7 +434,7 @@
       <div class="diagram-label" id="diag-label-cant">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.3 · Cantilever</div>
+  <div class="footnote">Statiq v0.5.5 · Cantilever</div>
 </main>
 
 <!-- ═══════════════ CONTINUOUS BEAM TAB ═══════════════ -->
@@ -477,6 +495,15 @@
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-cont" onclick="setDiagMode('cont','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-cont" onclick="setDiagMode('cont','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-cont" onclick="setDiagMode('cont','N')">N</button>
+        <button class="diagram-toggle-btn" id="diag-btn-W-cont" onclick="setDiagMode('cont','W')">w</button>
+      </div>
+      <div id="ei-input-cont" style="display:none;margin-bottom:8px;">
+        <div class="field-row">
+          <div class="field"><label>E <span class="unit">kN/m²</span></label>
+            <input type="number" id="cont-E" value="210000000" step="1000000" oninput="if(diagData['cont'])renderDiagram('cont',diagData['cont'])"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
+            <input type="number" id="cont-Iy" value="10000" step="100" oninput="if(diagData['cont'])renderDiagram('cont',diagData['cont'])"></div>
+        </div>
       </div>
       <div class="diagram-svg-wrap">
         <svg id="diag-svg-cont" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg>
@@ -484,7 +511,7 @@
       <div class="diagram-label" id="diag-label-cont">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.3 · Continuous Beam</div>
+  <div class="footnote">Statiq v0.5.5 · Continuous Beam</div>
 </main>
 
 <!-- ═══════════════ FRAME TAB ═══════════════ -->
@@ -529,21 +556,19 @@
       <button class="add-load-btn" onclick="addFrameHinge()">＋ Add Hinge</button>
     </div>
     <!-- Indeterminacy indicator -->
-    <div id="frame-indet-info" style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;"></div>
+    <div id="frame-indet-info" style="margin-top:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:12px;color:var(--text2);font-family:DM Mono,monospace;"></div>
   </div>
 
-  <!-- Vertical loads on rafter -->
+  <!-- All frame loads -->
   <div class="card">
-    <div class="card-title">Vertical Loads on Rafter</div>
+    <div class="card-title">Distributed Loads</div>
     <div class="load-list" id="frame-vert-list"></div>
-    <button class="add-load-btn" onclick="addFrameLoad('vert')">＋ Add Vertical Load</button>
+    <button class="add-load-btn" onclick="addFrameLoad('vert')">＋ Add Distributed Load</button>
   </div>
-
-  <!-- Horizontal loads -->
   <div class="card">
-    <div class="card-title">Horizontal Loads on Columns</div>
+    <div class="card-title">Point &amp; Horizontal Loads</div>
     <div class="load-list" id="frame-horiz-list"></div>
-    <button class="add-load-btn" onclick="addFrameLoad('horiz')">＋ Add Horizontal Load</button>
+    <button class="add-load-btn" onclick="addFrameLoad('horiz')">＋ Add Point / H Load</button>
   </div>
 
   <button class="calc-btn" onclick="calculateFrame()">Calculate</button>
@@ -591,6 +616,15 @@
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-frame" onclick="setDiagMode('frame','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-frame" onclick="setDiagMode('frame','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-frame" onclick="setDiagMode('frame','N')">N</button>
+        <button class="diagram-toggle-btn" id="diag-btn-W-frame" onclick="setDiagMode('frame','W')">w</button>
+      </div>
+      <div id="ei-input-frame" class="hidden" style="display:none;gap:8px;margin-bottom:8px;">
+        <div class="field-row">
+          <div class="field"><label>E <span class="unit">kN/m²</span></label>
+            <input type="number" id="frame-E" value="210000000" step="1000000" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
+            <input type="number" id="frame-Iy" value="10000" step="100" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
+        </div>
       </div>
       <div class="diagram-svg-wrap">
         <svg id="diag-svg-frame" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg>
@@ -598,7 +632,7 @@
       <div class="diagram-label" id="diag-label-frame">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.3 · Frame</div>
+  <div class="footnote">Statiq v0.5.5 · Frame</div>
 </main>
 
 <script>
@@ -803,58 +837,157 @@ function renderContLoads(spanIdx,type) {
 // SVG DRAWING
 // ══════════════════════════════════════════════════
 const DEG2 = Math.PI/180;
-function maxFySys(sys) {
-  const pts=loads[sys].point.filter(l=>l.enabled&&l.values.F!==0);
-  if(!pts.length) return 1;
-  return Math.max(...pts.map(l=>Math.abs(l.values.F*Math.cos((l.values.alpha||0)*DEG2))));
+// ══════════════════════════════════════════════════
+// SVG DRAWING ENGINE v2 — scaled, color-coded, no overlap
+// Colors: F=red, q=blue, H=orange, Me=purple
+// ══════════════════════════════════════════════════
+const CLR = { F:'#d85a30', q:'#185fa5', H:'#d97706', Me:'#7c3aed' };
+
+function globalMaxLoad(sys) {
+  // Find max load value across ALL load types for consistent scaling
+  let maxF=0;
+  if(sys==='cont') {
+    spanData.forEach(sp=>{
+      sp.point.filter(l=>l.enabled).forEach(l=>{ maxF=Math.max(maxF,Math.abs(l.values.F)); });
+      sp.dist.filter(l=>l.enabled).forEach(l=>{ maxF=Math.max(maxF,Math.abs(l.values.qa),Math.abs(l.values.qb)); });
+    });
+  } else {
+    (loads[sys]?.point||[]).filter(l=>l.enabled).forEach(l=>{ maxF=Math.max(maxF,Math.abs(l.values.F)); });
+    (loads[sys]?.dist||[]).filter(l=>l.enabled).forEach(l=>{ maxF=Math.max(maxF,Math.abs(l.values.qa),Math.abs(l.values.qb)); });
+    (loads[sys]?.horiz||[]).filter(l=>l.enabled).forEach(l=>{ maxF=Math.max(maxF,Math.abs(l.values.H||0)); });
+  }
+  return maxF || 1;
 }
-function arrowSVG(tipX,tipY,F,alpha,maxF,color,markerId,label,row) {
-  const MIN_LEN=16, MAX_LEN=38;
-  const len=MIN_LEN+(MAX_LEN-MIN_LEN)*Math.abs(F*Math.cos(alpha*DEG2))/Math.max(maxF,1);
-  const tailX=tipX-len*Math.sin(alpha*DEG2);
-  const tailY=tipY-len*Math.cos(alpha*DEG2);
+
+// Draw a vertical point load arrow (scaled)
+function arrowSVG(tipX, tipY, F, alpha, maxF, label, row, prefix) {
+  const MIN_LEN=14, MAX_LEN=40;
+  const Fy=F*Math.cos((alpha||0)*DEG2);
+  const len=MIN_LEN+(MAX_LEN-MIN_LEN)*Math.abs(F)/Math.max(maxF,1);
+  const tailX=tipX-len*Math.sin((alpha||0)*DEG2);
+  const tailY=tipY-len*Math.cos((alpha||0)*DEG2);
   const labelY=tailY-4-row*10;
-  return `<line x1="${tailX.toFixed(1)}" y1="${tailY.toFixed(1)}" x2="${tipX.toFixed(1)}" y2="${(tipY-1).toFixed(1)}" stroke="${color}" stroke-width="2" marker-end="url(#${markerId})"/>
-  <text x="${tipX.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}" font-family="DM Mono,monospace">${label}</text>`;
+  const mid=`${prefix}arr-red`;
+  return `<line x1="${tailX.toFixed(1)}" y1="${tailY.toFixed(1)}" x2="${tipX.toFixed(1)}" y2="${(tipY-1).toFixed(1)}"
+    stroke="${CLR.F}" stroke-width="2" marker-end="url(#${mid})"/>
+  <text x="${tipX.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="8"
+    fill="${CLR.F}" font-family="DM Mono,monospace">${label}</text>`;
 }
+
+// Draw a horizontal load arrow (orange, dashed)
+function horizArrowSVG(fromX, toX, y, F, label, row) {
+  const dir = F >= 0 ? 1 : -1;
+  const mid = `harr${dir>0?'r':'l'}`;
+  const lx = dir>0 ? fromX : toX;
+  return `<line x1="${fromX.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(toX-dir*2).toFixed(1)}" y2="${y.toFixed(1)}"
+    stroke="${CLR.H}" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#${mid})"/>
+  <text x="${((fromX+toX)/2).toFixed(1)}" y="${(y-4-row*10).toFixed(1)}" text-anchor="middle" font-size="8"
+    fill="${CLR.H}" font-family="DM Mono,monospace">${label}</text>`;
+}
+
+// Draw a moment arc (purple, curved arrow)
+function momentSVG(cx, cy, Me, label, row) {
+  const r=12, sign=Me>=0?1:-1;
+  // Arc from 200° to 340° (CCW for positive)
+  const startA=(200)*Math.PI/180, endA=(340)*Math.PI/180;
+  const x1=cx+r*Math.cos(startA), y1=cy+r*Math.sin(startA);
+  const x2=cx+r*Math.cos(endA),   y2=cy+r*Math.sin(endA);
+  const sweep=sign>0?1:0;
+  return `<path d="M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 1 ${sweep} ${x2.toFixed(1)} ${y2.toFixed(1)}"
+    fill="none" stroke="${CLR.Me}" stroke-width="1.8" marker-end="url(#mearr)"/>
+  <text x="${cx}" y="${(cy-r-4-row*10).toFixed(1)}" text-anchor="middle" font-size="8"
+    fill="${CLR.Me}" font-family="DM Mono,monospace">${label}</text>`;
+}
+
+// Draw distributed load (scaled arrows + trapezoid top line)
+function distSVG(xa, xb, qa, qb, maxF, bY, label, di, prefix) {
+  const MIN_LEN=8, MAX_LEN=36;
+  const scale=v=>MIN_LEN+(MAX_LEN-MIN_LEN)*Math.abs(v)/Math.max(maxF,1);
+  const n=Math.max(3,Math.round((xb-xa)/20));
+  let h='';
+  for(let i=0;i<=n;i++){
+    const xi=xa+(i/n)*(xb-xa);
+    const qi=qa+(qb-qa)*(i/n);
+    const aLen=scale(qi);
+    h+=`<line x1="${xi.toFixed(1)}" y1="${(bY-2-aLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${bY-2}"
+      stroke="${CLR.q}" stroke-width="1.2" marker-end="url(#${prefix}arr)"/>`;
+  }
+  // Top connecting line (trapezoid shape)
+  const ya=bY-2-scale(qa), yb=bY-2-scale(qb);
+  h+=`<line x1="${xa.toFixed(1)}" y1="${ya.toFixed(1)}" x2="${xb.toFixed(1)}" y2="${yb.toFixed(1)}"
+    stroke="${CLR.q}" stroke-width="1.2"/>`;
+  // Label — stagger vertically per load index
+  const isTrap=qa!==qb;
+  const lbl=isTrap?`${label}:${qa}→${qb}kN/m`:`${label}=${qa}kN/m`;
+  const labelY=Math.min(ya,yb)-4-di*10;
+  h+=`<text x="${((xa+xb)/2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle"
+    font-size="8" fill="${CLR.q}" font-family="DM Mono,monospace">${lbl}</text>`;
+  return h;
+}
+
 function assignRows(xs) {
   const rows=new Array(xs.length).fill(0);
   for(let i=0;i<xs.length;i++) for(let j=0;j<i;j++) if(Math.abs(xs[i]-xs[j])<40&&rows[j]===rows[i]) rows[i]++;
   return rows;
 }
+
 function mkDefs(prefix) {
   return `<defs>
-    <marker id="${prefix}arr" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto"><polygon points="0,0 5,2.5 0,5" fill="#185fa5"/></marker>
-    <marker id="${prefix}arr-red" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto"><polygon points="0,0 5,2.5 0,5" fill="#d85a30"/></marker>
+    <marker id="${prefix}arr" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+      <polygon points="0,0 5,2.5 0,5" fill="${CLR.q}"/></marker>
+    <marker id="${prefix}arr-red" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+      <polygon points="0,0 5,2.5 0,5" fill="${CLR.F}"/></marker>
+    <marker id="harrr" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+      <polygon points="0,0 5,2.5 0,5" fill="${CLR.H}"/></marker>
+    <marker id="harrl" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+      <polygon points="5,0 0,2.5 5,5" fill="${CLR.H}"/></marker>
+    <marker id="mearr" markerWidth="5" markerHeight="5" refX="3" refY="2.5" orient="auto">
+      <polygon points="0,0 5,2.5 0,5" fill="${CLR.Me}"/></marker>
   </defs>`;
 }
 
 function drawBeam() {
   const svg=document.getElementById('beam-svg'); if(!svg) return;
   const L=parseFloat(document.getElementById('bL').value)||5;
-  const x0=30,x1=290,bY=62,bW=x1-x0; const mF=maxFySys('beam'); let h='';
+  const x0=30,x1=290,bY=70,bW=x1-x0;
+  const maxF=globalMaxLoad('beam');
+  let h='';
+
+  // Distributed loads (blue)
   loads.beam.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
     const xa=x0+Math.min(dl.values.a/L,1)*bW, xb=x0+Math.min(dl.values.b/L,1)*bW;
-    const n=Math.max(3,Math.round((xb-xa)/22));
-    for(let i=0;i<=n;i++){
-      const xi=xa+(i/n)*(xb-xa);
-      const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
-      const maxQ=Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1);
-      const arrowLen=6+28*(Math.abs(qi)/maxQ);
-      h+=`<line x1="${xi.toFixed(1)}" y1="${(bY-2-arrowLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${bY-2}" stroke="#185fa5" stroke-width="1.2" marker-end="url(#barr)"/>`;
-    }
-    h+=`<line x1="${xa.toFixed(1)}" y1="${(bY-2-6-28*(Math.abs(dl.values.qa)/Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1))).toFixed(1)}" x2="${xb.toFixed(1)}" y2="${(bY-2-6-28*(Math.abs(dl.values.qb)/Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1))).toFixed(1)}" stroke="#185fa5" stroke-width="1.2"/>`;
-    const isTrap=dl.values.qa!==dl.values.qb;
-    const lbl=isTrap?`q${di+1}:${dl.values.qa}→${dl.values.qb}kN/m`:`q${di+1}=${dl.values.qa}kN/m`;
-    h+=`<text x="${((xa+xb)/2).toFixed(1)}" y="${10-di*9}" text-anchor="middle" font-size="8" fill="#185fa5" font-family="DM Mono,monospace">${lbl}</text>`;
+    h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${di+1}`,di,'b');
   });
+
+  // Beam
   h+=`<rect x="${x0}" y="${bY}" width="${bW}" height="8" rx="2" fill="#1a1a18"/>`;
+
+  // Point loads (red, scaled)
   const pts=loads.beam.point.filter(l=>l.enabled&&l.values.F!==0);
-  const rows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
+  const ptRows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
   pts.forEach((pl,pi)=>{
     const ax=x0+Math.min(pl.values.a/L,1)*bW, alpha=pl.values.alpha||0;
-    h+=arrowSVG(ax,bY,pl.values.F,alpha,mF,'#d85a30','barr-red',`F${pi+1}=${pl.values.F}kN${alpha!==0?` α=${alpha}°`:''}`,rows[pi]);
+    const lbl=`F${pi+1}=${pl.values.F}kN${alpha!==0?` α=${alpha}°`:''}`;
+    h+=arrowSVG(ax,bY,pl.values.F,alpha,maxF,lbl,ptRows[pi],'b');
   });
+
+  // Horizontal loads (orange, dashed)
+  const horizs=(loads.beam.horiz||[]).filter(l=>l.enabled&&(l.values.H||0)!==0);
+  const hRows=assignRows(horizs.map(hl=>x0+Math.min((hl.values.a||0)/L,1)*bW));
+  horizs.forEach((hl,hi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    const hLen=14+(26*Math.abs(hl.values.H)/maxF);
+    h+=horizArrowSVG(ax-hLen,ax,bY+4,hl.values.H,`H${hi+1}=${hl.values.H}kN`,hRows[hi]);
+  });
+
+  // Moments Me (purple arc)
+  const mes=(loads.beam.horiz||[]).filter(l=>l.enabled&&(l.values.Me||0)!==0);
+  mes.forEach((hl,mi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    h+=momentSVG(ax,bY-14,hl.values.Me,`Me=${hl.values.Me}kNm`,mi);
+  });
+
+  // Supports
   h+=`<polygon points="${x0},${bY+8} ${x0-8},${bY+20} ${x0+8},${bY+20}" fill="#1a1a18"/>`;
   h+=`<text x="${x0}" y="${bY+30}" text-anchor="middle" font-size="9" fill="#6b6a65">A</text>`;
   h+=`<polygon points="${x1},${bY+8} ${x1-8},${bY+20} ${x1+8},${bY+20}" fill="#1a1a18"/>`;
@@ -862,41 +995,60 @@ function drawBeam() {
   h+=`<text x="${x1}" y="${bY+30}" text-anchor="middle" font-size="9" fill="#6b6a65">B</text>`;
   h+=`<line x1="${x0}" y1="${bY+38}" x2="${x1}" y2="${bY+38}" stroke="#a8a7a2" stroke-width="0.8"/>`;
   h+=`<text x="${(x0+x1)/2}" y="${bY+49}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
+  svg.setAttribute('viewBox','0 0 320 110');
   svg.innerHTML=mkDefs('b')+h;
 }
 
 function drawCantilever() {
   const svg=document.getElementById('cant-svg'); if(!svg) return;
   const L=parseFloat(document.getElementById('cL').value)||3;
-  const x0=50,x1=290,bY=60,bW=x1-x0; const mF=maxFySys('cant'); let h='';
+  const x0=50,x1=290,bY=70,bW=x1-x0;
+  const maxF=globalMaxLoad('cant');
+  let h='';
+
+  // Wall support
   h+=`<rect x="10" y="${bY-18}" width="38" height="44" rx="2" fill="#e0dfd8"/>`;
   for(let i=0;i<5;i++){const y=bY-14+i*8; h+=`<line x1="10" y1="${y}" x2="28" y2="${y+8}" stroke="#a8a7a2" stroke-width="1"/>`;}
   h+=`<rect x="36" y="${bY-14}" width="4" height="36" fill="#1a1a18"/>`;
+
+  // Distributed loads (blue)
   loads.cant.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
     const xa=x0+Math.min(dl.values.a/L,1)*bW, xb=x0+Math.min(dl.values.b/L,1)*bW;
-    const n=Math.max(3,Math.round((xb-xa)/22));
-    for(let i=0;i<=n;i++){
-      const xi=xa+(i/n)*(xb-xa);
-      const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
-      const maxQ=Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1);
-      const arrowLen=6+28*(Math.abs(qi)/maxQ);
-      h+=`<line x1="${xi.toFixed(1)}" y1="${(bY-2-arrowLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${bY-2}" stroke="#185fa5" stroke-width="1.2" marker-end="url(#carr)"/>`;
-    }
-    h+=`<line x1="${xa.toFixed(1)}" y1="${(bY-2-6-28*(Math.abs(dl.values.qa)/Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1))).toFixed(1)}" x2="${xb.toFixed(1)}" y2="${(bY-2-6-28*(Math.abs(dl.values.qb)/Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1))).toFixed(1)}" stroke="#185fa5" stroke-width="1.2"/>`;
-    const isTrap=dl.values.qa!==dl.values.qb;
-    const lbl=isTrap?`q${di+1}:${dl.values.qa}→${dl.values.qb}kN/m`:`q${di+1}=${dl.values.qa}kN/m`;
-    h+=`<text x="${((xa+xb)/2).toFixed(1)}" y="${10-di*9}" text-anchor="middle" font-size="8" fill="#185fa5" font-family="DM Mono,monospace">${lbl}</text>`;
+    h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${di+1}`,di,'c');
   });
+
+  // Beam
   h+=`<rect x="${x0}" y="${bY}" width="${bW}" height="8" rx="2" fill="#1a1a18"/>`;
+
+  // Point loads (red, scaled)
   const pts=loads.cant.point.filter(l=>l.enabled&&l.values.F!==0);
-  const rows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
+  const ptRows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
   pts.forEach((pl,pi)=>{
     const ax=x0+Math.min(pl.values.a/L,1)*bW, alpha=pl.values.alpha||0;
-    h+=arrowSVG(ax,bY,pl.values.F,alpha,mF,'#d85a30','carr-red',`F${pi+1}=${pl.values.F}kN${alpha!==0?` α=${alpha}°`:''}`,rows[pi]);
+    const lbl=`F${pi+1}=${pl.values.F}kN${alpha!==0?` α=${alpha}°`:''}`;
+    h+=arrowSVG(ax,bY,pl.values.F,alpha,maxF,lbl,ptRows[pi],'c');
   });
+
+  // Horizontal loads (orange, dashed)
+  const horizs=(loads.cant.horiz||[]).filter(l=>l.enabled&&(l.values.H||0)!==0);
+  const hRows=assignRows(horizs.map(hl=>x0+Math.min((hl.values.a||0)/L,1)*bW));
+  horizs.forEach((hl,hi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    const hLen=14+(26*Math.abs(hl.values.H)/maxF);
+    h+=horizArrowSVG(ax-hLen,ax,bY+4,hl.values.H,`H${hi+1}=${hl.values.H}kN`,hRows[hi]);
+  });
+
+  // Moments Me (purple arc)
+  const mes=(loads.cant.horiz||[]).filter(l=>l.enabled&&(l.values.Me||0)!==0);
+  mes.forEach((hl,mi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    h+=momentSVG(ax,bY-14,hl.values.Me,`Me=${hl.values.Me}kNm`,mi);
+  });
+
   h+=`<text x="${x1+4}" y="${bY+16}" font-size="9" fill="#a8a7a2">free</text>`;
   h+=`<line x1="${x0}" y1="${bY+26}" x2="${x1}" y2="${bY+26}" stroke="#a8a7a2" stroke-width="0.8"/>`;
   h+=`<text x="${(x0+x1)/2}" y="${bY+37}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
+  svg.setAttribute('viewBox','0 0 320 110');
   svg.innerHTML=mkDefs('c')+h;
 }
 
@@ -912,37 +1064,35 @@ function drawContinuous() {
   const bW=svgW-PAD*2;
   let h='';
 
-  // Distributed loads
+  const maxF=globalMaxLoad('cont');
+
+  // Distributed loads (blue, globally scaled)
+  let distIdx=0;
   spanData.forEach((sp,si)=>{
     const xSpanStart=PAD+Ls.slice(0,si).reduce((a,b)=>a+b,0)/Ltotal*bW;
     const xSpanEnd=PAD+Ls.slice(0,si+1).reduce((a,b)=>a+b,0)/Ltotal*bW;
     const spW=xSpanEnd-xSpanStart;
-    sp.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl)=>{
+    sp.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
       const xa=xSpanStart+Math.min(dl.values.a/sp.L,1)*spW;
       const xb=xSpanStart+Math.min(dl.values.b/sp.L,1)*spW;
-      const nn=Math.max(2,Math.round((xb-xa)/18));
-      const maxQ=Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1);
-      for(let i=0;i<=nn;i++){
-        const xi=xa+(i/nn)*(xb-xa);
-        const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/nn);
-        const aLen=4+18*(Math.abs(qi)/maxQ);
-        h+=`<line x1="${xi.toFixed(1)}" y1="${(bY-1-aLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${bY-1}" stroke="#185fa5" stroke-width="1.1" marker-end="url(#coarr)"/>`;
-      }
-      h+=`<line x1="${xa.toFixed(1)}" y1="${(bY-1-4-18*(Math.abs(dl.values.qa)/maxQ)).toFixed(1)}" x2="${xb.toFixed(1)}" y2="${(bY-1-4-18*(Math.abs(dl.values.qb)/maxQ)).toFixed(1)}" stroke="#185fa5" stroke-width="1.1"/>`;
+      h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${distIdx+1}`,distIdx,'co');
+      distIdx++;
     });
   });
 
   // Beam
   h+=`<rect x="${PAD}" y="${bY}" width="${bW}" height="${beamH}" rx="2" fill="#1a1a18"/>`;
 
-  // Point loads
+  // Point loads (red, globally scaled)
+  let ptIdx=0;
   spanData.forEach((sp,si)=>{
     const xSpanStart=PAD+Ls.slice(0,si).reduce((a,b)=>a+b,0)/Ltotal*bW;
     const xSpanEnd=PAD+Ls.slice(0,si+1).reduce((a,b)=>a+b,0)/Ltotal*bW;
     const spW=xSpanEnd-xSpanStart;
     sp.point.filter(l=>l.enabled&&l.values.F!==0).forEach((pl,pi)=>{
       const ax=xSpanStart+Math.min(pl.values.a/sp.L,1)*spW;
-      h+=`<line x1="${ax.toFixed(1)}" y1="20" x2="${ax.toFixed(1)}" y2="${bY-1}" stroke="#d85a30" stroke-width="1.8" marker-end="url(#coarr-red)"/>`;
+      h+=arrowSVG(ax,bY,pl.values.F,0,maxF,`F${ptIdx+1}=${pl.values.F}kN`,0,'co');
+      ptIdx++;
     });
   });
 
@@ -968,10 +1118,7 @@ function drawContinuous() {
     cx+=spanPx;
   });
 
-  svg.innerHTML=`<defs>
-    <marker id="coarr" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="#185fa5"/></marker>
-    <marker id="coarr-red" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="#d85a30"/></marker>
-  </defs>`+h;
+  svg.innerHTML=mkDefs('co')+h;
 }
 
 // ══════════════════════════════════════════════════
@@ -1356,7 +1503,7 @@ function renderFrameHinges(){
       <div class="load-item-body">
         <div class="field-row">
           <div class="field"><label>Member</label>
-            <select style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif"
+            <select style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:DM Sans,sans-serif"
               onchange="updateHingeVal(${hg.id},'member',this.value)">
               <option value="left" ${hg.member==='left'?'selected':''}>Left column</option>
               <option value="rafter" ${hg.member==='rafter'?'selected':''}>Rafter</option>
@@ -1385,7 +1532,9 @@ function addFrameLoad(type){
   const b=parseFloat(document.getElementById('fB').value)||5;
   const h=parseFloat(document.getElementById('fH').value)||4;
   frameLoads[type].push({ id, enabled:true,
-    values: type==='vert' ? {qa:10,qb:10,a:0,b:b} : {F:5,z:h/2}
+    values: type==='vert'
+      ? {member:'rafter', qa:10, qb:10, a:0, b:b}
+      : {member:'left', F:5, z:h/2, alpha:0}
   });
   renderFrameLoads(type); drawFrame();
 }
@@ -1406,20 +1555,36 @@ function renderFrameLoads(type){
   const el=document.getElementById('frame-'+type+'-list');
   const list=frameLoads[type];
   if(!list.length){el.innerHTML='';return;}
+  const b=parseFloat(document.getElementById('fB').value)||5;
   const h=parseFloat(document.getElementById('fH').value)||4;
   el.innerHTML=list.map((l,i)=>{
-    const lbl=type==='vert'?'q'+(i+1):'H'+(i+1);
+    const lbl=type==='vert'?'q'+(i+1):'P'+(i+1);
     const eye=l.enabled?'👁':'🚫';
+    const mem=l.values.member||'rafter';
+    const maxPos=mem==='rafter'?b:h;
+    // Member selector (same for both types)
+    const memSel='<div class="field"><label>Member</label>'+
+      '<select style="width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:DM Sans,sans-serif" '+
+      'onchange="updateFrameVal(&quot;'+type+'&quot;,'+l.id+',&quot;member&quot;,this.value);renderFrameLoads(&quot;'+type+'&quot;)">'+
+      '<option value="left"'+(mem==='left'?' selected':'')+'>Left col</option>'+
+      '<option value="rafter"'+(mem==='rafter'?' selected':'')+'>Rafter</option>'+
+      '<option value="right"'+(mem==='right'?' selected':'')+'>Right col</option>'+
+      '</select></div>';
     const body=type==='vert'
-      ?'<div class="field-row-4">'+
+      ?'<div class="field-row">'+memSel+
+        '<div class="field"><label>from <span class="unit">m</span></label><input type="number" value="'+l.values.a+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;a&quot;,this.value)"></div>'+
+        '</div>'+
+        '<div class="field-row" style="margin-top:6px">'+
         '<div class="field"><label>q_a <span class="unit">kN/m</span></label><input type="number" value="'+l.values.qa+'" step="0.5" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;qa&quot;,this.value)"></div>'+
         '<div class="field"><label>q_b <span class="unit">kN/m</span></label><input type="number" value="'+l.values.qb+'" step="0.5" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;qb&quot;,this.value)"></div>'+
-        '<div class="field"><label>from <span class="unit">m</span></label><input type="number" value="'+l.values.a+'" step="0.1" min="0" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;a&quot;,this.value)"></div>'+
-        '<div class="field"><label>to <span class="unit">m</span></label><input type="number" value="'+l.values.b+'" step="0.1" min="0" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;b&quot;,this.value)"></div>'+
+        '<div class="field"><label>to <span class="unit">m</span></label><input type="number" value="'+l.values.b+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;vert&quot;,'+l.id+',&quot;b&quot;,this.value)"></div>'+
         '</div>'
-      :'<div class="field-row">'+
-        '<div class="field"><label>F <span class="unit">kN</span></label><input type="number" value="'+l.values.F+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;F&quot;,this.value)"></div>'+
-        '<div class="field"><label>z <span class="unit">m from base</span></label><input type="number" value="'+l.values.z+'" step="0.1" min="0" max="'+h+'" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;z&quot;,this.value)"></div>'+
+      :'<div class="field-row">'+memSel+
+        '<div class="field"><label>pos <span class="unit">m</span></label><input type="number" value="'+(l.values.z||0)+'" step="0.1" min="0" max="'+maxPos+'" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;z&quot;,this.value)"></div>'+
+        '</div>'+
+        '<div class="field-row" style="margin-top:6px">'+
+        '<div class="field"><label>F <span class="unit">kN (⊥ member)</span></label><input type="number" value="'+(l.values.F||0)+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;F&quot;,this.value)"></div>'+
+        '<div class="field"><label>H <span class="unit">kN (∥ horiz)</span></label><input type="number" value="'+(l.values.H||0)+'" step="0.5" oninput="updateFrameVal(&quot;horiz&quot;,'+l.id+',&quot;H&quot;,this.value)"></div>'+
         '</div>';
     return '<div class="load-item'+(l.enabled?'':' disabled')+'">'+
       '<div class="load-item-header"><div class="load-item-label">'+lbl+'</div>'+
@@ -1442,30 +1607,88 @@ function drawFrame(){
   const rafW=col_R-col_L;
   let html='';
 
-  // Vertical dist loads on rafter
+  // Global max for scaling
+  let fMaxAll=0;
+  frameLoads.vert.filter(l=>l.enabled).forEach(l=>{fMaxAll=Math.max(fMaxAll,Math.abs(l.values.qa||0),Math.abs(l.values.qb||0));});
+  frameLoads.horiz.filter(l=>l.enabled).forEach(l=>{fMaxAll=Math.max(fMaxAll,Math.abs(l.values.F||0),Math.abs(l.values.H||0));});
+  if(fMaxAll<0.1) fMaxAll=1;
+  const FMIN=8,FMAX=32;
+  const fScale=v=>FMIN+(FMAX-FMIN)*Math.abs(v)/fMaxAll;
+
+  // Distributed loads — on any member
   frameLoads.vert.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
-    const xa=col_L+Math.min(dl.values.a/b,1)*rafW;
-    const xb=col_L+Math.min(dl.values.b/b,1)*rafW;
-    const n=Math.max(3,Math.round((xb-xa)/18));
-    const maxQ=Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1);
-    for(let i=0;i<=n;i++){
-      const xi=xa+(i/n)*(xb-xa);
-      const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
-      const aLen=6+22*(Math.abs(qi)/maxQ);
-      html+=`<line x1="${xi.toFixed(1)}" y1="${(col_top-aLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${col_top-1}" stroke="#185fa5" stroke-width="1.1" marker-end="url(#farr)"/>`;
-    }
-    const qaLen=6+22*(Math.abs(dl.values.qa)/maxQ);
-    const qbLen=6+22*(Math.abs(dl.values.qb)/maxQ);
-    html+=`<line x1="${xa.toFixed(1)}" y1="${(col_top-qaLen).toFixed(1)}" x2="${xb.toFixed(1)}" y2="${(col_top-qbLen).toFixed(1)}" stroke="#185fa5" stroke-width="1.1"/>`;
+    const mem=dl.values.member||'rafter';
+    const maxPos=mem==='rafter'?b:h;
+    const t_a=Math.min((dl.values.a||0)/maxPos,1);
+    const t_b=Math.min((dl.values.b||b)/maxPos,1);
+    const n=Math.max(3,8);
     const lbl=dl.values.qa!==dl.values.qb?`q${di+1}:${dl.values.qa}→${dl.values.qb}kN/m`:`q${di+1}=${dl.values.qa}kN/m`;
-    html+=`<text x="${((xa+xb)/2).toFixed(1)}" y="${(col_top-qaLen-5).toFixed(1)}" text-anchor="middle" font-size="8" fill="#185fa5" font-family="DM Mono,monospace">${lbl}</text>`;
+
+    if(mem==='rafter'){
+      // Vertical arrows on rafter
+      const xa=col_L+t_a*rafW, xb=col_L+t_b*rafW;
+      for(let i=0;i<=n;i++){
+        const xi=xa+(i/n)*(xb-xa);
+        const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
+        const aLen=fScale(qi);
+        html+=`<line x1="${xi.toFixed(1)}" y1="${(col_top-aLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${col_top-1}" stroke="${CLR.q}" stroke-width="1.1" marker-end="url(#farr-q)"/>`;
+      }
+      const qaL=fScale(dl.values.qa), qbL=fScale(dl.values.qb);
+      html+=`<line x1="${xa.toFixed(1)}" y1="${(col_top-qaL).toFixed(1)}" x2="${xb.toFixed(1)}" y2="${(col_top-qbL).toFixed(1)}" stroke="${CLR.q}" stroke-width="1.1"/>`;
+      html+=`<text x="${((xa+xb)/2).toFixed(1)}" y="${(col_top-Math.max(qaL,qbL)-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.q}" font-family="DM Mono,monospace">${lbl}</text>`;
+    } else {
+      // Horizontal arrows on column (perpendicular to column = horizontal)
+      const colX=mem==='left'?col_L:col_R;
+      const ya=col_bot-t_a*(col_bot-col_top), yb=col_bot-t_b*(col_bot-col_top);
+      const dir=mem==='left'?1:-1;
+      for(let i=0;i<=n;i++){
+        const yi=ya+(i/n)*(yb-ya);
+        const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
+        const aLen=fScale(qi);
+        html+=`<line x1="${(colX+dir*(aLen+2)).toFixed(1)}" y1="${yi.toFixed(1)}" x2="${(colX+dir*2).toFixed(1)}" y2="${yi.toFixed(1)}" stroke="${CLR.q}" stroke-width="1.1" marker-end="url(#farr-q)"/>`;
+      }
+      html+=`<text x="${(colX+dir*(fScale(dl.values.qa)+10)).toFixed(1)}" y="${(ya-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.q}" font-family="DM Mono,monospace">${lbl}</text>`;
+    }
   });
 
-  // Horizontal loads
-  frameLoads.horiz.filter(l=>l.enabled&&l.values.F!==0).forEach((hl,i)=>{
-    const zy=col_bot-Math.min(hl.values.z/h,1)*(col_bot-col_top);
-    html+=`<line x1="${col_L-32}" y1="${zy}" x2="${col_L-3}" y2="${zy}" stroke="#d85a30" stroke-width="1.8" marker-end="url(#farr-red)"/>`;
-    html+=`<text x="${col_L-34}" y="${zy-4}" text-anchor="end" font-size="8" fill="#d85a30" font-family="DM Mono,monospace">H${i+1}=${hl.values.F}</text>`;
+  // Point / Horizontal loads — on any member
+  frameLoads.horiz.filter(l=>l.enabled).forEach((hl,i)=>{
+    const mem=hl.values.member||'left';
+    const maxPos=mem==='rafter'?b:h;
+    const t=Math.min((hl.values.z||0)/maxPos,1);
+    const F=hl.values.F||0, H=hl.values.H||0;
+
+    if(mem==='rafter'){
+      const px=col_L+t*rafW;
+      // F = vertical point load on rafter
+      if(F!==0){
+        const aLen=fScale(F);
+        html+=`<line x1="${px}" y1="${(col_top-aLen).toFixed(1)}" x2="${px}" y2="${col_top-1}" stroke="${CLR.F}" stroke-width="2" marker-end="url(#farr-red)"/>`;
+        html+=`<text x="${px}" y="${(col_top-aLen-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.F}" font-family="DM Mono,monospace">F${i+1}=${F}kN</text>`;
+      }
+      // H = horizontal load on rafter
+      if(H!==0){
+        const aLen=fScale(H); const dir=H>0?1:-1;
+        html+=`<line x1="${(px-dir*aLen).toFixed(1)}" y1="${col_top+4}" x2="${(px-dir*2).toFixed(1)}" y2="${col_top+4}" stroke="${CLR.H}" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#farr-h)"/>`;
+        html+=`<text x="${px}" y="${col_top+16}" text-anchor="middle" font-size="8" fill="${CLR.H}" font-family="DM Mono,monospace">H${i+1}=${H}kN</text>`;
+      }
+    } else {
+      const colX=mem==='left'?col_L:col_R;
+      const py=col_bot-t*(col_bot-col_top);
+      const dir=mem==='left'?1:-1;
+      // F = perpendicular to column (horizontal)
+      if(F!==0){
+        const aLen=fScale(F);
+        html+=`<line x1="${(colX+dir*(aLen+2)).toFixed(1)}" y1="${py}" x2="${(colX+dir*2).toFixed(1)}" y2="${py}" stroke="${CLR.F}" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#farr-red)"/>`;
+        html+=`<text x="${(colX+dir*(aLen+14)).toFixed(1)}" y="${(py-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.F}" font-family="DM Mono,monospace">F${i+1}=${F}kN</text>`;
+      }
+      // H = vertical load on column
+      if(H!==0){
+        const aLen=fScale(H);
+        html+=`<line x1="${colX}" y1="${(py-aLen).toFixed(1)}" x2="${colX}" y2="${(py-2).toFixed(1)}" stroke="${CLR.H}" stroke-width="2" marker-end="url(#farr-h)"/>`;
+        html+=`<text x="${(colX+8).toFixed(1)}" y="${(py-aLen).toFixed(1)}" font-size="8" fill="${CLR.H}" font-family="DM Mono,monospace">V${i+1}=${H}kN</text>`;
+      }
+    }
   });
 
   // Frame members
@@ -1514,8 +1737,9 @@ function drawFrame(){
   html+=`<text x="${col_L-28}" y="${(col_bot+col_top)/2+4}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">h=${h}m</text>`;
 
   svg.innerHTML=`<defs>
-    <marker id="farr" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="#185fa5"/></marker>
-    <marker id="farr-red" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="#d85a30"/></marker>
+    <marker id="farr-q" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="${CLR.q}"/></marker>
+    <marker id="farr-red" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="${CLR.F}"/></marker>
+    <marker id="farr-h" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="${CLR.H}"/></marker>
   </defs>`+html;
   updateIndetInfo();
 }
@@ -1757,14 +1981,22 @@ const diagMode = { beam:'M', cant:'M', cont:'M', frame:'M' };
 
 function setDiagMode(sys, mode){
   diagMode[sys] = mode;
-  ['M','Q','N'].forEach(m=>{
+  ['M','Q','N','W'].forEach(m=>{
     const btn = document.getElementById('diag-btn-'+m+'-'+sys);
     if(btn) btn.className = 'diagram-toggle-btn' + (m===mode ? ' active-'+m : '');
   });
-  const labels = { M:'Bending Moment M — kNm', Q:'Shear Force Q — kN', N:'Normal Force N — kN' };
+  const labels = {
+    M:'Bending Moment M — kNm',
+    Q:'Shear Force Q — kN',
+    N:'Normal Force N — kN',
+    W:'Deflection w — mm'
+  };
   const lbl = document.getElementById('diag-label-'+sys);
-  if(lbl) lbl.textContent = labels[mode];
-  // Re-render stored data
+  if(lbl) lbl.textContent = labels[mode]||'';
+  // Show/hide EI input
+  const eiEl = document.getElementById('ei-input-'+sys);
+  if(eiEl) eiEl.style.display = mode==='W' ? 'block' : 'none';
+  // Re-render
   if(diagData[sys]) renderDiagram(sys, diagData[sys]);
 }
 
@@ -1772,8 +2004,57 @@ function setDiagMode(sys, mode){
 const diagData = {};
 
 // Colors
-const diagColors = { M:'#0f6e56', Q:'#185fa5', N:'#8b3a1e' };
-const diagFill   = { M:'rgba(15,110,86,0.15)', Q:'rgba(24,95,165,0.15)', N:'rgba(139,58,30,0.15)' };
+const diagColors = { M:'#0f6e56', Q:'#185fa5', N:'#8b3a1e', W:'#7c3aed' };
+const diagFill   = { M:'rgba(15,110,86,0.15)', Q:'rgba(24,95,165,0.15)', N:'rgba(139,58,30,0.15)', W:'rgba(124,58,237,0.15)' };
+
+// ── Deflection computation ─────────────────────────
+// Numerically integrate M(x) twice to get w(x)
+// EI from inputs; Iy in cm^4 → m^4; E in kN/m^2
+function computeDeflection(sys, Mv, L) {
+  const E = parseFloat(document.getElementById(sys+'-E')?.value)||210000000;
+  const Iy_cm4 = parseFloat(document.getElementById(sys+'-Iy')?.value)||10000;
+  const Iy = Iy_cm4 * 1e-8; // cm^4 → m^4
+  const EI = E * Iy; // kNm^2
+  const n = Mv.length - 1;
+  const dx = L / n;
+  // M values: positive = tension bottom (already flipped for beam)
+  // w'' = -M/EI (beam equation, tension-bottom sign)
+  // Integrate twice with BCs: w(0)=0, w(L)=0 for simply supported
+  // Use conjugate beam method numerically
+  const phi = new Array(n+1).fill(0); // curvature = M/EI
+  for(let i=0;i<=n;i++) phi[i] = -Mv[i]/EI; // note: Mv already flipped
+
+  // First integration: slope theta (with constant C1)
+  const theta = new Array(n+1).fill(0);
+  for(let i=1;i<=n;i++) theta[i] = theta[i-1] + phi[i-1]*dx;
+
+  // BC w(0)=0, w(L)=0: find C1 so that w(L)=0
+  // w(L) = C1*L + integral of theta
+  const wRaw = new Array(n+1).fill(0);
+  for(let i=1;i<=n;i++) wRaw[i] = wRaw[i-1] + theta[i-1]*dx;
+  const C1 = -wRaw[n]/L; // correction slope
+  const w = new Array(n+1).fill(0);
+  for(let i=0;i<=n;i++) w[i] = wRaw[i] + C1*i*dx;
+
+  // Convert to mm
+  return w.map(v => v*1000);
+}
+
+function computeDeflectionCant(sys, Mv, L) {
+  const E = parseFloat(document.getElementById(sys+'-E')?.value)||210000000;
+  const Iy_cm4 = parseFloat(document.getElementById(sys+'-Iy')?.value)||10000;
+  const Iy = Iy_cm4 * 1e-8;
+  const EI = E * Iy;
+  const n = Mv.length - 1;
+  const dx = L / n;
+  // BC: w(0)=0, w'(0)=0 (fixed end)
+  const phi = Mv.map(m => m/EI);
+  const theta = new Array(n+1).fill(0);
+  for(let i=1;i<=n;i++) theta[i] = theta[i-1] + phi[i-1]*dx;
+  const w = new Array(n+1).fill(0);
+  for(let i=1;i<=n;i++) w[i] = w[i-1] + theta[i-1]*dx;
+  return w.map(v => v*1000);
+}
 
 // ── Generic diagram renderer with mm-paper + jumps ──
 function renderDiagram(sys, data){
@@ -1784,9 +2065,15 @@ function renderDiagram(sys, data){
   const fill  = diagFill[mode];
   const W = data.svgW, H = data.svgH;
 
+  // Handle W (deflection) mode
+  if(mode==='W'){
+    renderDeflectionDiagram(sys, data, svg, W, H, color, fill);
+    return;
+  }
+
   const members = data.members;
   let maxVal = 0;
-  members.forEach(m => m[mode].forEach(v => { if(Math.abs(v) > maxVal) maxVal = Math.abs(v); }));
+  members.forEach(m => { if(m[mode]) m[mode].forEach(v => { if(Math.abs(v) > maxVal) maxVal = Math.abs(v); }); });
   if(maxVal < 0.001) maxVal = 1;
   const SCALE = 50 / maxVal;
 
@@ -1887,6 +2174,78 @@ function renderDiagram(sys, data){
   svg.innerHTML=h;
 }
 
+// ── Deflection diagram renderer ───────────────────
+function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
+  let h='';
+  // mm-paper
+  const gridS=10;
+  h+=`<defs>
+    <pattern id="wgrid-${sys}" width="${gridS}" height="${gridS}" patternUnits="userSpaceOnUse">
+      <path d="M ${gridS} 0 L 0 0 0 ${gridS}" fill="none" stroke="#d0e8d0" stroke-width="0.4"/>
+    </pattern>
+    <pattern id="wgrid5-${sys}" width="${gridS*5}" height="${gridS*5}" patternUnits="userSpaceOnUse">
+      <rect width="${gridS*5}" height="${gridS*5}" fill="url(#wgrid-${sys})"/>
+      <path d="M ${gridS*5} 0 L 0 0 0 ${gridS*5}" fill="none" stroke="#a8d4a8" stroke-width="0.8"/>
+    </pattern>
+  </defs>`;
+  h+=`<rect width="${W}" height="${H}" fill="#f8fdf8"/>`;
+  h+=`<rect width="${W}" height="${H}" fill="url(#wgrid5-${sys})"/>`;
+
+  // For each member, compute and draw deflection
+  data.members.forEach(mem=>{
+    if(!mem.M || mem.M.length<2) return;
+    const dx_px = Math.sqrt((mem.x1-mem.x0)**2+(mem.y1-mem.y0)**2);
+    const memberLen = mem.memberLen||dx_px; // in metres
+    const L = data.totalL||memberLen;
+
+    // Get deflection values
+    let wVals;
+    if(sys==='cant') wVals = computeDeflectionCant(sys, mem.M, L);
+    else wVals = computeDeflection(sys, mem.M, L);
+
+    const maxW = Math.max(...wVals.map(Math.abs), 0.001);
+    const SCALE = 45 / maxW;
+
+    const dx=mem.x1-mem.x0, dy=mem.y1-mem.y0;
+    const len=Math.sqrt(dx*dx+dy*dy);
+    const tx=dx/len, ty=dy/len, nx=-ty, ny=tx;
+    const n=wVals.length-1;
+
+    let pts_fwd=[], pts_back=[];
+    for(let i=0;i<=n;i++){
+      const t=i/n;
+      const bx=mem.x0+t*dx, by=mem.y0+t*dy;
+      const offset=wVals[i]*SCALE;
+      pts_fwd.push([bx+offset*nx, by+offset*ny]);
+      pts_back.push([bx,by]);
+    }
+
+    const poly=[...pts_fwd,...pts_back.reverse()];
+    h+=`<polygon points="${poly.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="${fill}" stroke="none"/>`;
+
+    // Deflection curve (dashed)
+    const lineStr=pts_fwd.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    h+=`<path d="${lineStr}" fill="none" stroke="${color}" stroke-width="1.8" stroke-dasharray="5,3"/>`;
+
+    // Member baseline
+    h+=`<line x1="${mem.x0.toFixed(1)}" y1="${mem.y0.toFixed(1)}" x2="${mem.x1.toFixed(1)}" y2="${mem.y1.toFixed(1)}" stroke="#1a1a18" stroke-width="${mem.thick||3}" stroke-linecap="round"/>`;
+
+    // Max deflection label
+    const maxIdx=wVals.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
+    const t=maxIdx/n;
+    const bx=mem.x0+t*dx, by=mem.y0+t*dy;
+    const offset=wVals[maxIdx]*SCALE;
+    const lx=bx+offset*nx, ly=by+offset*ny;
+    h+=`<rect x="${(lx-20).toFixed(1)}" y="${(ly-11).toFixed(1)}" width="40" height="11" rx="2" fill="white" opacity="0.85"/>`;
+    h+=`<text x="${lx.toFixed(1)}" y="${(ly-2).toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">w=${wVals[maxIdx].toFixed(2)}mm</text>`;
+  });
+
+  if(data.overlay) h+=data.overlay;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+  svg.innerHTML=h;
+}
+
 // ── Beam diagram ───────────────────────────────────
 function renderBeamDiagram(L, Qv, Mv, xs, Nv=null){
   const SVG_W=300, SVG_H=140, PAD=20, bY=80, x0=PAD+10, x1=SVG_W-PAD-10;
@@ -1906,10 +2265,10 @@ function renderBeamDiagram(L, Qv, Mv, xs, Nv=null){
     svgW: SVG_W, svgH: SVG_H, pad: PAD, overlay: ov,
     members: [{
       x0, y0:bY, x1, y1:bY, thick:3,
-      M: Mv,
-      Q: Qv,
+      memberLen: L, M: Mv, Q: Qv,
       N: Nv||new Array(Qv.length).fill(0)
-    }]
+    }],
+    totalL: L
   };
   diagData['beam'] = data;
   renderDiagram('beam', data);
@@ -1927,10 +2286,10 @@ function renderCantDiagram(L, Qv, Mv, Nv=null){
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [{
       x0, y0:bY, x1, y1:bY, thick:3,
-      M: Mv,
-      Q: Qv,
+      memberLen: L, M: Mv, Q: Qv,
       N: Nv||new Array(Qv.length).fill(0)
-    }]
+    }],
+    totalL: L
   };
   diagData['cant'] = data;
   renderDiagram('cant', data);
