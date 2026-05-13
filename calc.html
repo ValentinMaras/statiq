@@ -152,12 +152,12 @@
 <div class="modal-overlay" id="modal-beam" onclick="closeModal('beam')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">Simply Supported Beam — Theory</div>
+      <div class="modal-title" id="modal-beam-title">Simply Supported Beam — Theory</div>
       <button class="modal-close" onclick="closeModal('beam')">×</button>
     </div>
     <div class="modal-section">
-      <h3>System</h3>
-      <p>A simply supported beam rests on a pin at A and a roller at B. It is statically determinate — 3 equilibrium equations are sufficient.</p>
+      <h3 id="mbs1h">System</h3>
+      <p id="mbs1p">A simply supported beam rests on a pin at A and a roller at B. It is statically determinate — 3 equilibrium equations are sufficient.</p>
     </div>
     <div class="modal-section">
       <h3>Reactions</h3>
@@ -181,7 +181,7 @@
 <div class="modal-overlay" id="modal-cant" onclick="closeModal('cant')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">Cantilever — Theory</div>
+      <div class="modal-title" id="modal-cant-title">Cantilever — Theory</div>
       <button class="modal-close" onclick="closeModal('cant')">×</button>
     </div>
     <div class="modal-section">
@@ -202,7 +202,7 @@
 <div class="modal-overlay" id="modal-cont" onclick="closeModal('cont')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">Continuous Beam — Theory</div>
+      <div class="modal-title" id="modal-cont-title">Continuous Beam — Theory</div>
       <button class="modal-close" onclick="closeModal('cont')">×</button>
     </div>
     <div class="modal-section">
@@ -241,15 +241,15 @@
 <div class="modal-overlay" id="modal-frame" onclick="closeModal('frame')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">Frame — Theory</div>
+      <div class="modal-title" id="modal-frame-title">Frame — Theory</div>
       <button class="modal-close" onclick="closeModal('frame')">×</button>
     </div>
     <div class="modal-section">
-      <h3>System</h3>
-      <p>A rectangular portal frame consists of two columns and a rafter. Depending on the support conditions, the frame is statically determinate (pinned feet) or indeterminate (fixed feet).</p>
+      <h3 id="mfs1h">System</h3>
+      <p id="mfs1p">A rectangular portal frame consists of two columns and a rafter. Depending on the support conditions, the frame is statically determinate (pinned feet) or indeterminate (fixed feet).</p>
     </div>
     <div class="modal-section">
-      <h3>Pinned Supports (statically determinate)</h3>
+      <h3 id="mfs2h">Pinned Supports (statically determinate)</h3>
       <p>With pinned feet, 4 unknown reactions (H_A, V_A, H_B, V_B) and 3 equilibrium equations + 1 hinge condition → solvable directly.</p>
       <div class="formula-box">
         ΣM_A = 0 → V_B · b = ΣM_loads_about_A<br>
@@ -260,7 +260,7 @@
       </div>
     </div>
     <div class="modal-section">
-      <h3>Fixed Supports (3× statically indeterminate)</h3>
+      <h3 id="mfs3h">Fixed Supports (3× statically indeterminate)</h3>
       <p>With fixed feet, 6 unknowns (H, V, M at each support). Solved using the stiffness method — the horizontal thrust H is the primary unknown, found from the compatibility condition (zero horizontal displacement at rafter level).</p>
       <div class="formula-box">
         H = ( Σq·b²/8 + ΣF·a·(b−a)/b ) / ( h + b/6·EI_col/EI_raf )
@@ -268,7 +268,7 @@
       </div>
     </div>
     <div class="modal-section">
-      <h3>Internal Forces</h3>
+      <h3 id="mfs4h">Internal Forces</h3>
       <p>M, Q and N are computed member by member (left column, rafter, right column) using equilibrium from the support upward.</p>
       <div class="formula-box">
         Column: N = V, Q = H, M = H·x − M_foot<br>
@@ -334,7 +334,7 @@
       </div>
       <div class="chart-divider"></div>
       <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · tension bottom</div></div>
+        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · Zugfaser unten</div></div>
         <div class="chart-wrap"><canvas id="chartBM"></canvas></div>
       </div>
       <div class="chart-divider"></div>
@@ -414,7 +414,7 @@
       </div>
       <div class="chart-divider"></div>
       <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · tension top</div></div>
+        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · Zugfaser oben</div></div>
         <div class="chart-wrap"><canvas id="chartCM"></canvas></div>
       </div>
       <div class="chart-divider"></div>
@@ -496,7 +496,7 @@
       </div>
       <div class="chart-divider"></div>
       <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · tension bottom</div></div>
+        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · Zugfaser unten</div></div>
         <div class="chart-wrap"><canvas id="chartContM"></canvas></div>
       </div>
     </div>
@@ -971,43 +971,11 @@ function mkDefs(prefix) {
 function drawBeam() {
   const svg=document.getElementById('beam-svg'); if(!svg) return;
   const L=parseFloat(document.getElementById('bL').value)||5;
-  const x0=30,x1=290,bY=70,bW=x1-x0;
-  const maxF=globalMaxLoad('beam');
+  const x0=30,x1=290,bY=55,bW=x1-x0;
   let h='';
 
-  // Distributed loads (blue)
-  loads.beam.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
-    const xa=x0+Math.min(dl.values.a/L,1)*bW, xb=x0+Math.min(dl.values.b/L,1)*bW;
-    h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${di+1}`,di,'b');
-  });
-
-  // Beam
+  // Beam only - no load arrows
   h+=`<rect x="${x0}" y="${bY}" width="${bW}" height="8" rx="2" fill="#1a1a18"/>`;
-
-  // Point loads (red, scaled)
-  const pts=loads.beam.point.filter(l=>l.enabled&&l.values.F!==0);
-  const ptRows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
-  pts.forEach((pl,pi)=>{
-    const ax=x0+Math.min(pl.values.a/L,1)*bW, alpha=pl.values.alpha||0;
-    const lbl=`F${pi+1}=${pl.values.F}kN${alpha!==0?` α=${alpha}°`:''}`;
-    h+=arrowSVG(ax,bY,pl.values.F,alpha,maxF,lbl,ptRows[pi],'b');
-  });
-
-  // Horizontal loads (orange, dashed)
-  const horizs=(loads.beam.horiz||[]).filter(l=>l.enabled&&(l.values.H||0)!==0);
-  const hRows=assignRows(horizs.map(hl=>x0+Math.min((hl.values.a||0)/L,1)*bW));
-  horizs.forEach((hl,hi)=>{
-    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
-    const hLen=14+(26*Math.abs(hl.values.H)/maxF);
-    h+=horizArrowSVG(ax-hLen,ax,bY+4,hl.values.H,`H${hi+1}=${hl.values.H}kN`,hRows[hi]);
-  });
-
-  // Moments Me (purple arc)
-  const mes=(loads.beam.horiz||[]).filter(l=>l.enabled&&(l.values.Me||0)!==0);
-  mes.forEach((hl,mi)=>{
-    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
-    h+=momentSVG(ax,bY-14,hl.values.Me,`Me=${hl.values.Me}kNm`,mi);
-  });
 
   // Supports
   h+=`<polygon points="${x0},${bY+8} ${x0-8},${bY+20} ${x0+8},${bY+20}" fill="#1a1a18"/>`;
@@ -1017,60 +985,28 @@ function drawBeam() {
   h+=`<text x="${x1}" y="${bY+30}" text-anchor="middle" font-size="9" fill="#6b6a65">B</text>`;
   h+=`<line x1="${x0}" y1="${bY+38}" x2="${x1}" y2="${bY+38}" stroke="#a8a7a2" stroke-width="0.8"/>`;
   h+=`<text x="${(x0+x1)/2}" y="${bY+49}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
-  svg.setAttribute('viewBox','0 0 320 110');
+  svg.setAttribute('viewBox','0 0 320 90');
   svg.innerHTML=mkDefs('b')+h;
 }
 
 function drawCantilever() {
   const svg=document.getElementById('cant-svg'); if(!svg) return;
   const L=parseFloat(document.getElementById('cL').value)||3;
-  const x0=50,x1=290,bY=70,bW=x1-x0;
-  const maxF=globalMaxLoad('cant');
+  const x0=50,x1=290,bY=45,bW=x1-x0;
   let h='';
 
-  // Wall support
-  h+=`<rect x="10" y="${bY-18}" width="38" height="44" rx="2" fill="#e0dfd8"/>`;
-  for(let i=0;i<5;i++){const y=bY-14+i*8; h+=`<line x1="10" y1="${y}" x2="28" y2="${y+8}" stroke="#a8a7a2" stroke-width="1"/>`;}
-  h+=`<rect x="36" y="${bY-14}" width="4" height="36" fill="#1a1a18"/>`;
+  // Wall support only
+  h+=`<rect x="10" y="${bY-14}" width="36" height="36" rx="2" fill="#e0dfd8"/>`;
+  for(let i=0;i<4;i++){const y=bY-10+i*8; h+=`<line x1="10" y1="${y}" x2="26" y2="${y+8}" stroke="#a8a7a2" stroke-width="1"/>`;}
+  h+=`<rect x="36" y="${bY-10}" width="4" height="28" fill="#1a1a18"/>`;
 
-  // Distributed loads (blue)
-  loads.cant.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
-    const xa=x0+Math.min(dl.values.a/L,1)*bW, xb=x0+Math.min(dl.values.b/L,1)*bW;
-    h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${di+1}`,di,'c');
-  });
-
-  // Beam
+  // Beam only
   h+=`<rect x="${x0}" y="${bY}" width="${bW}" height="8" rx="2" fill="#1a1a18"/>`;
 
-  // Point loads (red, scaled)
-  const pts=loads.cant.point.filter(l=>l.enabled&&l.values.F!==0);
-  const ptRows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
-  pts.forEach((pl,pi)=>{
-    const ax=x0+Math.min(pl.values.a/L,1)*bW, alpha=pl.values.alpha||0;
-    const lbl=`F${pi+1}=${pl.values.F}kN${alpha!==0?` α=${alpha}°`:''}`;
-    h+=arrowSVG(ax,bY,pl.values.F,alpha,maxF,lbl,ptRows[pi],'c');
-  });
-
-  // Horizontal loads (orange, dashed)
-  const horizs=(loads.cant.horiz||[]).filter(l=>l.enabled&&(l.values.H||0)!==0);
-  const hRows=assignRows(horizs.map(hl=>x0+Math.min((hl.values.a||0)/L,1)*bW));
-  horizs.forEach((hl,hi)=>{
-    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
-    const hLen=14+(26*Math.abs(hl.values.H)/maxF);
-    h+=horizArrowSVG(ax-hLen,ax,bY+4,hl.values.H,`H${hi+1}=${hl.values.H}kN`,hRows[hi]);
-  });
-
-  // Moments Me (purple arc)
-  const mes=(loads.cant.horiz||[]).filter(l=>l.enabled&&(l.values.Me||0)!==0);
-  mes.forEach((hl,mi)=>{
-    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
-    h+=momentSVG(ax,bY-14,hl.values.Me,`Me=${hl.values.Me}kNm`,mi);
-  });
-
-  h+=`<text x="${x1+4}" y="${bY+16}" font-size="9" fill="#a8a7a2">free</text>`;
-  h+=`<line x1="${x0}" y1="${bY+26}" x2="${x1}" y2="${bY+26}" stroke="#a8a7a2" stroke-width="0.8"/>`;
-  h+=`<text x="${(x0+x1)/2}" y="${bY+37}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
-  svg.setAttribute('viewBox','0 0 320 110');
+  h+=`<text x="${x1+4}" y="${bY+12}" font-size="9" fill="#a8a7a2">free</text>`;
+  h+=`<line x1="${x0}" y1="${bY+22}" x2="${x1}" y2="${bY+22}" stroke="#a8a7a2" stroke-width="0.8"/>`;
+  h+=`<text x="${(x0+x1)/2}" y="${bY+33}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
+  svg.setAttribute('viewBox','0 0 320 80');
   svg.innerHTML=mkDefs('c')+h;
 }
 
@@ -1086,23 +1022,9 @@ function drawContinuous() {
   const bW=svgW-PAD*2;
   let h='';
 
-  const maxF=globalMaxLoad('cont');
 
-  // Distributed loads (blue, globally scaled)
-  let distIdx=0;
-  spanData.forEach((sp,si)=>{
-    const xSpanStart=PAD+Ls.slice(0,si).reduce((a,b)=>a+b,0)/Ltotal*bW;
-    const xSpanEnd=PAD+Ls.slice(0,si+1).reduce((a,b)=>a+b,0)/Ltotal*bW;
-    const spW=xSpanEnd-xSpanStart;
-    sp.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
-      const xa=xSpanStart+Math.min(dl.values.a/sp.L,1)*spW;
-      const xb=xSpanStart+Math.min(dl.values.b/sp.L,1)*spW;
-      h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${distIdx+1}`,distIdx,'co');
-      distIdx++;
-    });
-  });
-
-  // Beam
+  // Structure only
+    // Beam
   h+=`<rect x="${PAD}" y="${bY}" width="${bW}" height="${beamH}" rx="2" fill="#1a1a18"/>`;
 
   // Point loads (red, globally scaled)
@@ -1146,13 +1068,13 @@ function drawContinuous() {
 // ══════════════════════════════════════════════════
 // CHART OPTIONS
 // ══════════════════════════════════════════════════
-function mkOpts(absLabels) {
+function mkOpts(absLabels, reverseY=false) {
   return {
     responsive:true,maintainAspectRatio:false,animation:{duration:350},
     plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>Math.abs(ctx.parsed.y).toFixed(2)}}},
     scales:{
       x:{ticks:{maxTicksLimit:8,color:'#a8a7a2',font:{size:10,family:'DM Mono'}},grid:{color:'#e0dfd8'},border:{color:'#e0dfd8'}},
-      y:{ticks:{maxTicksLimit:5,color:'#a8a7a2',font:{size:10,family:'DM Mono'},callback:v=>absLabels?Math.abs(v).toFixed(1):v.toFixed(1)},grid:{color:'#e0dfd8'},border:{color:'#e0dfd8'}}
+      y:{reverse:reverseY,ticks:{maxTicksLimit:5,color:'#a8a7a2',font:{size:10,family:'DM Mono'},callback:v=>absLabels?Math.abs(v).toFixed(1):v.toFixed(1)},grid:{color:'#e0dfd8'},border:{color:'#e0dfd8'}}
     },
     elements:{point:{radius:0},line:{borderWidth:2}}
   };
@@ -1193,8 +1115,10 @@ function calculateBeam() {
         Q-=qa*t+(q_xe-qa)*t/2; M-=qa*t*(x-(da+t/2))+(q_xe-qa)*t/2*(x-(da+t*2/3));}
     });
     horizs.forEach(hl=>{ if(x>=(hl.values.a||0)){N-=(hl.values.H||0); M+=hl.values.Me||0;} });
-    Qv.push(+Q.toFixed(3)); Mv.push(+(-M).toFixed(3)); Nv.push(+N.toFixed(3));
+    Qv.push(+(-Q).toFixed(3)); Mv.push(+(-M).toFixed(3)); Nv.push(+N.toFixed(3));
   }
+  // Close Q at A side: Q starts from 0
+  xs.unshift(0); Qv.unshift(0); Mv.unshift(0); Nv.unshift(Nv[0]);
   const Mmax=Math.max(...Mv.map(Math.abs)),Qmax=Math.max(...Qv.map(Math.abs)),Nmax=Math.max(...Nv.map(Math.abs));
   document.getElementById('b-res-A').textContent=A.toFixed(2);
   document.getElementById('b-res-B').textContent=B.toFixed(2);
@@ -1241,7 +1165,7 @@ function calculateCantilever() {
         Q-=qa*t+(q_xe-qa)*t/2; M-=qa*t*(x-(da+t/2))+(q_xe-qa)*t/2*(x-(da+t*2/3));}
     });
     horizs.forEach(hl=>{ if(x>=(hl.values.a||0)){N-=(hl.values.H||0); M+=hl.values.Me||0;} });
-    Qv.push(+Q.toFixed(3)); Mv.push(+M.toFixed(3)); Nv.push(+N.toFixed(3));
+    Qv.push(+(-Q).toFixed(3)); Mv.push(+M.toFixed(3)); Nv.push(+N.toFixed(3));
   }
   const Mmax=Math.max(...Mv.map(Math.abs)),Qmax=Math.max(...Qv.map(Math.abs)),Nmax=Math.max(...Nv.map(Math.abs));
   document.getElementById('c-res-V').textContent=VA.toFixed(2);
@@ -1253,7 +1177,7 @@ function calculateCantilever() {
   document.getElementById('cant-results').classList.remove('hidden');
   if(window._chartCQ)window._chartCQ.destroy(); if(window._chartCM)window._chartCM.destroy(); if(window._chartCN)window._chartCN.destroy();
   window._chartCQ=new Chart(document.getElementById('chartCQ'),{type:'line',data:{labels:xs,datasets:[{data:Qv,borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  window._chartCM=new Chart(document.getElementById('chartCM'),{type:'line',data:{labels:xs,datasets:[{data:Mv,borderColor:'#0f6e56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
+  window._chartCM=new Chart(document.getElementById('chartCM'),{type:'line',data:{labels:xs,datasets:[{data:Mv,borderColor:'#0f6e56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:0}]},options:mkOpts(false, true)});
   window._chartCN=new Chart(document.getElementById('chartCN'),{type:'line',data:{labels:xs,datasets:[{data:Nv,borderColor:'#8b3a1e',backgroundColor:'rgba(139,58,30,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
   renderCantDiagram(L, Qv, Mv, Nv);
 }
@@ -1635,91 +1559,9 @@ function drawFrame(){
   const rafW=col_R-col_L;
   let html='';
 
-  // Global max for scaling
-  let fMaxAll=0;
-  frameLoads.vert.filter(l=>l.enabled).forEach(l=>{fMaxAll=Math.max(fMaxAll,Math.abs(l.values.qa||0),Math.abs(l.values.qb||0));});
-  frameLoads.horiz.filter(l=>l.enabled).forEach(l=>{fMaxAll=Math.max(fMaxAll,Math.abs(l.values.F||0),Math.abs(l.values.H||0));});
-  if(fMaxAll<0.1) fMaxAll=1;
-  const FMIN=8,FMAX=32;
-  const fScale=v=>FMIN+(FMAX-FMIN)*Math.abs(v)/fMaxAll;
 
-  // Distributed loads — on any member
-  frameLoads.vert.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
-    const mem=dl.values.member||'rafter';
-    const maxPos=mem==='rafter'?b:h;
-    const t_a=Math.min((dl.values.a||0)/maxPos,1);
-    const t_b=Math.min((dl.values.b||b)/maxPos,1);
-    const n=Math.max(3,8);
-    const lbl=dl.values.qa!==dl.values.qb?`q${di+1}:${dl.values.qa}→${dl.values.qb}kN/m`:`q${di+1}=${dl.values.qa}kN/m`;
-
-    if(mem==='rafter'){
-      // Vertical arrows on rafter
-      const xa=col_L+t_a*rafW, xb=col_L+t_b*rafW;
-      for(let i=0;i<=n;i++){
-        const xi=xa+(i/n)*(xb-xa);
-        const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
-        const aLen=fScale(qi);
-        html+=`<line x1="${xi.toFixed(1)}" y1="${(col_top-aLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${col_top-1}" stroke="${CLR.q}" stroke-width="1.1" marker-end="url(#farr-q)"/>`;
-      }
-      const qaL=fScale(dl.values.qa), qbL=fScale(dl.values.qb);
-      html+=`<line x1="${xa.toFixed(1)}" y1="${(col_top-qaL).toFixed(1)}" x2="${xb.toFixed(1)}" y2="${(col_top-qbL).toFixed(1)}" stroke="${CLR.q}" stroke-width="1.1"/>`;
-      html+=`<text x="${((xa+xb)/2).toFixed(1)}" y="${(col_top-Math.max(qaL,qbL)-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.q}" font-family="DM Mono,monospace">${lbl}</text>`;
-    } else {
-      // Horizontal arrows on column (perpendicular to column = horizontal)
-      const colX=mem==='left'?col_L:col_R;
-      const ya=col_bot-t_a*(col_bot-col_top), yb=col_bot-t_b*(col_bot-col_top);
-      const dir=mem==='left'?1:-1;
-      for(let i=0;i<=n;i++){
-        const yi=ya+(i/n)*(yb-ya);
-        const qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
-        const aLen=fScale(qi);
-        html+=`<line x1="${(colX+dir*(aLen+2)).toFixed(1)}" y1="${yi.toFixed(1)}" x2="${(colX+dir*2).toFixed(1)}" y2="${yi.toFixed(1)}" stroke="${CLR.q}" stroke-width="1.1" marker-end="url(#farr-q)"/>`;
-      }
-      html+=`<text x="${(colX+dir*(fScale(dl.values.qa)+10)).toFixed(1)}" y="${(ya-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.q}" font-family="DM Mono,monospace">${lbl}</text>`;
-    }
-  });
-
-  // Point / Horizontal loads — on any member
-  frameLoads.horiz.filter(l=>l.enabled).forEach((hl,i)=>{
-    const mem=hl.values.member||'left';
-    const maxPos=mem==='rafter'?b:h;
-    const t=Math.min((hl.values.z||0)/maxPos,1);
-    const F=hl.values.F||0, H=hl.values.H||0;
-
-    if(mem==='rafter'){
-      const px=col_L+t*rafW;
-      // F = vertical point load on rafter
-      if(F!==0){
-        const aLen=fScale(F);
-        html+=`<line x1="${px}" y1="${(col_top-aLen).toFixed(1)}" x2="${px}" y2="${col_top-1}" stroke="${CLR.F}" stroke-width="2" marker-end="url(#farr-red)"/>`;
-        html+=`<text x="${px}" y="${(col_top-aLen-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.F}" font-family="DM Mono,monospace">F${i+1}=${F}kN</text>`;
-      }
-      // H = horizontal load on rafter
-      if(H!==0){
-        const aLen=fScale(H); const dir=H>0?1:-1;
-        html+=`<line x1="${(px-dir*aLen).toFixed(1)}" y1="${col_top+4}" x2="${(px-dir*2).toFixed(1)}" y2="${col_top+4}" stroke="${CLR.H}" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#farr-h)"/>`;
-        html+=`<text x="${px}" y="${col_top+16}" text-anchor="middle" font-size="8" fill="${CLR.H}" font-family="DM Mono,monospace">H${i+1}=${H}kN</text>`;
-      }
-    } else {
-      const colX=mem==='left'?col_L:col_R;
-      const py=col_bot-t*(col_bot-col_top);
-      const dir=mem==='left'?1:-1;
-      // F = perpendicular to column (horizontal)
-      if(F!==0){
-        const aLen=fScale(F);
-        html+=`<line x1="${(colX+dir*(aLen+2)).toFixed(1)}" y1="${py}" x2="${(colX+dir*2).toFixed(1)}" y2="${py}" stroke="${CLR.F}" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#farr-red)"/>`;
-        html+=`<text x="${(colX+dir*(aLen+14)).toFixed(1)}" y="${(py-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.F}" font-family="DM Mono,monospace">F${i+1}=${F}kN</text>`;
-      }
-      // H = vertical load on column
-      if(H!==0){
-        const aLen=fScale(H);
-        html+=`<line x1="${colX}" y1="${(py-aLen).toFixed(1)}" x2="${colX}" y2="${(py-2).toFixed(1)}" stroke="${CLR.H}" stroke-width="2" marker-end="url(#farr-h)"/>`;
-        html+=`<text x="${(colX+8).toFixed(1)}" y="${(py-aLen).toFixed(1)}" font-size="8" fill="${CLR.H}" font-family="DM Mono,monospace">V${i+1}=${H}kN</text>`;
-      }
-    }
-  });
-
-  // Frame members
+  // Structure only - no load arrows
+    // Frame members
   html+=`<line x1="${col_L}" y1="${col_bot}" x2="${col_L}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
   html+=`<line x1="${col_L}" y1="${col_top}" x2="${col_R}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
   html+=`<line x1="${col_R}" y1="${col_bot}" x2="${col_R}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
@@ -2176,7 +2018,7 @@ function renderDiagram(sys, data){
       h+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="1.5" stroke-dasharray="3,2"/>`;
       // Label the jump values
       const lx=(bx+o2*nx), ly=(by+o2*ny);
-      h+=`<text x="${(lx+2).toFixed(1)}" y="${(ly-3).toFixed(1)}" font-size="7" fill="${color}" font-family="DM Mono,monospace">${v2.toFixed(1)}</text>`;
+      h+=`<text x="${(lx+2).toFixed(1)}" y="${(ly-3).toFixed(1)}" font-size="7" fill="${color}" font-family="DM Mono,monospace">${Math.abs(v2).toFixed(1)}</text>`;
     });
 
     // Zero line (member)
@@ -2186,11 +2028,11 @@ function renderDiagram(sys, data){
     const maxIdx=vals.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
     const t=maxIdx/n;
     const bx=mem.x0+t*dx, by=mem.y0+t*dy;
-    const v=vals[maxIdx], offset=-v*SCALE;
+    const v=vals[maxIdx], offset=(mem.flip!==false ? -v : v)*SCALE;
     const lx=bx+offset*nx, ly=by+offset*ny;
     if(Math.abs(v)>maxVal*0.05){
       h+=`<rect x="${(lx-14).toFixed(1)}" y="${(ly-11).toFixed(1)}" width="28" height="10" rx="2" fill="white" opacity="0.8"/>`;
-      h+=`<text x="${lx.toFixed(1)}" y="${(ly-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">${v.toFixed(1)}</text>`;
+      h+=`<text x="${lx.toFixed(1)}" y="${(ly-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">${Math.abs(v).toFixed(1)}</text>`;
     }
   });
 
@@ -2314,7 +2156,8 @@ function renderCantDiagram(L, Qv, Mv, Nv=null){
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [{
       x0, y0:bY, x1, y1:bY, thick:3,
-      memberLen: L, M: Mv, Q: Qv,
+      memberLen: L, flip:false,
+      M: Mv, Q: Qv,
       N: Nv||new Array(Qv.length).fill(0)
     }],
     totalL: L
@@ -2394,12 +2237,13 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB){
   const data = {
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [
-      // Left col: bottom (col_bot) to top (col_top), x=col_L fixed
-      { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, M:Mleft, Q:Qleft, N:Nleft },
-      // Rafter: left to right at col_top
-      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, M:Mraf,  Q:Qraf,  N:Nraf  },
-      // Right col: top to bottom
-      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, M:Mright,Q:Qright,N:Nright}
+      // Left col: bottom to top - normal points RIGHT (inward) ✓
+      { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, flip:false, M:Mleft, Q:Qleft, N:Nleft },
+      // Rafter: left to right - normal points UP (inward) - but rafter sags DOWN
+      // For rafter: positive M = sagging = tension BELOW = toward interior → flip needed
+      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:true, M:Mraf,  Q:Qraf,  N:Nraf  },
+      // Right col: top to bottom - normal points LEFT (inward) ✓
+      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:false, M:Mright,Q:Qright,N:Nright}
     ]
   };
   diagData['frame'] = data;
@@ -2438,6 +2282,37 @@ const calcTranslations = {
     from: 'from', to: 'to', member: 'Member',
     rafter: 'Rafter', leftCol: 'Left column', rightCol: 'Right column',
     spans: 'Spans', addSpan: '＋', removeSpan: '−',
+    fixed: 'Fixed ⊞', pinned: 'Pin △', roller: 'Roller ○',
+    on: 'On', off: 'Off',
+    // Modal titles
+    modalBeamTitle: 'Simply Supported Beam — Theory',
+    modalCantTitle: 'Cantilever — Theory',
+    modalContTitle: 'Continuous Beam — Theory',
+    modalFrameTitle: 'Frame — Theory',
+    // Modal beam content
+    modalBeamS1h: 'System',
+    modalBeamS1p: 'A simply supported beam is supported by a pin at A (fixed in x and y) and a roller at B (fixed in y only). It is statically determinate with 3 equilibrium equations.',
+    modalBeamS2h: 'Equilibrium — Reactions',
+    modalBeamS3h: 'Shear Force Q(x)',
+    modalBeamS3p: 'The shear force at position x is the sum of all vertical forces to the left of the section:',
+    modalBeamS4h: 'Bending Moment M(x)',
+    modalBeamS4p: 'The bending moment is the integral of the shear force. Tension-bottom convention: positive M shown downward.',
+    modalBeamS5h: 'Inclined Point Loads',
+    modalBeamS5p: 'An inclined load F at angle α (from vertical) is decomposed into:',
+    // Modal cant content
+    modalCantS1h: 'System',
+    modalCantS1p: 'A cantilever is fixed at one end (built-in support at A) and free at the other. The fixed support provides a vertical reaction V_A, a horizontal reaction H_A, and a restraining moment M_A.',
+    modalCantS2h: 'Reactions at Support A',
+    modalCantS3h: 'Shear Force Q(x)',
+    modalCantS3p: 'Computed from the fixed support (x = 0) toward the free end:',
+    modalCantS4h: 'Bending Moment M(x)',
+    modalCantS4p: 'Maximum at the fixed support (x = 0), zero at the free end. Tension on top.',
+    // Modal frame content
+    modalFrameS1h: 'System',
+    modalFrameS1p: 'A rectangular portal frame consists of two columns and a rafter.',
+    modalFrameS2h: 'Pinned Supports (statically determinate)',
+    modalFrameS3h: 'Fixed Supports (3× statically indeterminate)',
+    modalFrameS4h: 'Internal Forces',
   },
   de: {
     tabs: ['Einfeldträger', 'Kragarm', 'Durchlaufträger', 'Rahmen'],
@@ -2464,6 +2339,33 @@ const calcTranslations = {
     from: 'von', to: 'bis', member: 'Stab',
     rafter: 'Riegel', leftCol: 'Linker Stiel', rightCol: 'Rechter Stiel',
     spans: 'Felder', addSpan: '＋', removeSpan: '−',
+    fixed: 'Einspannung ⊞', pinned: 'Festlager △', roller: 'Loslager ○',
+    on: 'An', off: 'Aus',
+    modalBeamTitle: 'Einfeldträger — Theorie',
+    modalCantTitle: 'Kragarm — Theorie',
+    modalContTitle: 'Durchlaufträger — Theorie',
+    modalFrameTitle: 'Rahmen — Theorie',
+    modalBeamS1h: 'System',
+    modalBeamS1p: 'Der Einfeldträger ist an Lager A gelenkig (Festlager, fixiert in x und y) und an Lager B verschieblich (Loslager, fixiert in y) gelagert. Das System ist statisch bestimmt mit 3 Gleichgewichtsbedingungen.',
+    modalBeamS2h: 'Gleichgewicht — Auflagerkräfte',
+    modalBeamS3h: 'Querkraftverlauf Q(x)',
+    modalBeamS3p: 'Die Querkraft an der Stelle x ist die Summe aller vertikalen Kräfte links vom Schnitt:',
+    modalBeamS4h: 'Biegemomentenverlauf M(x)',
+    modalBeamS4p: 'Das Biegemoment ist das Integral der Querkraft. Zugfaser-unten-Konvention: positives M wird nach unten dargestellt.',
+    modalBeamS5h: 'Geneigte Einzellasten',
+    modalBeamS5p: 'Eine geneigte Last F mit Winkel α (zur Vertikalen) wird in Komponenten zerlegt:',
+    modalCantS1h: 'System',
+    modalCantS1p: 'Der Kragarm ist an einem Ende eingespannt (Einspannung bei A) und am anderen Ende frei. Die Einspannung liefert eine Vertikalkraft V_A, eine Horizontalkraft H_A und ein Einspannmoment M_A.',
+    modalCantS2h: 'Auflagerkräfte bei A',
+    modalCantS3h: 'Querkraftverlauf Q(x)',
+    modalCantS3p: 'Berechnung von der Einspannung (x = 0) zum freien Ende:',
+    modalCantS4h: 'Biegemomentenverlauf M(x)',
+    modalCantS4p: 'Maximum bei der Einspannung (x = 0), null am freien Ende. Zugfaser oben.',
+    modalFrameS1h: 'System',
+    modalFrameS1p: 'Ein rechteckiger Rahmen besteht aus zwei Stielen und einem Riegel.',
+    modalFrameS2h: 'Gelenkige Lagerung (statisch bestimmt)',
+    modalFrameS3h: 'Eingespannte Lagerung (3-fach statisch unbestimmt)',
+    modalFrameS4h: 'Schnittgrößen',
   },
   fr: {
     tabs: ['Poutre Simple', 'Console', 'Poutre Continue', 'Portique'],
@@ -2490,6 +2392,33 @@ const calcTranslations = {
     from: 'de', to: 'à', member: 'Barre',
     rafter: 'Traverse', leftCol: 'Poteau gauche', rightCol: 'Poteau droit',
     spans: 'Travées', addSpan: '＋', removeSpan: '−',
+    fixed: 'Encastrement ⊞', pinned: 'Appui △', roller: 'Appui mobile ○',
+    on: 'Actif', off: 'Inactif',
+    modalBeamTitle: 'Poutre Simple — Théorie',
+    modalCantTitle: 'Console — Théorie',
+    modalContTitle: 'Poutre Continue — Théorie',
+    modalFrameTitle: 'Portique — Théorie',
+    modalBeamS1h: 'Système',
+    modalBeamS1p: "Une poutre simple est appuyée en A (appui fixe, bloqué en x et y) et en B (appui mobile, bloqué en y). Le système est isostatique avec 3 équations d'équilibre.",
+    modalBeamS2h: 'Équilibre — Réactions',
+    modalBeamS3h: 'Effort Tranchant T(x)',
+    modalBeamS3p: "L'effort tranchant en x est la somme de toutes les forces verticales à gauche de la section:",
+    modalBeamS4h: 'Moment Fléchissant M(x)',
+    modalBeamS4p: "Le moment fléchissant est l'intégrale de l'effort tranchant. Convention traction en bas: M positif affiché vers le bas.",
+    modalBeamS5h: 'Charges Inclinées',
+    modalBeamS5p: 'Une charge inclinée F à l\'angle α (par rapport à la verticale) est décomposée en:',
+    modalCantS1h: 'Système',
+    modalCantS1p: "La console est encastrée à une extrémité (appui A) et libre à l'autre. L'encastrement fournit V_A, H_A et le moment d'encastrement M_A.",
+    modalCantS2h: 'Réactions en A',
+    modalCantS3h: 'Effort Tranchant T(x)',
+    modalCantS3p: "Calculé depuis l'encastrement (x = 0) vers l'extrémité libre:",
+    modalCantS4h: 'Moment Fléchissant M(x)',
+    modalCantS4p: "Maximum à l'encastrement (x = 0), nul à l'extrémité libre. Traction en haut.",
+    modalFrameS1h: 'Système',
+    modalFrameS1p: "Un portique rectangulaire est composé de deux poteaux et d'une traverse.",
+    modalFrameS2h: 'Appuis articulés (isostatique)',
+    modalFrameS3h: 'Encastrements (3× hyperstatique)',
+    modalFrameS4h: 'Efforts internes',
   },
   es: {
     tabs: ['Viga Biapoyada', 'Ménsula', 'Viga Continua', 'Pórtico'],
@@ -2516,6 +2445,33 @@ const calcTranslations = {
     from: 'desde', to: 'hasta', member: 'Barra',
     rafter: 'Viga', leftCol: 'Pilar izquierdo', rightCol: 'Pilar derecho',
     spans: 'Vanos', addSpan: '＋', removeSpan: '−',
+    fixed: 'Empotramiento ⊞', pinned: 'Articulación △', roller: 'Apoyo móvil ○',
+    on: 'Activo', off: 'Inactivo',
+    modalBeamTitle: 'Viga Biapoyada — Teoría',
+    modalCantTitle: 'Ménsula — Teoría',
+    modalContTitle: 'Viga Continua — Teoría',
+    modalFrameTitle: 'Pórtico — Teoría',
+    modalBeamS1h: 'Sistema',
+    modalBeamS1p: 'Una viga biapoyada está apoyada en A (apoyo fijo, bloqueado en x e y) y en B (apoyo móvil, bloqueado en y). El sistema es isostático con 3 ecuaciones de equilibrio.',
+    modalBeamS2h: 'Equilibrio — Reacciones',
+    modalBeamS3h: 'Fuerza Cortante Q(x)',
+    modalBeamS3p: 'La fuerza cortante en x es la suma de todas las fuerzas verticales a la izquierda de la sección:',
+    modalBeamS4h: 'Momento Flector M(x)',
+    modalBeamS4p: 'El momento flector es la integral de la fuerza cortante. Convención tracción abajo: M positivo mostrado hacia abajo.',
+    modalBeamS5h: 'Cargas Inclinadas',
+    modalBeamS5p: 'Una carga inclinada F con ángulo α (respecto a la vertical) se descompone en:',
+    modalCantS1h: 'Sistema',
+    modalCantS1p: 'La ménsula está empotrada en un extremo (apoyo A) y libre en el otro. El empotramiento proporciona V_A, H_A y el momento de empotramiento M_A.',
+    modalCantS2h: 'Reacciones en A',
+    modalCantS3h: 'Fuerza Cortante Q(x)',
+    modalCantS3p: 'Calculada desde el empotramiento (x = 0) hacia el extremo libre:',
+    modalCantS4h: 'Momento Flector M(x)',
+    modalCantS4p: 'Máximo en el empotramiento (x = 0), cero en el extremo libre. Tracción arriba.',
+    modalFrameS1h: 'Sistema',
+    modalFrameS1p: 'Un pórtico rectangular consta de dos pilares y una viga.',
+    modalFrameS2h: 'Apoyos articulados (isostático)',
+    modalFrameS3h: 'Empotramiento (3× hiperestático)',
+    modalFrameS4h: 'Esfuerzos internos',
   }
 };
 
@@ -2590,6 +2546,39 @@ function applyCalcTranslations(){
     else if(txt==='Length L'||txt==='Länge L'||txt==='Longueur L'||txt==='Longitud L') lbl.childNodes[0].textContent=t.length+' ';
     else if(txt==='Width b'||txt==='Breite b'||txt==='Largeur b'||txt==='Ancho b') lbl.childNodes[0].textContent=t.width+' ';
     else if(txt==='Height h'||txt==='Höhe h'||txt==='Hauteur h'||txt==='Altura h') lbl.childNodes[0].textContent=t.height+' ';
+  });
+
+  // Modal titles
+  const t2 = calcTranslations[calcLang]||calcTranslations.en;
+  const setT = (id,val) => { const el=document.getElementById(id); if(el&&val) el.textContent=val; };
+  setT('modal-beam-title', t2.modalBeamTitle);
+  setT('modal-cant-title', t2.modalCantTitle);
+  setT('modal-cont-title', t2.modalContTitle);
+  setT('modal-frame-title', t2.modalFrameTitle);
+  // Modal beam sections
+  setT('mbs1h', t2.modalBeamS1h); setT('mbs1p', t2.modalBeamS1p);
+  setT('mbs2h', t2.modalBeamS2h);
+  setT('mbs3h', t2.modalBeamS3h); setT('mbs3p', t2.modalBeamS3p);
+  setT('mbs4h', t2.modalBeamS4h); setT('mbs4p', t2.modalBeamS4p);
+  setT('mbs5h', t2.modalBeamS5h); setT('mbs5p', t2.modalBeamS5p);
+  // Modal cant sections
+  setT('mcs1h', t2.modalCantS1h); setT('mcs1p', t2.modalCantS1p);
+  setT('mcs2h', t2.modalCantS2h);
+  setT('mcs3h', t2.modalCantS3h); setT('mcs3p', t2.modalCantS3p);
+  setT('mcs4h', t2.modalCantS4h); setT('mcs4p', t2.modalCantS4p);
+  // Modal frame sections
+  setT('mfs1h', t2.modalFrameS1h); setT('mfs1p', t2.modalFrameS1p);
+  setT('mfs2h', t2.modalFrameS2h);
+  setT('mfs3h', t2.modalFrameS3h);
+  setT('mfs4h', t2.modalFrameS4h);
+  // Toggle buttons (On/Off, Fixed/Pinned/Roller)
+  document.querySelectorAll('.toggle-btn').forEach(btn=>{
+    const txt=btn.textContent.trim();
+    if(txt==='An'||txt==='On'||txt==='Actif'||txt==='Activo') btn.textContent=t2.on;
+    else if(txt==='Aus'||txt==='Off'||txt==='Inactif'||txt==='Inactivo') btn.textContent=t2.off;
+    else if(txt.startsWith('Fixed')||txt.startsWith('Einspan')||txt.startsWith('Encast')||txt.startsWith('Empo')) btn.textContent=t2.fixed;
+    else if(txt.startsWith('Pin')||txt.startsWith('Festlager')||txt.startsWith('Appui △')||txt.startsWith('Articu')) btn.textContent=t2.pinned;
+    else if(txt.startsWith('Roller')||txt.startsWith('Loslager')||txt.startsWith('Appui mobile')||txt.startsWith('Apoyo m')) btn.textContent=t2.roller;
   });
 
   // Footnotes
