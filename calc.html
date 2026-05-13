@@ -7,7 +7,6 @@
   <meta name="description" content="Structural analysis app for civil engineering students — calculate shear forces, bending moments and section properties." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -327,22 +326,7 @@
       <div class="metric"><div class="m-label">Q<sub>max</sub></div><div class="m-value" id="b-res-Qmax">—</div><div class="m-unit">kN</div></div>
       <div class="metric"><div class="m-label">N<sub>max</sub></div><div class="m-value" id="b-res-Nmax">—</div><div class="m-unit">kN</div></div>
     </div>
-    <div class="card">
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Shear Force Q(x)</div><div class="chart-badge">kN</div></div>
-        <div class="chart-wrap"><canvas id="chartBQ"></canvas></div>
-      </div>
-      <div class="chart-divider"></div>
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · Zugfaser unten</div></div>
-        <div class="chart-wrap"><canvas id="chartBM"></canvas></div>
-      </div>
-      <div class="chart-divider"></div>
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Normal Force N(x)</div><div class="chart-badge">kN</div></div>
-        <div class="chart-wrap"><canvas id="chartBN"></canvas></div>
-      </div>
-    </div>
+    
   </div>
 
     <!-- Diagram on structure -->
@@ -407,22 +391,7 @@
       <div class="metric"><div class="m-label">Q<sub>max</sub></div><div class="m-value" id="c-res-Qmax">—</div><div class="m-unit">kN</div></div>
       <div class="metric"><div class="m-label">N<sub>max</sub></div><div class="m-value" id="c-res-Nmax">—</div><div class="m-unit">kN</div></div>
     </div>
-    <div class="card">
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Shear Force Q(x)</div><div class="chart-badge">kN</div></div>
-        <div class="chart-wrap"><canvas id="chartCQ"></canvas></div>
-      </div>
-      <div class="chart-divider"></div>
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · Zugfaser oben</div></div>
-        <div class="chart-wrap"><canvas id="chartCM"></canvas></div>
-      </div>
-      <div class="chart-divider"></div>
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Normal Force N(x)</div><div class="chart-badge">kN</div></div>
-        <div class="chart-wrap"><canvas id="chartCN"></canvas></div>
-      </div>
-    </div>
+    
   </div>
 
     <!-- Diagram on structure -->
@@ -489,17 +458,7 @@
         <tbody id="cont-reactions-body"></tbody>
       </table>
     </div>
-    <div class="card">
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Shear Force Q(x)</div><div class="chart-badge">kN</div></div>
-        <div class="chart-wrap"><canvas id="chartContQ"></canvas></div>
-      </div>
-      <div class="chart-divider"></div>
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Bending Moment M(x)</div><div class="chart-badge">kNm · Zugfaser unten</div></div>
-        <div class="chart-wrap"><canvas id="chartContM"></canvas></div>
-      </div>
-    </div>
+    
   </div>
 
     <!-- Diagram on structure -->
@@ -604,22 +563,7 @@
       </table>
     </div>
 
-    <div class="card">
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Bending Moment M</div><div class="chart-badge">kNm</div></div>
-        <div class="chart-wrap"><canvas id="chartFM"></canvas></div>
-      </div>
-      <div class="chart-divider"></div>
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Shear Force Q</div><div class="chart-badge">kN</div></div>
-        <div class="chart-wrap"><canvas id="chartFQ"></canvas></div>
-      </div>
-      <div class="chart-divider"></div>
-      <div class="chart-block">
-        <div class="chart-header"><div class="chart-title">Normal Force N</div><div class="chart-badge">kN</div></div>
-        <div class="chart-wrap"><canvas id="chartFN"></canvas></div>
-      </div>
-    </div>
+    
   </div>
 
 
@@ -656,7 +600,6 @@
 const DEG = Math.PI / 180;
 const loads = { beam:{point:[],dist:[],horiz:[]}, cant:{point:[],dist:[],horiz:[]} };
 let uid = 0;
-let chartBQ=null,chartBM=null,chartCQ=null,chartCM=null,chartContQ=null,chartContM=null;
 
 // Continuous beam state
 let numSpans = 2;
@@ -971,11 +914,40 @@ function mkDefs(prefix) {
 function drawBeam() {
   const svg=document.getElementById('beam-svg'); if(!svg) return;
   const L=parseFloat(document.getElementById('bL').value)||5;
-  const x0=30,x1=290,bY=55,bW=x1-x0;
+  const x0=30,x1=290,bY=70,bW=x1-x0;
+  const maxF=globalMaxLoad('beam');
   let h='';
 
-  // Beam only - no load arrows
+  // Distributed loads
+  loads.beam.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
+    const xa=x0+Math.min(dl.values.a/L,1)*bW, xb=x0+Math.min(dl.values.b/L,1)*bW;
+    h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${di+1}`,di,'b');
+  });
+
+  // Beam
   h+=`<rect x="${x0}" y="${bY}" width="${bW}" height="8" rx="2" fill="#1a1a18"/>`;
+
+  // Point loads
+  const pts=loads.beam.point.filter(l=>l.enabled&&l.values.F!==0);
+  const ptRows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
+  pts.forEach((pl,pi)=>{
+    const ax=x0+Math.min(pl.values.a/L,1)*bW, alpha=pl.values.alpha||0;
+    h+=arrowSVG(ax,bY,pl.values.F,alpha,maxF,`F${pi+1}=${pl.values.F}kN${alpha?` α=${alpha}°`:''}`,ptRows[pi],'b');
+  });
+
+  // Horizontal loads
+  const horizs=(loads.beam.horiz||[]).filter(l=>l.enabled&&(l.values.H||0)!==0);
+  horizs.forEach((hl,hi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    const hLen=14+26*Math.abs(hl.values.H)/maxF;
+    h+=horizArrowSVG(ax-hLen,ax,bY+4,hl.values.H,`H${hi+1}=${hl.values.H}kN`,hi);
+  });
+
+  // Moments
+  (loads.beam.horiz||[]).filter(l=>l.enabled&&(l.values.Me||0)!==0).forEach((hl,mi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    h+=momentSVG(ax,bY-14,hl.values.Me,`Me=${hl.values.Me}kNm`,mi);
+  });
 
   // Supports
   h+=`<polygon points="${x0},${bY+8} ${x0-8},${bY+20} ${x0+8},${bY+20}" fill="#1a1a18"/>`;
@@ -985,28 +957,56 @@ function drawBeam() {
   h+=`<text x="${x1}" y="${bY+30}" text-anchor="middle" font-size="9" fill="#6b6a65">B</text>`;
   h+=`<line x1="${x0}" y1="${bY+38}" x2="${x1}" y2="${bY+38}" stroke="#a8a7a2" stroke-width="0.8"/>`;
   h+=`<text x="${(x0+x1)/2}" y="${bY+49}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
-  svg.setAttribute('viewBox','0 0 320 90');
+  svg.setAttribute('viewBox','0 0 320 110');
   svg.innerHTML=mkDefs('b')+h;
 }
 
 function drawCantilever() {
   const svg=document.getElementById('cant-svg'); if(!svg) return;
   const L=parseFloat(document.getElementById('cL').value)||3;
-  const x0=50,x1=290,bY=45,bW=x1-x0;
+  const x0=50,x1=290,bY=70,bW=x1-x0;
+  const maxF=globalMaxLoad('cant');
   let h='';
 
-  // Wall support only
-  h+=`<rect x="10" y="${bY-14}" width="36" height="36" rx="2" fill="#e0dfd8"/>`;
-  for(let i=0;i<4;i++){const y=bY-10+i*8; h+=`<line x1="10" y1="${y}" x2="26" y2="${y+8}" stroke="#a8a7a2" stroke-width="1"/>`;}
-  h+=`<rect x="36" y="${bY-10}" width="4" height="28" fill="#1a1a18"/>`;
+  // Wall
+  h+=`<rect x="10" y="${bY-18}" width="38" height="44" rx="2" fill="#e0dfd8"/>`;
+  for(let i=0;i<5;i++){const y=bY-14+i*8; h+=`<line x1="10" y1="${y}" x2="28" y2="${y+8}" stroke="#a8a7a2" stroke-width="1"/>`;}
+  h+=`<rect x="36" y="${bY-14}" width="4" height="36" fill="#1a1a18"/>`;
 
-  // Beam only
+  // Distributed loads
+  loads.cant.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
+    const xa=x0+Math.min(dl.values.a/L,1)*bW, xb=x0+Math.min(dl.values.b/L,1)*bW;
+    h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${di+1}`,di,'c');
+  });
+
+  // Beam
   h+=`<rect x="${x0}" y="${bY}" width="${bW}" height="8" rx="2" fill="#1a1a18"/>`;
 
-  h+=`<text x="${x1+4}" y="${bY+12}" font-size="9" fill="#a8a7a2">free</text>`;
-  h+=`<line x1="${x0}" y1="${bY+22}" x2="${x1}" y2="${bY+22}" stroke="#a8a7a2" stroke-width="0.8"/>`;
-  h+=`<text x="${(x0+x1)/2}" y="${bY+33}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
-  svg.setAttribute('viewBox','0 0 320 80');
+  // Point loads
+  const pts=loads.cant.point.filter(l=>l.enabled&&l.values.F!==0);
+  const ptRows=assignRows(pts.map(pl=>x0+Math.min(pl.values.a/L,1)*bW));
+  pts.forEach((pl,pi)=>{
+    const ax=x0+Math.min(pl.values.a/L,1)*bW, alpha=pl.values.alpha||0;
+    h+=arrowSVG(ax,bY,pl.values.F,alpha,maxF,`F${pi+1}=${pl.values.F}kN${alpha?` α=${alpha}°`:''}`,ptRows[pi],'c');
+  });
+
+  // Horizontal loads
+  (loads.cant.horiz||[]).filter(l=>l.enabled&&(l.values.H||0)!==0).forEach((hl,hi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    const hLen=14+26*Math.abs(hl.values.H)/maxF;
+    h+=horizArrowSVG(ax-hLen,ax,bY+4,hl.values.H,`H${hi+1}=${hl.values.H}kN`,hi);
+  });
+
+  // Moments
+  (loads.cant.horiz||[]).filter(l=>l.enabled&&(l.values.Me||0)!==0).forEach((hl,mi)=>{
+    const ax=x0+Math.min((hl.values.a||0)/L,1)*bW;
+    h+=momentSVG(ax,bY-14,hl.values.Me,`Me=${hl.values.Me}kNm`,mi);
+  });
+
+  h+=`<text x="${x1+4}" y="${bY+16}" font-size="9" fill="#a8a7a2">free</text>`;
+  h+=`<line x1="${x0}" y1="${bY+26}" x2="${x1}" y2="${bY+26}" stroke="#a8a7a2" stroke-width="0.8"/>`;
+  h+=`<text x="${(x0+x1)/2}" y="${bY+37}" text-anchor="middle" font-size="9" fill="#a8a7a2" font-family="DM Mono,monospace">L = ${L} m</text>`;
+  svg.setAttribute('viewBox','0 0 320 110');
   svg.innerHTML=mkDefs('c')+h;
 }
 
@@ -1023,7 +1023,22 @@ function drawContinuous() {
   let h='';
 
 
-  // Structure only
+  const maxF=globalMaxLoad('cont');
+
+  // Distributed loads
+  let distIdx=0;
+  spanData.forEach((sp,si)=>{
+    const xSpanStart=PAD+Ls.slice(0,si).reduce((a,b)=>a+b,0)/Ltotal*bW;
+    const xSpanEnd=PAD+Ls.slice(0,si+1).reduce((a,b)=>a+b,0)/Ltotal*bW;
+    const spW=xSpanEnd-xSpanStart;
+    sp.dist.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
+      const xa=xSpanStart+Math.min(dl.values.a/sp.L,1)*spW;
+      const xb=xSpanStart+Math.min(dl.values.b/sp.L,1)*spW;
+      h+=distSVG(xa,xb,dl.values.qa,dl.values.qb,maxF,bY,`q${distIdx+1}`,distIdx,'co');
+      distIdx++;
+    });
+  });
+
     // Beam
   h+=`<rect x="${PAD}" y="${bY}" width="${bW}" height="${beamH}" rx="2" fill="#1a1a18"/>`;
 
@@ -1068,17 +1083,6 @@ function drawContinuous() {
 // ══════════════════════════════════════════════════
 // CHART OPTIONS
 // ══════════════════════════════════════════════════
-function mkOpts(absLabels, reverseY=false) {
-  return {
-    responsive:true,maintainAspectRatio:false,animation:{duration:350},
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>Math.abs(ctx.parsed.y).toFixed(2)}}},
-    scales:{
-      x:{ticks:{maxTicksLimit:8,color:'#a8a7a2',font:{size:10,family:'DM Mono'}},grid:{color:'#e0dfd8'},border:{color:'#e0dfd8'}},
-      y:{reverse:reverseY,ticks:{maxTicksLimit:5,color:'#a8a7a2',font:{size:10,family:'DM Mono'},callback:v=>absLabels?Math.abs(v).toFixed(1):v.toFixed(1)},grid:{color:'#e0dfd8'},border:{color:'#e0dfd8'}}
-    },
-    elements:{point:{radius:0},line:{borderWidth:2}}
-  };
-}
 
 // ══════════════════════════════════════════════════
 // BEAM CALCULATION
@@ -1127,11 +1131,7 @@ function calculateBeam() {
   document.getElementById('b-res-Qmax').textContent=Qmax.toFixed(2);
   document.getElementById('b-res-Nmax').textContent=Nmax.toFixed(2);
   document.getElementById('beam-results').classList.remove('hidden');
-  if(window._chartBQ)window._chartBQ.destroy(); if(window._chartBM)window._chartBM.destroy(); if(window._chartBN)window._chartBN.destroy();
-  window._chartBQ=new Chart(document.getElementById('chartBQ'),{type:'line',data:{labels:xs,datasets:[{data:Qv,borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  window._chartBM=new Chart(document.getElementById('chartBM'),{type:'line',data:{labels:xs,datasets:[{data:Mv,borderColor:'#0f6e56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:0}]},options:mkOpts(true)});
-  window._chartBN=new Chart(document.getElementById('chartBN'),{type:'line',data:{labels:xs,datasets:[{data:Nv,borderColor:'#8b3a1e',backgroundColor:'rgba(139,58,30,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  renderBeamDiagram(L, Qv, Mv, xs, Nv);
+        renderBeamDiagram(L, Qv, Mv, xs, Nv);
 }
 
 function calculateCantilever() {
@@ -1175,11 +1175,7 @@ function calculateCantilever() {
   document.getElementById('c-res-Qmax').textContent=Qmax.toFixed(2);
   document.getElementById('c-res-Nmax').textContent=Nmax.toFixed(2);
   document.getElementById('cant-results').classList.remove('hidden');
-  if(window._chartCQ)window._chartCQ.destroy(); if(window._chartCM)window._chartCM.destroy(); if(window._chartCN)window._chartCN.destroy();
-  window._chartCQ=new Chart(document.getElementById('chartCQ'),{type:'line',data:{labels:xs,datasets:[{data:Qv,borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  window._chartCM=new Chart(document.getElementById('chartCM'),{type:'line',data:{labels:xs,datasets:[{data:Mv,borderColor:'#0f6e56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:0}]},options:mkOpts(false, true)});
-  window._chartCN=new Chart(document.getElementById('chartCN'),{type:'line',data:{labels:xs,datasets:[{data:Nv,borderColor:'#8b3a1e',backgroundColor:'rgba(139,58,30,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  renderCantDiagram(L, Qv, Mv, Nv);
+        renderCantDiagram(L, Qv, Mv, Nv);
 }
 
 
@@ -1382,7 +1378,6 @@ let supportA = 'fixed';
 let supportB = 'pin';
 let frameHinges = []; // [{id, member:'left'|'rafter'|'right', pos:float}]
 let frameLoads = { vert: [], horiz: [] };
-let chartFM=null, chartFQ=null, chartFN=null;
 
 function supportDOF(s){ return s==='fixed'?3:s==='pin'?2:1; }
 
@@ -1560,7 +1555,48 @@ function drawFrame(){
   let html='';
 
 
-  // Structure only - no load arrows
+  // Loads on frame members
+  let fMaxAll=0;
+  frameLoads.vert.filter(l=>l.enabled).forEach(l=>{fMaxAll=Math.max(fMaxAll,Math.abs(l.values.qa||0),Math.abs(l.values.qb||0));});
+  frameLoads.horiz.filter(l=>l.enabled).forEach(l=>{fMaxAll=Math.max(fMaxAll,Math.abs(l.values.F||0),Math.abs(l.values.H||0));});
+  if(fMaxAll<0.1) fMaxAll=1;
+  const fScale=v=>8+24*Math.abs(v)/fMaxAll;
+
+  frameLoads.vert.filter(l=>l.enabled&&(l.values.qa!==0||l.values.qb!==0)).forEach((dl,di)=>{
+    const mem=dl.values.member||'rafter';
+    const maxPos=mem==='rafter'?b:h;
+    const t_a=Math.min((dl.values.a||0)/maxPos,1), t_b=Math.min((dl.values.b||b)/maxPos,1);
+    const lbl=dl.values.qa!==dl.values.qb?`q${di+1}:${dl.values.qa}→${dl.values.qb}kN/m`:`q${di+1}=${dl.values.qa}kN/m`;
+    if(mem==='rafter'){
+      const xa=col_L+t_a*rafW, xb=col_L+t_b*rafW;
+      const n=Math.max(3,Math.round((xb-xa)/18));
+      const maxQ=Math.max(Math.abs(dl.values.qa),Math.abs(dl.values.qb),0.1);
+      for(let i=0;i<=n;i++){
+        const xi=xa+(i/n)*(xb-xa), qi=dl.values.qa+(dl.values.qb-dl.values.qa)*(i/n);
+        const aLen=fScale(qi);
+        html+=`<line x1="${xi.toFixed(1)}" y1="${(col_top-aLen).toFixed(1)}" x2="${xi.toFixed(1)}" y2="${col_top-1}" stroke="${CLR.q}" stroke-width="1.1" marker-end="url(#farr-q)"/>`;
+      }
+      const qaL=fScale(dl.values.qa), qbL=fScale(dl.values.qb);
+      html+=`<line x1="${col_L+t_a*rafW}" y1="${(col_top-qaL).toFixed(1)}" x2="${col_L+t_b*rafW}" y2="${(col_top-qbL).toFixed(1)}" stroke="${CLR.q}" stroke-width="1.1"/>`;
+      html+=`<text x="${((col_L+t_a*rafW+col_L+t_b*rafW)/2).toFixed(1)}" y="${(col_top-Math.max(qaL,qbL)-4).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.q}" font-family="DM Mono,monospace">${lbl}</text>`;
+    }
+  });
+
+  frameLoads.horiz.filter(l=>l.enabled).forEach((hl,i)=>{
+    const mem=hl.values.member||'left';
+    const maxPos=mem==='rafter'?b:h;
+    const t=Math.min((hl.values.z||0)/maxPos,1);
+    const F=hl.values.F||0;
+    if(mem!=='rafter'&&F!==0){
+      const colX=mem==='left'?col_L:col_R;
+      const py=col_bot-t*(col_bot-col_top);
+      const dir=mem==='left'?1:-1;
+      const aLen=fScale(F);
+      html+=`<line x1="${(colX+dir*(aLen+2)).toFixed(1)}" y1="${py}" x2="${(colX+dir*2).toFixed(1)}" y2="${py}" stroke="${CLR.F}" stroke-width="1.8" stroke-dasharray="4,2" marker-end="url(#farr-red)"/>`;
+      html+=`<text x="${(colX+dir*(aLen+14)).toFixed(1)}" y="${(py-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${CLR.F}" font-family="DM Mono,monospace">F${i+1}=${F}kN</text>`;
+    }
+  });
+
     // Frame members
   html+=`<line x1="${col_L}" y1="${col_bot}" x2="${col_L}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
   html+=`<line x1="${col_L}" y1="${col_top}" x2="${col_R}" y2="${col_top}" stroke="#1a1a18" stroke-width="4" stroke-linecap="round"/>`;
