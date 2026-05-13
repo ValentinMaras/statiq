@@ -522,6 +522,19 @@
         <button class="toggle-btn" id="btn-sB-roller" onclick="setSupportB('roller')">Roller ○</button>
       </div>
     </div>
+    <!-- Head support -->
+    <div style="margin-top:8px">
+      <div class="card-title" style="margin-bottom:8px">Head Support (top)</div>
+      <div class="toggle-row" style="margin-bottom:6px;">
+        <button class="toggle-btn active" id="btn-sH-none" onclick="setHeadSupport('pos','none')">None</button>
+        <button class="toggle-btn" id="btn-sH-left" onclick="setHeadSupport('pos','left')">&#8592; Left</button>
+        <button class="toggle-btn" id="btn-sH-right" onclick="setHeadSupport('pos','right')">Right &#8594;</button>
+      </div>
+      <div class="toggle-row" id="head-type-row" style="display:none;">
+        <button class="toggle-btn active" id="btn-sHT-roller" onclick="setHeadSupport('type','roller')">Roller ○</button>
+        <button class="toggle-btn" id="btn-sHT-pin" onclick="setHeadSupport('type','pin')">Pin △</button>
+      </div>
+    </div>
     <!-- Hinges -->
     <div style="margin-top:8px">
       <div class="card-title" style="margin-bottom:8px">Internal Hinges</div>
@@ -576,12 +589,20 @@
         <button class="diagram-toggle-btn" id="diag-btn-N-frame" onclick="setDiagMode('frame','N')">N</button>
         <button class="diagram-toggle-btn" id="diag-btn-W-frame" onclick="setDiagMode('frame','W')">w</button>
       </div>
-      <div id="ei-input-frame" class="hidden" style="display:none;gap:8px;margin-bottom:8px;">
+      <div id="ei-input-frame" style="display:none;margin-bottom:8px;">
+        <div style="font-size:10px;font-family:DM Mono,monospace;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Rafter</div>
+        <div class="field-row" style="margin-bottom:6px;">
+          <div class="field"><label>E <span class="unit">&#xD7;10&#x2076; kN/m&#xB2;</span></label>
+            <input type="number" id="frame-E-raf" value="210" step="1" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">&#xD7;10&#xB3; cm&#x2074;</span></label>
+            <input type="number" id="frame-Iy-raf" value="10" step="0.1" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
+        </div>
+        <div style="font-size:10px;font-family:DM Mono,monospace;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Columns</div>
         <div class="field-row">
-          <div class="field"><label>E <span class="unit">kN/m²</span></label>
-            <input type="number" id="frame-E" value="210000000" step="1000000" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
-          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
-            <input type="number" id="frame-Iy" value="10000" step="100" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
+          <div class="field"><label>E <span class="unit">&#xD7;10&#x2076; kN/m&#xB2;</span></label>
+            <input type="number" id="frame-E-col" value="210" step="1" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">&#xD7;10&#xB3; cm&#x2074;</span></label>
+            <input type="number" id="frame-Iy-col" value="10" step="0.1" oninput="if(diagData.frame)renderDiagram('frame',diagData.frame)"></div>
         </div>
       </div>
       <div class="diagram-svg-wrap">
@@ -1119,7 +1140,7 @@ function calculateBeam() {
         Q-=qa*t+(q_xe-qa)*t/2; M-=qa*t*(x-(da+t/2))+(q_xe-qa)*t/2*(x-(da+t*2/3));}
     });
     horizs.forEach(hl=>{ if(x>=(hl.values.a||0)){N-=(hl.values.H||0); M+=hl.values.Me||0;} });
-    Qv.push(+(-Q).toFixed(3)); Mv.push(+(-M).toFixed(3)); Nv.push(+N.toFixed(3));
+    Qv.push(+(Q).toFixed(3)); Mv.push(+(-M).toFixed(3)); Nv.push(+N.toFixed(3));
   }
   // Close Q at A side: Q starts from 0
   xs.unshift(0); Qv.unshift(0); Mv.unshift(0); Nv.unshift(Nv[0]);
@@ -1373,13 +1394,16 @@ function gaussElim(A,b) {
 // Static indeterminacy n = reactions - 3 - hinges
 let supportA = 'fixed';
 let supportB = 'pin';
+let supportHead = 'none'; // 'none' | 'left' | 'right'
+let supportHeadType = 'roller'; // 'roller' | 'pin'
 let frameHinges = []; // [{id, member:'left'|'rafter'|'right', pos:float}]
 let frameLoads = { vert: [], horiz: [] };
 
 function supportDOF(s){ return s==='fixed'?3:s==='pin'?2:1; }
 
 function frameIndeterminacy(){
-  const r = supportDOF(supportA) + supportDOF(supportB);
+  const headDOF = supportHead==='none' ? 0 : (supportHeadType==='pin' ? 2 : 1);
+  const r = supportDOF(supportA) + supportDOF(supportB) + headDOF;
   return r - 3 - frameHinges.length;
 }
 
@@ -1391,6 +1415,24 @@ function updateIndetInfo(){
              : n === 0 ? '✅ Statically determinate'
              : `⚙️ Statically indeterminate — degree ${n}`;
   el.textContent = desc;
+}
+
+function setHeadSupport(param, val){
+  if(param==='pos'){
+    supportHead = val;
+    ['none','left','right'].forEach(t=>{
+      document.getElementById('btn-sH-'+t).className='toggle-btn'+(val===t?' active':'');
+    });
+    // Show/hide type selector
+    const typeRow = document.getElementById('head-type-row');
+    if(typeRow) typeRow.style.display = val==='none' ? 'none' : 'flex';
+  } else {
+    supportHeadType = val;
+    ['roller','pin'].forEach(t=>{
+      document.getElementById('btn-sHT-'+t).className='toggle-btn'+(val===t?' active':'');
+    });
+  }
+  updateIndetInfo(); drawFrame();
 }
 
 function setSupportA(type){
@@ -1635,6 +1677,24 @@ function drawFrame(){
   drawSupport(col_L, col_bot, supportA, 'A');
   drawSupport(col_R, col_bot, supportB, 'B');
 
+  // Head support
+  if(supportHead!=='none'){
+    const hx = supportHead==='left' ? col_L : col_R;
+    const hdir = supportHead==='left' ? -1 : 1;
+    if(supportHeadType==='roller'){
+      // Roller: circle + guide line
+      html+=`<circle cx="${(hx+hdir*12).toFixed(1)}" cy="${col_top}" r="5" fill="none" stroke="#1a1a18" stroke-width="1.5"/>`;
+      html+=`<line x1="${(hx+hdir*17).toFixed(1)}" y1="${col_top-7}" x2="${(hx+hdir*17).toFixed(1)}" y2="${col_top+7}" stroke="#1a1a18" stroke-width="1.5"/>`;
+      for(let i=-6;i<=6;i+=4) html+=`<line x1="${(hx+hdir*17).toFixed(1)}" y1="${(col_top+i).toFixed(1)}" x2="${(hx+hdir*21).toFixed(1)}" y2="${(col_top+i+3).toFixed(1)}" stroke="#1a1a18" stroke-width="0.8"/>`;
+    } else {
+      // Pin: triangle
+      const px = hx+hdir*14;
+      html+=`<polygon points="${px},${col_top} ${px+hdir*8},${col_top-7} ${px+hdir*8},${col_top+7}" fill="#1a1a18"/>`;
+      html+=`<line x1="${(px+hdir*8).toFixed(1)}" y1="${col_top-8}" x2="${(px+hdir*8).toFixed(1)}" y2="${col_top+8}" stroke="#1a1a18" stroke-width="1.5"/>`;
+    }
+    html+=`<text x="${(hx+hdir*26).toFixed(1)}" y="${(col_top+4).toFixed(1)}" font-size="8" fill="#6b6a65">H</text>`;
+  }
+
   // Dimension labels
   html+=`<text x="${(col_L+col_R)/2}" y="${col_bot+45}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">b = ${b} m</text>`;
   html+=`<text x="${col_L-28}" y="${(col_bot+col_top)/2+4}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">h=${h}m</text>`;
@@ -1663,6 +1723,10 @@ function calculateFrame(){
 
   const vLoads=frameLoads.vert.filter(l=>l.enabled);
   const hLoads=frameLoads.horiz.filter(l=>l.enabled);
+  // Head support: horizontal roller at top of frame
+  // Adds 1 DOF → reduces indeterminacy by 1
+  // For sway frame: head support eliminates horizontal displacement at top
+  // → H_head absorbs horizontal force, columns have no sway
 
   // Total loads
   let Vtot=0, Mvert_A=0;
@@ -1863,9 +1927,11 @@ function calculateFrame(){
   document.getElementById('f-res-Nmax').textContent=Nmax.toFixed(2);
 
   // Reactions table
+  const H_head = supportHead!=='none' ? (Htotal - HA - HB) : 0;
   document.getElementById('frame-reactions-body').innerHTML=
     `<tr><td>A</td><td>${HA.toFixed(2)}</td><td>${VA.toFixed(2)}</td><td>${supportA==='fixed'?MA_r.toFixed(2):'—'}</td></tr>`+
-    `<tr><td>B</td><td>${HB.toFixed(2)}</td><td>${VB.toFixed(2)}</td><td>${supportB==='fixed'?MB_r.toFixed(2):'—'}</td></tr>`;
+    `<tr><td>B</td><td>${HB.toFixed(2)}</td><td>${VB.toFixed(2)}</td><td>${supportB==='fixed'?MB_r.toFixed(2):'—'}</td></tr>`+
+    (supportHead!=='none'?`<tr><td>H (top)</td><td>${H_head.toFixed(2)}</td><td>—</td><td>—</td></tr>`:'');
 
   document.getElementById('frame-results').classList.remove('hidden');
 
@@ -2026,7 +2092,8 @@ function renderDiagram(sys, data){
       for(let i=s;i<=e;i++){
         const t=i/n;
         const bx=mem.x0+t*dx, by=mem.y0+t*dy;
-        const offset=(mem.flip!==false ? -vals[i] : vals[i])*SCALE;
+        const useFlip = mode==='Q' && mem.qFlip ? true : (mem.flip!==false);
+        const offset=(useFlip ? -vals[i] : vals[i])*SCALE;
         pts_fwd.push([bx+offset*nx, by+offset*ny]);
         pts_back.push([bx, by]);
       }
@@ -2057,7 +2124,8 @@ function renderDiagram(sys, data){
     const maxIdx=vals.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
     const t=maxIdx/n;
     const bx=mem.x0+t*dx, by=mem.y0+t*dy;
-    const v=vals[maxIdx], offset=(mem.flip!==false ? -v : v)*SCALE;
+    const useFlipLbl = mode==='Q' && mem.qFlip ? true : (mem.flip!==false);
+    const v=vals[maxIdx], offset=(useFlipLbl ? -v : v)*SCALE;
     const lx=bx+offset*nx, ly=by+offset*ny;
     if(Math.abs(v)>maxVal*0.05){
       h+=`<rect x="${(lx-14).toFixed(1)}" y="${(ly-11).toFixed(1)}" width="28" height="10" rx="2" fill="white" opacity="0.8"/>`;
@@ -2204,7 +2272,7 @@ function renderCantDiagram(L, Qv, Mv, Nv=null){
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [{
       x0, y0:bY, x1, y1:bY, thick:3,
-      memberLen: L, flip:false,
+      memberLen: L, flip:false, qFlip:true,
       M: Mv, Q: Qv,
       N: Nv||new Array(Qv.length).fill(0)
     }],
