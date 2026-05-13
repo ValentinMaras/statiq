@@ -1417,6 +1417,15 @@ function updateIndetInfo(){
   el.textContent = desc;
 }
 
+function syncColumnHeights(){
+  // When main h changes, sync hA and hB
+  const h = document.getElementById('fH').value;
+  const hAel = document.getElementById('fHA');
+  const hBel = document.getElementById('fHB');
+  if(hAel && Math.abs(parseFloat(hAel.value)-parseFloat(hAel.dataset.manual||hAel.value))< 0.01) hAel.value=h;
+  if(hBel && Math.abs(parseFloat(hBel.value)-parseFloat(hBel.dataset.manual||hBel.value))< 0.01) hBel.value=h;
+}
+
 function setHeadSupport(param, val){
   if(param==='pos'){
     supportHead = val;
@@ -1511,6 +1520,9 @@ function addFrameLoad(type){
   const id=++uid;
   const b=parseFloat(document.getElementById('fB').value)||5;
   const h=parseFloat(document.getElementById('fH').value)||4;
+  const hA=parseFloat(document.getElementById('fHA')?.value)||h;
+  const hB=parseFloat(document.getElementById('fHB')?.value)||h;
+    const hMax=Math.max(hA,hB,h);
   frameLoads[type].push({ id, enabled:true,
     values: type==='vert'
       ? {member:'rafter', qa:10, qb:10, a:0, b:b}
@@ -1537,6 +1549,9 @@ function renderFrameLoads(type){
   if(!list.length){el.innerHTML='';return;}
   const b=parseFloat(document.getElementById('fB').value)||5;
   const h=parseFloat(document.getElementById('fH').value)||4;
+  const hA=parseFloat(document.getElementById('fHA')?.value)||h;
+  const hB=parseFloat(document.getElementById('fHB')?.value)||h;
+  const hMax=Math.max(hA,hB,h);
   el.innerHTML=list.map((l,i)=>{
     const lbl=type==='vert'?'q'+(i+1):'P'+(i+1);
     const eye=l.enabled?'👁':'🚫';
@@ -1586,9 +1601,17 @@ function drawFrame(){
   const svg=document.getElementById('frame-svg'); if(!svg) return;
   const b=parseFloat(document.getElementById('fB').value)||5;
   const h=parseFloat(document.getElementById('fH').value)||4;
+  const hA=parseFloat(document.getElementById('fHA')?.value)||h;
+  const hB=parseFloat(document.getElementById('fHB')?.value)||h;
+  const hMax=Math.max(hA,hB,h);
 
   const SVG_W=320, PAD=40;
-  const col_bot=175, col_top=col_bot-120;
+  const SVG_H_frame=220;
+  const scale_h=120/hMax;
+  const col_bot=185;
+  const col_topA=col_bot-Math.round(hA*scale_h);
+  const col_topB=col_bot-Math.round(hB*scale_h);
+  const col_top=Math.min(col_topA,col_topB); // rafter at highest point
   const col_L=PAD+20, col_R=SVG_W-PAD-20;
   const rafW=col_R-col_L;
   let html='';
@@ -1697,7 +1720,8 @@ function drawFrame(){
 
   // Dimension labels
   html+=`<text x="${(col_L+col_R)/2}" y="${col_bot+45}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">b = ${b} m</text>`;
-  html+=`<text x="${col_L-28}" y="${(col_bot+col_top)/2+4}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">h=${h}m</text>`;
+  html+=`<text x="${col_L-28}" y="${(col_bot+col_topA)/2+4}" text-anchor="middle" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">hA=${hA}m</text>`;
+  html+=`<text x="${col_R+28}" y="${(col_bot+col_topB)/2+4}" text-anchor="start" font-size="8" fill="#a8a7a2" font-family="DM Mono,monospace">hB=${hB}m</text>`;
 
   svg.innerHTML=`<defs>
     <marker id="farr-q" markerWidth="4" markerHeight="4" refX="2.5" refY="2" orient="auto"><polygon points="0,0 4,2 0,4" fill="${CLR.q}"/></marker>
@@ -1718,231 +1742,194 @@ function calculateFrame(){
 
   const n=frameIndeterminacy();
   if(n<0){alert('This system is a mechanism and cannot be calculated.');return;}
-
   document.getElementById('f-res-indet').textContent = n===0?'0 (det.)':n;
 
   const vLoads=frameLoads.vert.filter(l=>l.enabled);
   const hLoads=frameLoads.horiz.filter(l=>l.enabled);
-  // Head support: horizontal roller at top of frame
-  // Adds 1 DOF → reduces indeterminacy by 1
-  // For sway frame: head support eliminates horizontal displacement at top
-  // → H_head absorbs horizontal force, columns have no sway
 
-  // Total loads
+  // ── Total loads ──
   let Vtot=0, Mvert_A=0;
   vLoads.forEach(dl=>{
-    const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
-    const qa=dl.values.qa,qb=dl.values.qb;
+    const mem=dl.values.member||'rafter';
+    if(mem!=='rafter') return; // only rafter loads in vertical sum (simplified)
+    const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0) return;
+    const qa=dl.values.qa, qb=dl.values.qb;
     const Rr=qa*len, xr=a+len/2, Rt=(qb-qa)*len/2, xt=a+len*2/3;
     Vtot+=Rr+Rt; Mvert_A+=Rr*xr+Rt*xt;
   });
-  let Htot=0, Mhoriz_base=0;
-  hLoads.forEach(hl=>{Htot+=hl.values.F; Mhoriz_base+=hl.values.F*hl.values.z;});
+  let Htot=0;
+  hLoads.forEach(hl=>{ Htot+=(hl.values.H||hl.values.F||0); });
 
-  // Determine reaction unknowns based on support types
-  // A: fixed→HA,VA,MA | pin→HA,VA | roller→VA
-  // B: fixed→HB,VB,MB | pin→HB,VB | roller→VB
+  // ── Reactions ──
   let HA=0,VA=0,MA_r=0,HB=0,VB=0,MB_r=0;
 
-  // ── STATICALLY DETERMINATE cases ──
   if(n===0){
-    // Case: pin-A + roller-B (most common determinate)
     if(supportA==='pin' && supportB==='roller'){
-      VB = Mvert_A/b;
-      VA = Vtot-VB;
-      // ΣFx=0: HA = Htot (roller B has no H)
-      HA = Htot;
-      HB = 0;
-      // If any rafter hinge: use hinge condition for HA
-      if(frameHinges.some(hg=>hg.member==='rafter'||hg.member==='left'||hg.member==='right')){
-        // ΣM_crown_left=0: HA*h + MA_r = VA*(b/2) - Σvert_left_moments
-        let M_left=0;
-        vLoads.forEach(dl=>{
-          const a=dl.values.a,bE=Math.min(dl.values.b,b/2),len=bE-a; if(len<=0)return;
-          const qa=dl.values.qa,qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(bE-a)/(dl.values.b-dl.values.a||1);
-          const Rr=qa*len,xr=a+len/2,Rt=(qb_-qa)*len/2,xt_=a+len*2/3;
-          M_left+=(Rr*(b/2-xr)+Rt*(b/2-xt_));
-        });
-        let M_horiz=0;
-        hLoads.forEach(hl=>M_horiz+=hl.values.F*(h-hl.values.z));
-        HA=(VA*b/2-M_left-M_horiz)/h;
-        HB=Htot-HA;
-      }
-    }
-    // Case: roller-A + pin-B
-    else if(supportA==='roller' && supportB==='pin'){
-      VA = (b*Vtot - Mvert_A)/b; // ΣM_B=0
-      VB = Vtot-VA;
-      HB = Htot; HA=0;
-    }
-    // Case: pin-A + pin-B + ridge hinge (determinate arch)
-    else if(supportA==='pin' && supportB==='pin' && frameHinges.length>0){
+      VB=Mvert_A/b; VA=Vtot-VB; HA=Htot; HB=0;
+    } else if(supportA==='roller' && supportB==='pin'){
+      VB=Mvert_A/b; VA=Vtot-VB; HB=Htot; HA=0;
+    } else if(supportA==='pin' && supportB==='pin'){
       VB=Mvert_A/b; VA=Vtot-VB;
+      // Ridge hinge condition → solve HA
       let M_left=0;
       vLoads.forEach(dl=>{
-        const a=dl.values.a,bE=Math.min(dl.values.b,b/2),len=bE-a; if(len<=0)return;
-        const qa=dl.values.qa,t=(dl.values.b-dl.values.a)||1;
-        const qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(bE-a)/t;
-        const Rr=qa*len,xr=a+len/2,Rt=(qb_-qa)*len/2,xt_=a+len*2/3;
+        if((dl.values.member||'rafter')!=='rafter') return;
+        const a=dl.values.a, bE=Math.min(dl.values.b,b/2), len=bE-a; if(len<=0)return;
+        const qa=dl.values.qa, qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(bE-a)/(dl.values.b-dl.values.a||1);
+        const Rr=qa*len, xr=a+len/2, Rt=(qb_-qa)*len/2, xt_=a+len*2/3;
         M_left+=(Rr*(b/2-xr)+Rt*(b/2-xt_));
       });
       let M_horiz=0;
-      hLoads.forEach(hl=>M_horiz+=hl.values.F*(h-hl.values.z));
-      HA=(VA*b/2-M_left-M_horiz)/h;
-      HB=Htot-HA;
-    }
-    else {
-      // Generic determinate: just use equilibrium
+      hLoads.forEach(hl=>M_horiz+=(hl.values.H||hl.values.F||0)*(h-(hl.values.z||0)));
+      HA=(VA*b/2-M_left-M_horiz)/h; HB=Htot-HA;
+    } else {
       VB=Mvert_A/b; VA=Vtot-VB; HA=Htot; HB=0;
     }
-  }
-  // ── STATICALLY INDETERMINATE cases — Force Method ──
-  else {
-    // Use numerical force method with virtual work
-    // Primary system: remove redundants, solve with compatibility
-    // For simplicity: use the horizontal thrust H as primary redundant
-    // and moment at fixed supports as additional redundants
-    // δ_11 = flexibility coefficient (unit H)
-    // Δ_1P = load term
-
-    const fixA = supportA==='fixed';
-    const fixB = supportB==='fixed';
-
-    // δ_11: displacement from unit H at rafter level
-    // Left col: moment = x (from base), right col: moment = x
-    let d11 = 0;
-    if(fixA) d11 += h*h*h/3;   // fixed base left
-    else     d11 += h*h*h/3;   // pin base (same for sway)
-    if(fixB) d11 += h*h*h/3;
-    else     d11 += h*h*h/3;
-
-    // Δ_1P from vertical loads on rafter
-    let D1P = 0;
+  } else {
+    // Force method (indeterminate)
+    const fixA=supportA==='fixed', fixB=supportB==='fixed';
+    let d11=0;
+    if(fixA) d11+=h*h*h/3;
+    else d11+=h*h*h/3;
+    if(fixB) d11+=h*h*h/3;
+    else d11+=h*h*h/3;
+    d11+=b*h*h;
+    let d1P=0;
+    VB=Mvert_A/b; VA=Vtot-VB;
     vLoads.forEach(dl=>{
-      const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
-      const qa=dl.values.qa,qb_=dl.values.qb;
-      const NI=60;
-      for(let k=0;k<=NI;k++){
-        const x=a+k/NI*len, w=(k===0||k===NI)?0.5:1, dx=len/NI;
-        const q_x=qa+(qb_-qa)*k/NI;
-        // Simply supported reaction at A from strip load q_x*dx at x:
-        const Ra_strip=q_x*dx*(b-x)/b;
-        // M0 in left col = Ra_strip * z (for z from 0 to h... no, rafter is rigid)
-        // Contribution via virtual work: m1=z in col, M0 from hogging
-        D1P += w*q_x*dx*(b-x)/b * h*h/2;
-        D1P += w*q_x*dx*x/b * h*h/2; // right col
-      }
+      if((dl.values.member||'rafter')!=='rafter') return;
+      const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
+      const qa=dl.values.qa, qb=dl.values.qb;
+      const xc=a+len/2;
+      d1P-=h*(qa*len*(b/2-xc));
     });
-    D1P = -D1P; // sign convention
-
-    // Δ_1P from horizontal loads
     hLoads.forEach(hl=>{
-      const z=hl.values.z, F=hl.values.F;
-      const zt=h-z; // from top of col
-      // Virtual work in left col: m1=s (from top), M0=F*(zt-s) for s<zt
-      D1P -= F*(zt*zt*(3*h-zt))/6;
+      const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
+      d1P+=F*(h-z)*(h-z)*(h+2*(h-z))/(6*h)*(fixA?1:1);
     });
-
-    // Ridge hinge: additional compatibility
-    // If hinge: add condition ΔM_crown=0
-    // Approximation: H_hinge = (D1P + hinge_term) / (d11 + hinge_flex)
-    const H = -D1P / d11;
-    HA = H; HB = H;
-
-    // Vertical reactions from ΣM
-    VB = Mvert_A/b; VA = Vtot-VB;
-
-    // Fixed end moments
-    if(fixA){
-      MA_r = HA*h;
-      hLoads.forEach(hl=>{ if(supportA!=='roller') MA_r-=hl.values.F*(h-hl.values.z); });
-    }
-    if(fixB){
-      MB_r = HB*h;
-    }
-    // Adjust V for moment imbalance
-    if(fixA||fixB){
-      VB = (Mvert_A + MA_r - MB_r)/b;
-      VA = Vtot-VB;
-    }
+    const X1=-d1P/d11; // horizontal thrust
+    HA=X1; HB=Htot-X1;
+    if(fixA){ MA_r=-(HA*h); vLoads.forEach(dl=>{
+      if((dl.values.member||'rafter')!=='rafter') return;
+      const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
+      MA_r+=dl.values.qa*len*(a+len/2)/2+(dl.values.qb-dl.values.qa)*len/2*(a+len*2/3)/2;
+    });}
+    if(fixB) MB_r=-(HB*h);
   }
 
-  // ── Build M, Q, N diagrams ──
-  const NP=80;
-  const allM=[],allQ=[],allN=[],allXlbl=[];
-  let xOff=0;
+  // ── Internal forces — section by section ──
+  const NP=100;
+  const allM=[],allQ=[],allN=[];
 
-  // LEFT COLUMN (x=0 base → x=h top)
+  // ── LEFT COLUMN: from base (A) upward to rafter ──
+  // Convention: x=0 at base, x=h at top
+  // Q positive = leftward horizontal force on left face (from right)
+  // Build from TOP downward (right-to-left convention)
+  const Mleft=[], Qleft=[], Nleft=[];
   for(let k=0;k<=NP;k++){
-    const x=k/NP*h;
-    let M = supportA==='fixed' ? MA_r-HA*x : -HA*x;
-    hLoads.forEach(hl=>{ if(x>=hl.values.z) M+=hl.values.F*(x-hl.values.z); });
+    const x=k/NP*h; // x=0 base, x=h top
+    // M at base: MA_r (if fixed), at top: continuity with rafter
+    let M = supportA==='fixed' ? MA_r + HA*x : HA*x;
+    // Add horizontal loads on left column
+    hLoads.forEach(hl=>{
+      if((hl.values.member||'left')!=='left') return;
+      if(x>=(hl.values.z||0)) M+=(hl.values.H||hl.values.F||0)*(x-(hl.values.z||0));
+    });
+    // Q = horizontal reaction at base = HA (shear in column)
     let Q=HA;
-    hLoads.forEach(hl=>{ if(x>=hl.values.z) Q-=hl.values.F; });
-    allM.push(+M.toFixed(3));
-    allQ.push(+Q.toFixed(3));
-    allN.push(+(-VA).toFixed(3));
-    allXlbl.push('L:'+(x/h*100).toFixed(0)+'%');
+    hLoads.forEach(hl=>{
+      if((hl.values.member||'left')!=='left') return;
+      if(x>=(hl.values.z||0)) Q-=(hl.values.H||hl.values.F||0);
+    });
+    // N = vertical force in column = -VA (compression)
+    Mleft.push(+M.toFixed(3));
+    Qleft.push(+Q.toFixed(3));
+    Nleft.push(+(-VA).toFixed(3));
   }
-  xOff+=h;
+  // Enforce M=0 at hinges in left column
+  frameHinges.filter(hg=>hg.member==='left').forEach(hg=>{
+    const ki=Math.round(hg.x*NP);
+    Mleft[ki]=0;
+  });
 
-  // RAFTER (x=0 left → x=b right)
-  const M_rafter_start = supportA==='fixed' ? MA_r-HA*h : -HA*h;
+  // ── RAFTER: from left (x=0) to right (x=b) ──
+  // M at start of rafter = M at top of left column (continuity!)
+  const M_rafter_start = Mleft[NP]; // top of left col
+  const Mraf=[], Qraf=[], Nraf=[];
   for(let k=0;k<=NP;k++){
     const x=k/NP*b;
-    let M=M_rafter_start+VA*x, Q=VA, N=-HA;
+    let M=M_rafter_start + VA*x - HA*0, Q=-VA, N=-HA;
+    // Note: Q goes from right convention → Q = -VA at start (before loads)
+    // Actually build from right: Q at right end = VB (upward = positive)
+    // Then subtract loads going left
+    // For now: standard left-to-right
     vLoads.forEach(dl=>{
-      const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
-      const qa=dl.values.qa,qb_=dl.values.qb;
+      if((dl.values.member||'rafter')!=='rafter') return;
+      const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
+      const qa=dl.values.qa, qb_=dl.values.qb;
       if(x>a){
         const t=Math.min(x-a,len), q_xe=len>0?qa+(qb_-qa)*t/len:qa;
-        Q-=qa*t+(q_xe-qa)*t/2;
+        Q+=qa*t+(q_xe-qa)*t/2; // Q decreases as we go right (loads push down)
         M-=qa*t*(x-(a+t/2))+(q_xe-qa)*t/2*(x-(a+t*2/3));
       }
     });
-    allM.push(+M.toFixed(3));
-    allQ.push(+Q.toFixed(3));
-    allN.push(+N.toFixed(3));
-    allXlbl.push('R:'+(x/b*100).toFixed(0)+'%');
+    Mraf.push(+M.toFixed(3));
+    Qraf.push(+(-Q).toFixed(3)); // flip for display (right-to-left convention)
+    Nraf.push(+N.toFixed(3));
   }
+  // Enforce M=0 at hinges in rafter
+  frameHinges.filter(hg=>hg.member==='rafter').forEach(hg=>{
+    const ki=Math.round(hg.x*NP);
+    Mraf[ki]=0;
+    // Linear interpolation either side
+    for(let i=0;i<ki;i++) Mraf[i]=Mraf[i]*(i/ki);
+    for(let i=ki+1;i<=NP;i++) Mraf[i]=Mraf[i]*((NP-i)/(NP-ki));
+  });
 
-  // RIGHT COLUMN (x=0 top → x=h base)
-  const M_right_top = allM[allM.length-1]; // end of rafter = top of right col
+  // ── RIGHT COLUMN: from top downward (x=0 top → x=h base) ──
+  // M at top of right col = M at end of rafter (continuity!)
+  const M_right_top = Mraf[NP];
+  const Mright=[], Qright=[], Nright=[];
   for(let k=0;k<=NP;k++){
-    const x=k/NP*h;
+    const x=k/NP*h; // x=0 top, x=h base
     let M = M_right_top - HB*x;
     if(supportB==='fixed') M = M_right_top - HB*x;
-    allM.push(+M.toFixed(3));
-    allQ.push(+HB.toFixed(3));
-    allN.push(+(-VB).toFixed(3));
-    allXlbl.push('R:'+(x/h*100).toFixed(0)+'%');
+    // Q in right col = HB (from right-to-left: positive = toward frame)
+    Mright.push(+M.toFixed(3));
+    Qright.push(+(HB).toFixed(3));
+    Nright.push(+(-VB).toFixed(3));
   }
+  // Enforce M=0 at hinges in right column
+  frameHinges.filter(hg=>hg.member==='right').forEach(hg=>{
+    const ki=Math.round(hg.x*NP);
+    Mright[ki]=0;
+  });
+  // Enforce M=0 at base if roller/pin
+  if(supportB==='roller'||supportB==='pin') Mright[NP]=0;
+  if(supportA==='roller'||supportA==='pin') Mleft[0]=0;
 
-  const Mmax=Math.max(...allM.map(Math.abs));
-  const Qmax=Math.max(...allQ.map(Math.abs));
-  const Nmax=Math.max(...allN.map(Math.abs));
+  // ── Collect all for max values ──
+  const allMall=[...Mleft,...Mraf,...Mright];
+  const allQall=[...Qleft,...Qraf,...Qright];
+  const allNall=[...Nleft,...Nraf,...Nright];
+  const Mmax=Math.max(...allMall.map(Math.abs));
+  const Qmax=Math.max(...allQall.map(Math.abs));
+  const Nmax=Math.max(...allNall.map(Math.abs));
 
   document.getElementById('f-res-Mmax').textContent=Mmax.toFixed(2);
   document.getElementById('f-res-Qmax').textContent=Qmax.toFixed(2);
   document.getElementById('f-res-Nmax').textContent=Nmax.toFixed(2);
 
-  // Reactions table
-  const H_head = supportHead!=='none' ? (Htotal - HA - HB) : 0;
+  const H_head = supportHead!=='none' ? (Htot - HA - HB) : 0;
   document.getElementById('frame-reactions-body').innerHTML=
     `<tr><td>A</td><td>${HA.toFixed(2)}</td><td>${VA.toFixed(2)}</td><td>${supportA==='fixed'?MA_r.toFixed(2):'—'}</td></tr>`+
     `<tr><td>B</td><td>${HB.toFixed(2)}</td><td>${VB.toFixed(2)}</td><td>${supportB==='fixed'?MB_r.toFixed(2):'—'}</td></tr>`+
     (supportHead!=='none'?`<tr><td>H (top)</td><td>${H_head.toFixed(2)}</td><td>—</td><td>—</td></tr>`:'');
 
   document.getElementById('frame-results').classList.remove('hidden');
-
-  renderFrameDiagram(b, h, allM, allQ, allN, NP, supportA, supportB);
+  renderFrameDiagram(b, h, [...Mleft,...Mraf,...Mright], [...Qleft,...Qraf,...Qright], [...Nleft,...Nraf,...Nright], NP, supportA, supportB);
 }
 
-
-// ══════════════════════════════════════════════════
-// DIAGRAM ON STRUCTURE ENGINE
-// ══════════════════════════════════════════════════
-const diagMode = { beam:'M', cant:'M', cont:'M', frame:'M' };
 
 function setDiagMode(sys, mode){
   diagMode[sys] = mode;
