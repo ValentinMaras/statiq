@@ -140,7 +140,7 @@
     .diagram-toggle-btn.active-M { background: #e8f5f1; color: #0f6e56; border-color: #0f6e56; }
     .diagram-toggle-btn.active-Q { background: #e6f1fb; color: #185fa5; border-color: #185fa5; }
     .diagram-toggle-btn.active-N { background: #f5ede9; color: #8b3a1e; border-color: #8b3a1e; }
-    .diagram-svg-wrap { background: var(--surface2); border-radius: var(--radius-sm); overflow: auto; }
+    .diagram-svg-wrap { background: var(--surface2); border-radius: var(--radius-sm); overflow: auto; min-height: 140px; }
     .diagram-svg-wrap svg { display: block; }
     .diagram-label { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; text-align: center; margin-top: 6px; }
   </style>
@@ -340,10 +340,10 @@
       </div>
       <div id="ei-input-beam" style="display:none;margin-bottom:8px;">
         <div class="field-row">
-          <div class="field"><label>E <span class="unit">kN/m²</span></label>
-            <input type="number" id="beam-E" value="210000000" step="1000000" oninput="if(diagData['beam'])renderDiagram('beam',diagData['beam'])"></div>
-          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
-            <input type="number" id="beam-Iy" value="10000" step="100" oninput="if(diagData['beam'])renderDiagram('beam',diagData['beam'])"></div>
+          <div class="field"><label>E <span class="unit">×10⁶ kN/m²</span></label>
+            <input type="number" id="beam-E" value="210" step="1" oninput="if(diagData['beam'])renderDiagram('beam',diagData['beam'])"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">×10³ cm⁴</span></label>
+            <input type="number" id="beam-Iy" value="10" step="0.1" oninput="if(diagData['beam'])renderDiagram('beam',diagData['beam'])"></div>
         </div>
       </div>
       <div class="diagram-svg-wrap">
@@ -405,10 +405,10 @@
       </div>
       <div id="ei-input-cant" style="display:none;margin-bottom:8px;">
         <div class="field-row">
-          <div class="field"><label>E <span class="unit">kN/m²</span></label>
-            <input type="number" id="cant-E" value="210000000" step="1000000" oninput="if(diagData['cant'])renderDiagram('cant',diagData['cant'])"></div>
-          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
-            <input type="number" id="cant-Iy" value="10000" step="100" oninput="if(diagData['cant'])renderDiagram('cant',diagData['cant'])"></div>
+          <div class="field"><label>E <span class="unit">×10⁶ kN/m²</span></label>
+            <input type="number" id="cant-E" value="210" step="1" oninput="if(diagData['cant'])renderDiagram('cant',diagData['cant'])"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">×10³ cm⁴</span></label>
+            <input type="number" id="cant-Iy" value="10" step="0.1" oninput="if(diagData['cant'])renderDiagram('cant',diagData['cant'])"></div>
         </div>
       </div>
       <div class="diagram-svg-wrap">
@@ -472,14 +472,14 @@
       </div>
       <div id="ei-input-cont" style="display:none;margin-bottom:8px;">
         <div class="field-row">
-          <div class="field"><label>E <span class="unit">kN/m²</span></label>
-            <input type="number" id="cont-E" value="210000000" step="1000000" oninput="if(diagData['cont'])renderDiagram('cont',diagData['cont'])"></div>
-          <div class="field"><label>I<sub>y</sub> <span class="unit">cm⁴</span></label>
-            <input type="number" id="cont-Iy" value="10000" step="100" oninput="if(diagData['cont'])renderDiagram('cont',diagData['cont'])"></div>
+          <div class="field"><label>E <span class="unit">×10⁶ kN/m²</span></label>
+            <input type="number" id="cont-E" value="210" step="1" oninput="if(diagData['cont'])renderDiagram('cont',diagData['cont'])"></div>
+          <div class="field"><label>I<sub>y</sub> <span class="unit">×10³ cm⁴</span></label>
+            <input type="number" id="cont-Iy" value="10" step="0.1" oninput="if(diagData['cont'])renderDiagram('cont',diagData['cont'])"></div>
         </div>
       </div>
       <div class="diagram-svg-wrap">
-        <svg id="diag-svg-cont" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg>
+        <svg id="diag-svg-cont" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;min-height:140px"></svg>
       </div>
       <div class="diagram-label" id="diag-label-cont">Bending Moment M — kNm</div>
     </div>
@@ -585,7 +585,7 @@
         </div>
       </div>
       <div class="diagram-svg-wrap">
-        <svg id="diag-svg-frame" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"></svg>
+        <svg id="diag-svg-frame" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;min-height:140px"></svg>
       </div>
       <div class="diagram-label" id="diag-label-frame">Bending Moment M — kNm</div>
     </div>
@@ -1337,9 +1337,6 @@ function calculateContinuous() {
   }).join('');
 
   document.getElementById('cont-results').classList.remove('hidden');
-  if(chartContQ)chartContQ.destroy(); if(chartContM)chartContM.destroy();
-  chartContQ=new Chart(document.getElementById('chartContQ'),{type:'line',data:{labels:xs_all,datasets:[{data:Qv_all,borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  chartContM=new Chart(document.getElementById('chartContM'),{type:'line',data:{labels:xs_all,datasets:[{data:Mv_all,borderColor:'#0f6e56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:0}]},options:mkOpts(true)});
   renderContDiagram(spanData.map(s=>s.L), Qv_all, Mv_all);
 }
 
@@ -1872,10 +1869,6 @@ function calculateFrame(){
 
   document.getElementById('frame-results').classList.remove('hidden');
 
-  if(chartFM)chartFM.destroy(); if(chartFQ)chartFQ.destroy(); if(chartFN)chartFN.destroy();
-  chartFM=new Chart(document.getElementById('chartFM'),{type:'line',data:{labels:allXlbl,datasets:[{data:allM,borderColor:'#0f6e56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  chartFQ=new Chart(document.getElementById('chartFQ'),{type:'line',data:{labels:allXlbl,datasets:[{data:allQ,borderColor:'#185fa5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
-  chartFN=new Chart(document.getElementById('chartFN'),{type:'line',data:{labels:allXlbl,datasets:[{data:allN,borderColor:'#8b3a1e',backgroundColor:'rgba(139,58,30,0.08)',fill:true,tension:0}]},options:mkOpts(false)});
   renderFrameDiagram(b, h, allM, allQ, allN, NP, supportA, supportB);
 }
 
@@ -1917,8 +1910,8 @@ const diagFill   = { M:'rgba(15,110,86,0.15)', Q:'rgba(24,95,165,0.15)', N:'rgba
 // Numerically integrate M(x) twice to get w(x)
 // EI from inputs; Iy in cm^4 → m^4; E in kN/m^2
 function computeDeflection(sys, Mv, L) {
-  const E = parseFloat(document.getElementById(sys+'-E')?.value)||210000000;
-  const Iy_cm4 = parseFloat(document.getElementById(sys+'-Iy')?.value)||10000;
+  const E = (parseFloat(document.getElementById(sys+'-E')?.value)||210) * 1e6; // ×10⁶ kN/m²
+  const Iy_cm4 = (parseFloat(document.getElementById(sys+'-Iy')?.value)||10) * 1e3; // ×10³ cm⁴
   const Iy = Iy_cm4 * 1e-8; // cm^4 → m^4
   const EI = E * Iy; // kNm^2
   const n = Mv.length - 1;
@@ -1947,8 +1940,8 @@ function computeDeflection(sys, Mv, L) {
 }
 
 function computeDeflectionCant(sys, Mv, L) {
-  const E = parseFloat(document.getElementById(sys+'-E')?.value)||210000000;
-  const Iy_cm4 = parseFloat(document.getElementById(sys+'-Iy')?.value)||10000;
+  const E = (parseFloat(document.getElementById(sys+'-E')?.value)||210) * 1e6;
+  const Iy_cm4 = (parseFloat(document.getElementById(sys+'-Iy')?.value)||10) * 1e3;
   const Iy = Iy_cm4 * 1e-8;
   const EI = E * Iy;
   const n = Mv.length - 1;
@@ -2033,7 +2026,7 @@ function renderDiagram(sys, data){
       for(let i=s;i<=e;i++){
         const t=i/n;
         const bx=mem.x0+t*dx, by=mem.y0+t*dy;
-        const offset=-vals[i]*SCALE;
+        const offset=(mem.flip!==false ? -vals[i] : vals[i])*SCALE;
         pts_fwd.push([bx+offset*nx, by+offset*ny]);
         pts_back.push([bx, by]);
       }
@@ -2101,13 +2094,32 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
   data.members.forEach(mem=>{
     if(!mem.M || mem.M.length<2) return;
     const dx_px = Math.sqrt((mem.x1-mem.x0)**2+(mem.y1-mem.y0)**2);
-    const memberLen = mem.memberLen||dx_px; // in metres
+    const memberLen = mem.memberLen||dx_px;
     const L = data.totalL||memberLen;
 
-    // Get deflection values
+    // Get deflection values — frame uses per-member EI
     let wVals;
-    if(sys==='cant') wVals = computeDeflectionCant(sys, mem.M, L);
-    else wVals = computeDeflection(sys, mem.M, L);
+    if(sys==='frame'){
+      const isCol = mem.isColumn||false;
+      const E_id = isCol ? 'frame-E-col' : 'frame-E-raf';
+      const Iy_id = isCol ? 'frame-Iy-col' : 'frame-Iy-raf';
+      const E = (parseFloat(document.getElementById(E_id)?.value)||210)*1e6;
+      const Iy_cm4 = (parseFloat(document.getElementById(Iy_id)?.value)||10)*1e3;
+      const EI = E * Iy_cm4 * 1e-8;
+      // Numerical integration (simply supported assumption per member)
+      const n = mem.M.length-1, dx = L/n;
+      const phi = mem.M.map(m => m/EI);
+      const theta = new Array(n+1).fill(0);
+      for(let i=1;i<=n;i++) theta[i]=theta[i-1]+phi[i-1]*dx;
+      const wRaw = new Array(n+1).fill(0);
+      for(let i=1;i<=n;i++) wRaw[i]=wRaw[i-1]+theta[i-1]*dx;
+      const C1 = -wRaw[n]/L;
+      wVals = wRaw.map((v,i) => (v+C1*i*dx)*1000);
+    } else if(sys==='cant') {
+      wVals = computeDeflectionCant(sys, mem.M, L);
+    } else {
+      wVals = computeDeflection(sys, mem.M, L);
+    }
 
     const maxW = Math.max(...wVals.map(Math.abs), 0.001);
     const SCALE = 45 / maxW;
@@ -2198,6 +2210,9 @@ function renderCantDiagram(L, Qv, Mv, Nv=null){
     }],
     totalL: L
   };
+  // Flip M and Q for display: cant tension on top = diagram goes UP
+  data.members[0].M = Mv.map(v => v);  // keep as-is, flip:false handles direction
+  data.members[0].Q = Qv.map(v => v);
   diagData['cant'] = data;
   renderDiagram('cant', data);
 }
@@ -2227,6 +2242,7 @@ function renderContDiagram(Ls, Qv_all, Mv_all){
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [{
       x0, y0:bY, x1, y1:bY, thick:3,
+      flip:true,
       M: Mv_all,
       Q: Qv_all,
       N: new Array(Qv_all.length).fill(0)
@@ -2273,13 +2289,9 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB){
   const data = {
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [
-      // Left col: bottom to top - normal points RIGHT (inward) ✓
-      { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, flip:false, M:Mleft, Q:Qleft, N:Nleft },
-      // Rafter: left to right - normal points UP (inward) - but rafter sags DOWN
-      // For rafter: positive M = sagging = tension BELOW = toward interior → flip needed
-      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:true, M:Mraf,  Q:Qraf,  N:Nraf  },
-      // Right col: top to bottom - normal points LEFT (inward) ✓
-      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:false, M:Mright,Q:Qright,N:Nright}
+      { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mleft,  Q:Qleft,  N:Nleft  },
+      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:true,  isColumn:false, memberLen:b, M:Mraf,   Q:Qraf,   N:Nraf   },
+      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mright, Q:Qright, N:Nright }
     ]
   };
   diagData['frame'] = data;
