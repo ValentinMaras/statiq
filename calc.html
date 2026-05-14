@@ -140,6 +140,7 @@
     .diagram-toggle-btn.active-M { background: #e8f5f1; color: #0f6e56; border-color: #0f6e56; }
     .diagram-toggle-btn.active-Q { background: #e6f1fb; color: #185fa5; border-color: #185fa5; }
     .diagram-toggle-btn.active-N { background: #f5ede9; color: #8b3a1e; border-color: #8b3a1e; }
+    .diagram-toggle-btn.active-W { background: #f5f0ff; color: #7c3aed; border-color: #7c3aed; }
     .diagram-svg-wrap { background: var(--surface2); border-radius: var(--radius-sm); overflow: auto; min-height: 140px; }
     .diagram-svg-wrap svg { display: block; }
     .diagram-label { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; text-align: center; margin-top: 6px; }
@@ -510,16 +511,16 @@
       <div class="card-title" style="margin-bottom:8px">Support A (left)</div>
       <div class="toggle-row">
         <button class="toggle-btn active" id="btn-sA-fixed" onclick="setSupportA('fixed')">Fixed ⊞</button>
-        <button class="toggle-btn" id="btn-sA-pin" onclick="setSupportA('pin')">Pin △</button>
-        <button class="toggle-btn" id="btn-sA-roller" onclick="setSupportA('roller')">Roller ○</button>
+        <button class="toggle-btn" id="btn-sA-pin" onclick="setSupportA('pin')">Festlager △</button>
+        <button class="toggle-btn" id="btn-sA-roller" onclick="setSupportA('roller')">Gleitlager ○</button>
       </div>
     </div>
     <div style="margin-top:8px">
       <div class="card-title" style="margin-bottom:8px">Support B (right)</div>
       <div class="toggle-row">
         <button class="toggle-btn" id="btn-sB-fixed" onclick="setSupportB('fixed')">Fixed ⊞</button>
-        <button class="toggle-btn active" id="btn-sB-pin" onclick="setSupportB('pin')">Pin △</button>
-        <button class="toggle-btn" id="btn-sB-roller" onclick="setSupportB('roller')">Roller ○</button>
+        <button class="toggle-btn active" id="btn-sB-pin" onclick="setSupportB('pin')">Festlager △</button>
+        <button class="toggle-btn" id="btn-sB-roller" onclick="setSupportB('roller')">Gleitlager ○</button>
       </div>
     </div>
     <!-- Head support -->
@@ -531,8 +532,8 @@
         <button class="toggle-btn" id="btn-sH-right" onclick="setHeadSupport('pos','right')">Right &#8594;</button>
       </div>
       <div class="toggle-row" id="head-type-row" style="display:none;">
-        <button class="toggle-btn active" id="btn-sHT-roller" onclick="setHeadSupport('type','roller')">Roller ○</button>
-        <button class="toggle-btn" id="btn-sHT-pin" onclick="setHeadSupport('type','pin')">Pin △</button>
+        <button class="toggle-btn active" id="btn-sHT-roller" onclick="setHeadSupport('type','roller')">Gleitlager ○</button>
+        <button class="toggle-btn" id="btn-sHT-pin" onclick="setHeadSupport('type','pin')">Festlager △</button>
       </div>
     </div>
     <!-- Hinges -->
@@ -1736,198 +1737,410 @@ function drawFrame(){
 // Handles all statically (in)determinate combinations
 // ══════════════════════════════════════════════════
 function calculateFrame(){
-  const b=parseFloat(document.getElementById('fB').value);
-  const h=parseFloat(document.getElementById('fH').value);
+  const b  = parseFloat(document.getElementById('fB').value)||5;
+  const h  = parseFloat(document.getElementById('fH').value)||4;
+  const hA = parseFloat(document.getElementById('fHA')?.value)||h;
+  const hB = parseFloat(document.getElementById('fHB')?.value)||h;
   if(!b||b<=0||!h||h<=0){alert('Please enter valid dimensions.');return;}
 
-  const n=frameIndeterminacy();
-  if(n<0){alert('This system is a mechanism and cannot be calculated.');return;}
+  const n = frameIndeterminacy();
+  if(n<0){alert('This system is a mechanism.');return;}
   document.getElementById('f-res-indet').textContent = n===0?'0 (det.)':n;
 
-  const vLoads=frameLoads.vert.filter(l=>l.enabled);
-  const hLoads=frameLoads.horiz.filter(l=>l.enabled);
+  const vLoads = frameLoads.vert.filter(l=>l.enabled);
+  const hLoads = frameLoads.horiz.filter(l=>l.enabled);
 
-  // ── Total loads ──
-  let Vtot=0, Mvert_A=0;
+  // ── Vertical loads on rafter ──────────────────────────────
+  let Vtot=0, Mvert_A=0, Mvert_B=0;
   vLoads.forEach(dl=>{
-    const mem=dl.values.member||'rafter';
-    if(mem!=='rafter') return; // only rafter loads in vertical sum (simplified)
-    const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0) return;
-    const qa=dl.values.qa, qb=dl.values.qb;
-    const Rr=qa*len, xr=a+len/2, Rt=(qb-qa)*len/2, xt=a+len*2/3;
-    Vtot+=Rr+Rt; Mvert_A+=Rr*xr+Rt*xt;
+    if((dl.values.member||'rafter')!=='rafter') return;
+    const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
+    const qa=dl.values.qa, qb_=dl.values.qb;
+    const R1=qa*len, x1=a+len/2;
+    const R2=(qb_-qa)*len/2, x2=a+len*2/3;
+    Vtot+=R1+R2;
+    Mvert_A+=R1*x1+R2*x2;
+    Mvert_B+=R1*(b-x1)+R2*(b-x2);
   });
-  let Htot=0;
-  hLoads.forEach(hl=>{ Htot+=(hl.values.H||hl.values.F||0); });
 
-  // ── Reactions ──
-  let HA=0,VA=0,MA_r=0,HB=0,VB=0,MB_r=0;
+  // Horizontal loads on columns
+  let Htot=0, Mhoriz_A_col=0;
+  hLoads.forEach(hl=>{
+    const F=hl.values.H||hl.values.F||0;
+    const z=hl.values.z||0;
+    const mem=hl.values.member||'left';
+    Htot+=F;
+    if(mem==='left') Mhoriz_A_col+=F*z;
+  });
 
-  if(n===0){
-    if(supportA==='pin' && supportB==='roller'){
-      VB=Mvert_A/b; VA=Vtot-VB; HA=Htot; HB=0;
-    } else if(supportA==='roller' && supportB==='pin'){
-      VB=Mvert_A/b; VA=Vtot-VB; HB=Htot; HA=0;
-    } else if(supportA==='pin' && supportB==='pin'){
-      VB=Mvert_A/b; VA=Vtot-VB;
-      // Ridge hinge condition → solve HA
-      let M_left=0;
-      vLoads.forEach(dl=>{
-        if((dl.values.member||'rafter')!=='rafter') return;
-        const a=dl.values.a, bE=Math.min(dl.values.b,b/2), len=bE-a; if(len<=0)return;
-        const qa=dl.values.qa, qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(bE-a)/(dl.values.b-dl.values.a||1);
-        const Rr=qa*len, xr=a+len/2, Rt=(qb_-qa)*len/2, xt_=a+len*2/3;
-        M_left+=(Rr*(b/2-xr)+Rt*(b/2-xt_));
-      });
-      let M_horiz=0;
-      hLoads.forEach(hl=>M_horiz+=(hl.values.H||hl.values.F||0)*(h-(hl.values.z||0)));
-      HA=(VA*b/2-M_left-M_horiz)/h; HB=Htot-HA;
-    } else {
-      VB=Mvert_A/b; VA=Vtot-VB; HA=Htot; HB=0;
-    }
-  } else {
-    // Force method (indeterminate)
-    const fixA=supportA==='fixed', fixB=supportB==='fixed';
-    let d11=0;
-    if(fixA) d11+=h*h*h/3;
-    else d11+=h*h*h/3;
-    if(fixB) d11+=h*h*h/3;
-    else d11+=h*h*h/3;
-    d11+=b*h*h;
-    let d1P=0;
-    VB=Mvert_A/b; VA=Vtot-VB;
+  // ── Vertical reactions (simple beam, independent of H) ──
+  let VA=0, VB=0;
+  VB = Mvert_A / b;
+  VA = Vtot - VB;
+
+  // ── Horizontal reactions + fixed-end moments ──────────────
+  // Computed using exact force method (Castigliano ∂U/∂H=0)
+  let HA=0, HB=0, MA_r=0, MB_r=0;
+
+  const fixA=supportA==='fixed', fixB=supportB==='fixed';
+  const pinA=supportA==='pin',   pinB=supportB==='pin';
+  const rolA=supportA==='roller', rolB=supportB==='roller';
+
+  // Hinge info
+  const rafHinge  = frameHinges.find(hg=>hg.member==='rafter');
+  const leftHinge = frameHinges.find(hg=>hg.member==='left');
+  const rightHinge= frameHinges.find(hg=>hg.member==='right');
+
+  // Helper: Mq_xh = moment of vert loads left of xh about xh (from left)
+  function Mq_at(xh){
+    let m=0;
     vLoads.forEach(dl=>{
       if((dl.values.member||'rafter')!=='rafter') return;
-      const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
-      const qa=dl.values.qa, qb=dl.values.qb;
-      const xc=a+len/2;
-      d1P-=h*(qa*len*(b/2-xc));
-    });
+      const a=dl.values.a, bE=Math.min(dl.values.b,xh), len=bE-a; if(len<=0)return;
+      const qa=dl.values.qa, qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(len/(dl.values.b-dl.values.a||1));
+      m+= qa*len*(xh-(a+len/2)) + (qb_-qa)*len/2*(xh-(a+len*2/3));
+    }); return m;
+  }
+
+  // Horizontal loads contribution to hinge condition
+  function Mhoriz_at(xh){
+    let m=0;
     hLoads.forEach(hl=>{
       const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
-      d1P+=F*(h-z)*(h-z)*(h+2*(h-z))/(6*h)*(fixA?1:1);
-    });
-    const X1=-d1P/d11; // horizontal thrust
-    HA=X1; HB=Htot-X1;
-    if(fixA){ MA_r=-(HA*h); vLoads.forEach(dl=>{
-      if((dl.values.member||'rafter')!=='rafter') return;
-      const a=dl.values.a,bE=Math.min(dl.values.b,b),len=bE-a; if(len<=0)return;
-      MA_r+=dl.values.qa*len*(a+len/2)/2+(dl.values.qb-dl.values.qa)*len/2*(a+len*2/3)/2;
-    });}
-    if(fixB) MB_r=-(HB*h);
+      if((hl.values.member||'left')==='left') m+=F*(hA-z);
+    }); return m;
   }
 
-  // ── Internal forces — section by section ──
+  if(n===0){
+    // ── STATISCH BESTIMMT ─────────────────────────────────
+    if(rolB){
+      // Pin A + Roller B OR Fixed A + Roller B
+      HB=0; HA=Htot;
+      if(rafHinge){
+        // Hinge at xh: ΣM_hinge_left = 0
+        // MA_r + HA*hA + VA*xh - Mq(xh) + Mhoriz = 0
+        // For pin A: MA_r=0 → HA = (VA*xh - Mq_xh + Mhoriz) / hA
+        const xh=parseFloat(rafHinge.pos)||b/2;
+        const Mq_xh=Mq_at(xh);
+        const Mh_xh=Mhoriz_at(xh);
+        if(pinA){ HA=(VA*xh-Mq_xh+Mh_xh)/hA; MA_r=0; }
+        else if(fixA){
+          // Fixed A: MA_r determined from ΣM_A_full frame + hinge condition
+          // Two equations: ΣM_A=0 for full frame, hinge condition
+          // From hinge: MA_r = -(HA*hA + VA*xh - Mq_xh + Mh_xh)
+          // But ΣM_A = MA_r - VB*b + Mvert_A + HA*hA ... simplified
+          HA=(VA*xh-Mq_xh+Mh_xh)/hA;
+          MA_r=0; // hinge makes fixed base like pin for moment
+        }
+        HB=Htot-HA;
+      } else {
+        // No hinge
+        if(pinA){ MA_r=0; }
+        else if(fixA){ MA_r=-(HA*hA); } // will be 0 for Htot=0
+      }
+    } else if(pinA && pinB && rafHinge){
+      // Zweigelenkrahmen + Gelenk = 3-Gelenk-Rahmen (n=0)
+      const xh=parseFloat(rafHinge.pos)||b/2;
+      const Mq_xh=Mq_at(xh);
+      const Mh_xh=Mhoriz_at(xh);
+      // ΣM_hinge_left = HA*hA + VA*xh - Mq_xh + Mh_xh = 0
+      HA=(VA*xh-Mq_xh+Mh_xh)/hA;
+      HB=Htot-HA; MA_r=0; MB_r=0;
+    } else {
+      // Generic determinate
+      HA=Htot; HB=0; MA_r=0; MB_r=0;
+    }
+
+  } else {
+    // ── STATISCH UNBESTIMMT ────────────────────────────────
+    // Exact force method (Castigliano ∂U/∂X=0) with correct EI weighting
+    // k = (EI_R / EI_S) · (h / l)   [Holschemacher Abkürzung]
+
+    // Read EI values from inputs (same fields used for deflection diagram)
+    const EI_R = (parseFloat(document.getElementById('frame-E-raf')?.value)||210)
+               * (parseFloat(document.getElementById('frame-Iy-raf')?.value)||10);
+    const EI_S = (parseFloat(document.getElementById('frame-E-col')?.value)||210)
+               * (parseFloat(document.getElementById('frame-Iy-col')?.value)||10);
+    // kappa: stiffness ratio (Holschemacher k = IR/IS · h/l)
+    const kappa = (EI_R / EI_S) * (hA / b);
+
+    const NP_fm=50;
+    const dx_fm=b/NP_fm;
+    const dh_fm=hA/NP_fm;
+
+    // Helper: rafter load-moment integral ∫₀ᵇ f(x)·(-VA·x + Mq(x)) dx
+    // weight fn w_x applied to each sample (trapezoidal rule)
+    function rafIntegral(weightFn){
+      let s=0;
+      for(let i=0;i<=NP_fm;i++){
+        const x=i/NP_fm*b;
+        const w=(i===0||i===NP_fm)?0.5:1;
+        let Mq_x=0;
+        vLoads.forEach(dl=>{
+          if((dl.values.member||'rafter')!=='rafter') return;
+          const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
+          const qa=dl.values.qa, qb_=dl.values.qb;
+          if(x>a){const t=Math.min(x-a,len),q_=len>0?qa+(qb_-qa)*t/len:qa;
+            Mq_x+=qa*t*(x-(a+t/2))+(q_-qa)*t/2*(x-(a+t*2/3));}
+        });
+        s+=w*weightFn(x)*(-VA*x+Mq_x)*dx_fm;
+      }
+      return s;
+    }
+
+    if(pinA && pinB){
+      // ── ZWEIGELENKRAHMEN (n=1) — Holschemacher 3.1 ───────
+      // ∂U/∂H = 0:
+      //   ∫_cols H·y²/EI_S dy  +  ∫_raf (H·hA - VA·x + Mq)·hA/EI_R dx = 0
+      //
+      // H · [2·hA³/(3·EI_S) + hA²·b/EI_R]
+      //   = hA/EI_R · ∫₀ᵇ (VA·x - Mq(x)) dx
+      //     + hload contributions from columns
+      //
+      // Dividing through by hA²/EI_R:
+      //   H · [2hA/(3·EI_S/EI_R) + b] · hA/EI_R
+      //   = hA/EI_R · load_integral
+      //
+      // With k = (EI_R/EI_S)·(hA/b):
+      //   denom = hA²·(2hA/(3·EI_S) + b/EI_R)  [absolute, no EI cancel needed]
+
+      const load_integral = rafIntegral(()=>1); // ∫(-VA·x+Mq)dx
+
+      // Horizontal load column contribution: ∫_z^hA F·(y-z)·y/EI_S dy
+      let hload_int=0;
+      hLoads.forEach(hl=>{
+        if((hl.values.member||'left')!=='left') return;
+        const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
+        const h1=hA;
+        // ∫_z^h1 F(y-z)·y dy = F·[h1³/3 - z·h1²/2 - z³/3 + z³/2]
+        hload_int += F/EI_S * (h1*h1*h1/3 - z*h1*h1/2 - z*z*z/3 + z*z*z/2);
+      });
+
+      // denom = ∫_cols y²/EI_S dy (×2) + ∫_raf hA²/EI_R dx
+      const denom = 2*hA*hA*hA/(3*EI_S) + hA*hA*b/EI_R;
+      HA = (-hA/EI_R * load_integral - hload_int) / denom;
+      HB = Htot - HA; MA_r = 0; MB_r = 0;
+
+    } else if(fixA && fixB){
+      // ── EINSPANNRAHMEN (n=3) — Holschemacher 3.2 ─────────
+      // Two redundants: H (horizontal thrust) and M₀ (equal end moments, symmetric)
+      // ∂U/∂H = 0  and  ∂U/∂M₀ = 0
+      //
+      // Primary structure: simply supported rafter + pinned columns (H=0, M₀=0)
+      // M_P_raf(x) = -VA·x + Mq(x)
+      //
+      // δ₁₁ = ∫y²/EI_S dy (×2 cols) + ∫hA²/EI_R dx = 2hA³/(3EI_S) + hA²b/EI_R
+      // δ₂₂ = ∫1/EI_S dy (×2 cols)  + ∫1/EI_R dx   = 2hA/EI_S + b/EI_R
+      // δ₁₂ = ∫hA/EI_S dy (×2 cols) + ∫hA/EI_R dx  = hA²/EI_S + hA·b/EI_R (= δ₂₁·hA?)
+      //      Actually δ₁₂ = ∫(∂M/∂H)(∂M/∂M₀)/EI ds
+      //      col: ∂M/∂H=y, ∂M/∂M₀=1 → ∫y dy/EI_S ×2 = hA²/EI_S
+      //      raf: ∂M/∂H=hA, ∂M/∂M₀=1 → hA·b/EI_R
+      //      δ₁₂ = hA²/EI_S + hA·b/EI_R
+      //
+      // Δ₁P = ∫hA·M_P_raf/EI_R dx  (cols have M_P=0)
+      // Δ₂P = ∫M_P_raf/EI_R dx
+      //
+      // System: [δ₁₁ δ₁₂][H ] = [-Δ₁P]
+      //         [δ₁₂ δ₂₂][M₀]   [-Δ₂P]
+
+      const Δ1P = rafIntegral(()=>hA) / EI_R;  // hA·∫M_P dx / EI_R
+      const Δ2P = rafIntegral(()=>1)  / EI_R;  // ∫M_P dx / EI_R
+
+      // Horizontal load contributions from columns:
+      let hΔ1P=0, hΔ2P=0;
+      hLoads.forEach(hl=>{
+        if((hl.values.member||'left')!=='left') return;
+        const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
+        for(let i=0;i<=NP_fm;i++){
+          const y=i/NP_fm*hA; if(y<=z) continue;
+          const w=(i===0||i===NP_fm)?0.5:1;
+          const M_P=F*(y-z);
+          hΔ1P += w*y*M_P/EI_S*dh_fm*2;
+          hΔ2P += w*1*M_P/EI_S*dh_fm*2;
+        }
+      });
+
+      const d11 = 2*hA*hA*hA/(3*EI_S) + hA*hA*b/EI_R;
+      const d22 = 2*hA/EI_S           + b/EI_R;
+      const d12 = hA*hA/EI_S          + hA*b/EI_R;
+
+      const rhs1 = -(Δ1P + hΔ1P);
+      const rhs2 = -(Δ2P + hΔ2P);
+
+      // Solve 2×2: [d11 d12][H ] = [rhs1]
+      //            [d12 d22][M₀]   [rhs2]
+      const det = d11*d22 - d12*d12;
+      HA   = (rhs1*d22 - rhs2*d12) / det;
+      MA_r = (d11*rhs2 - d12*rhs1) / det;
+      HB   = Htot - HA;
+      MB_r = MA_r; // symmetric frame: M₁ᴱ = M₂ᴱ
+
+    } else if(fixA && rolB){
+      // ── FIXED A + ROLLER B (n=1) ──────────────────────────
+      // H is determined by global equilibrium (HB=0, HA=Htot)
+      // Redundant: MA_r
+      // ∂U/∂MA_r = 0:
+      //   ∫col (MA_r + HA·y)·1/EI_S dy + ∫raf (MA_r + HA·hA - VA·x + Mq)·1/EI_R dx = 0
+      //   MA_r·(hA/EI_S + b/EI_R) + HA·(hA²/(2EI_S) + hA·b/EI_R) + Δ2P_raf = 0
+      HA=Htot; HB=0;
+      const Δ2P_raf = rafIntegral(()=>1) / EI_R;
+      const c1 = hA/EI_S + b/EI_R;
+      const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
+      MA_r = -(c2 + Δ2P_raf) / c1;
+      MB_r = 0;
+
+    } else if(fixA && pinB){
+      // ── FIXED A + FESTLAGER B (n=1) ───────────────────────
+      // Same as fixA+rolB for vertical loads (HB takes horizontal from right)
+      // Stiffness-based H distribution for horizontal loads:
+      const kA=3*EI_S/(hA*hA*hA), kB=3*EI_S/(hB*hB*hB);
+      HA=Htot*kA/(kA+kB); HB=Htot-HA;
+      const Δ2P_raf = rafIntegral(()=>1) / EI_R;
+      const c1 = hA/EI_S + b/EI_R;
+      const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
+      MA_r = -(c2 + Δ2P_raf) / c1;
+      MB_r = 0;
+
+      if(rafHinge){
+        const xh=parseFloat(rafHinge.pos)||b/2;
+        const Mq_xh=Mq_at(xh);
+        const Mh_xh=Mhoriz_at(xh);
+        HA=(VA*xh-Mq_xh+Mh_xh)/hA;
+        HB=Htot-HA; MA_r=0;
+      }
+    }
+  }
+
+  // ── Internal forces: M/Q/N per member ──────────────────────
   const NP=100;
-  const allM=[],allQ=[],allN=[];
 
-  // ── LEFT COLUMN: from base (A) upward to rafter ──
-  // Convention: x=0 at base, x=h at top
-  // Q positive = leftward horizontal force on left face (from right)
-  // Build from TOP downward (right-to-left convention)
-  const Mleft=[], Qleft=[], Nleft=[];
-  for(let k=0;k<=NP;k++){
-    const x=k/NP*h; // x=0 base, x=h top
-    // M at base: MA_r (if fixed), at top: continuity with rafter
-    let M = supportA==='fixed' ? MA_r + HA*x : HA*x;
-    // Add horizontal loads on left column
-    hLoads.forEach(hl=>{
-      if((hl.values.member||'left')!=='left') return;
-      if(x>=(hl.values.z||0)) M+=(hl.values.H||hl.values.F||0)*(x-(hl.values.z||0));
-    });
-    // Q = horizontal reaction at base = HA (shear in column)
-    let Q=HA;
-    hLoads.forEach(hl=>{
-      if((hl.values.member||'left')!=='left') return;
-      if(x>=(hl.values.z||0)) Q-=(hl.values.H||hl.values.F||0);
-    });
-    // N = vertical force in column = -VA (compression)
-    Mleft.push(+M.toFixed(3));
-    Qleft.push(+Q.toFixed(3));
-    Nleft.push(+(-VA).toFixed(3));
-  }
-  // Enforce M=0 at hinges in left column
-  frameHinges.filter(hg=>hg.member==='left').forEach(hg=>{
-    const ki=Math.round(hg.x*NP);
-    Mleft[ki]=0;
-  });
-
-  // ── RAFTER: from left (x=0) to right (x=b) ──
-  // M at start of rafter = M at top of left column (continuity!)
-  const M_rafter_start = Mleft[NP]; // top of left col
-  const Mraf=[], Qraf=[], Nraf=[];
-  for(let k=0;k<=NP;k++){
-    const x=k/NP*b;
-    let M=M_rafter_start + VA*x - HA*0, Q=-VA, N=-HA;
-    // Note: Q goes from right convention → Q = -VA at start (before loads)
-    // Actually build from right: Q at right end = VB (upward = positive)
-    // Then subtract loads going left
-    // For now: standard left-to-right
+  function Mq(x){
+    let m=0;
     vLoads.forEach(dl=>{
       if((dl.values.member||'rafter')!=='rafter') return;
       const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
       const qa=dl.values.qa, qb_=dl.values.qb;
-      if(x>a){
-        const t=Math.min(x-a,len), q_xe=len>0?qa+(qb_-qa)*t/len:qa;
-        Q+=qa*t+(q_xe-qa)*t/2; // Q decreases as we go right (loads push down)
-        M-=qa*t*(x-(a+t/2))+(q_xe-qa)*t/2*(x-(a+t*2/3));
-      }
-    });
-    Mraf.push(+M.toFixed(3));
-    Qraf.push(+(-Q).toFixed(3)); // flip for display (right-to-left convention)
-    Nraf.push(+N.toFixed(3));
+      if(x>a){const t=Math.min(x-a,len),q_=len>0?qa+(qb_-qa)*t/len:qa;
+        m+=qa*t*(x-(a+t/2))+(q_-qa)*t/2*(x-(a+t*2/3));}
+    }); return m;
   }
-  // Enforce M=0 at hinges in rafter
-  frameHinges.filter(hg=>hg.member==='rafter').forEach(hg=>{
-    const ki=Math.round(hg.x*NP);
-    Mraf[ki]=0;
-    // Linear interpolation either side
-    for(let i=0;i<ki;i++) Mraf[i]=Mraf[i]*(i/ki);
-    for(let i=ki+1;i<=NP;i++) Mraf[i]=Mraf[i]*((NP-i)/(NP-ki));
+  function Qq(x){
+    let q=0;
+    vLoads.forEach(dl=>{
+      if((dl.values.member||'rafter')!=='rafter') return;
+      const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
+      const qa=dl.values.qa, qb_=dl.values.qb;
+      if(x>a){const t=Math.min(x-a,len),q_=len>0?qa+(qb_-qa)*t/len:qa;
+        q+=qa*t+(q_-qa)*t/2;}
+    }); return q;
+  }
+  function Mq_right(x){
+    let m=0;
+    vLoads.forEach(dl=>{
+      if((dl.values.member||'rafter')!=='rafter') return;
+      const a=dl.values.a, bE=Math.min(dl.values.b,b);
+      const xS=Math.max(a,x), xE=bE, len=xE-xS; if(len<=0)return;
+      const t0=(xS-a)/(bE-a||1), qa_s=dl.values.qa+(dl.values.qb-dl.values.qa)*t0;
+      const t1=(xE-a)/(bE-a||1), qb_s=dl.values.qa+(dl.values.qb-dl.values.qa)*t1;
+      const R1=qa_s*len, xc1=xS+len/2;
+      const R2=(qb_s-qa_s)*len/2, xc2=xS+len*2/3;
+      m+=R1*(xc1-x)+R2*(xc2-x);
+    }); return m;
+  }
+
+  // LEFT COLUMN: x=0 at base (A), x=hA at top
+  const Mleft=[],Qleft=[],Nleft=[];
+  for(let k=0;k<=NP;k++){
+    const y=k/NP*hA;
+    let M=(fixA?MA_r:0)+HA*y;
+    let Q=HA;
+    hLoads.forEach(hl=>{
+      if((hl.values.member||'left')!=='left') return;
+      const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
+      if(y>=z){M+=F*(y-z); Q-=F;}
+    });
+    if(!fixA) M=0+HA*y; // pin: no MA_r
+    Mleft.push(+M.toFixed(3));
+    Qleft.push(+Q.toFixed(3));
+    Nleft.push(+(-VA).toFixed(3));
+  }
+  if(!fixA) Mleft[0]=0;
+  frameHinges.filter(hg=>hg.member==='left').forEach(hg=>{
+    const ki=Math.round((parseFloat(hg.pos)||hA/2)/hA*NP);
+    Mleft[ki]=0;
   });
 
-  // ── RIGHT COLUMN: from top downward (x=0 top → x=h base) ──
-  // M at top of right col = M at end of rafter (continuity!)
-  const M_right_top = Mraf[NP];
-  const Mright=[], Qright=[], Nright=[];
+  // RAFTER: x=0 at left, x=b at right
+  // Equilibrium freebody LEFT of cut (sagging = tension-bottom = positive):
+  //   M_raf(x) = VA*x - (MA_r + HA*hA) - Mq(x)
+  //            = VA*x - M_corner_left - Mq(x)
+  // Corner moments (same sign as column top, consistent with column formula):
+  const Mraf=[],Qraf=[],Nraf=[];
+  const M_corner_left  = (fixA ? MA_r : 0) + HA*hA;
+  const M_corner_right = (fixB ? MB_r : 0) + HB*hB;
+
   for(let k=0;k<=NP;k++){
-    const x=k/NP*h; // x=0 top, x=h base
-    let M = M_right_top - HB*x;
-    if(supportB==='fixed') M = M_right_top - HB*x;
-    // Q in right col = HB (from right-to-left: positive = toward frame)
+    const x=k/NP*b;
+    let M,Q;
+    if(rafHinge){
+      const xh=parseFloat(rafHinge.pos)||b/2;
+      const ki=Math.round(xh/b*NP);
+      if(k<=ki){
+        M = VA*x - M_corner_left - Mq(x);
+      } else {
+        // From right freebody: M(x) = VB*(b-x) - M_corner_right - Mq_right(x)
+        M = VB*(b-x) - M_corner_right - Mq_right(x);
+      }
+    } else {
+      M = VA*x - M_corner_left - Mq(x);
+    }
+    Q=VA-Qq(x);
+    Mraf.push(+M.toFixed(3));
+    Qraf.push(+Q.toFixed(3));
+    Nraf.push(+(-HA).toFixed(3));
+  }
+  if(rafHinge){
+    const ki=Math.round((parseFloat(rafHinge.pos)||b/2)/b*NP);
+    Mraf[ki]=0;
+  }
+
+  // RIGHT COLUMN: x=0 at top (rafter level), x=hB at base (B)
+  // Interpolate between M_corner_right (top) and MB_r or 0 (base)
+  const Mright=[],Qright=[],Nright=[];
+  for(let k=0;k<=NP;k++){
+    const x=k/NP*hB;
+    const M = M_corner_right + ((fixB ? MB_r : 0) - M_corner_right)*x/hB;
     Mright.push(+M.toFixed(3));
     Qright.push(+(HB).toFixed(3));
     Nright.push(+(-VB).toFixed(3));
   }
-  // Enforce M=0 at hinges in right column
+  if(!fixB) Mright[NP]=0;
+  if(!fixA) Mleft[0]=0;
   frameHinges.filter(hg=>hg.member==='right').forEach(hg=>{
-    const ki=Math.round(hg.x*NP);
+    const ki=Math.round((parseFloat(hg.pos)||hB/2)/hB*NP);
     Mright[ki]=0;
   });
-  // Enforce M=0 at base if roller/pin
-  if(supportB==='roller'||supportB==='pin') Mright[NP]=0;
-  if(supportA==='roller'||supportA==='pin') Mleft[0]=0;
 
-  // ── Collect all for max values ──
-  const allMall=[...Mleft,...Mraf,...Mright];
-  const allQall=[...Qleft,...Qraf,...Qright];
-  const allNall=[...Nleft,...Nraf,...Nright];
-  const Mmax=Math.max(...allMall.map(Math.abs));
-  const Qmax=Math.max(...allQall.map(Math.abs));
-  const Nmax=Math.max(...allNall.map(Math.abs));
+  // ── Results ────────────────────────────────────────────────
+  const allM=[...Mleft,...Mraf,...Mright];
+  const allQ=[...Qleft,...Qraf,...Qright];
+  const allN=[...Nleft,...Nraf,...Nright];
+  const Mmax=Math.max(...allM.map(Math.abs));
+  const Qmax=Math.max(...allQ.map(Math.abs));
+  const Nmax=Math.max(...allN.map(Math.abs));
 
   document.getElementById('f-res-Mmax').textContent=Mmax.toFixed(2);
   document.getElementById('f-res-Qmax').textContent=Qmax.toFixed(2);
   document.getElementById('f-res-Nmax').textContent=Nmax.toFixed(2);
 
-  const H_head = supportHead!=='none' ? (Htot - HA - HB) : 0;
+  const H_head=supportHead!=='none'?(Htot-HA-HB):0;
   document.getElementById('frame-reactions-body').innerHTML=
-    `<tr><td>A</td><td>${HA.toFixed(2)}</td><td>${VA.toFixed(2)}</td><td>${supportA==='fixed'?MA_r.toFixed(2):'—'}</td></tr>`+
-    `<tr><td>B</td><td>${HB.toFixed(2)}</td><td>${VB.toFixed(2)}</td><td>${supportB==='fixed'?MB_r.toFixed(2):'—'}</td></tr>`+
+    `<tr><td>A</td><td>${HA.toFixed(2)}</td><td>${VA.toFixed(2)}</td><td>${fixA?MA_r.toFixed(2):'—'}</td></tr>`+
+    `<tr><td>B</td><td>${HB.toFixed(2)}</td><td>${VB.toFixed(2)}</td><td>${fixB?MB_r.toFixed(2):'—'}</td></tr>`+
     (supportHead!=='none'?`<tr><td>H (top)</td><td>${H_head.toFixed(2)}</td><td>—</td><td>—</td></tr>`:'');
 
   document.getElementById('frame-results').classList.remove('hidden');
-  renderFrameDiagram(b, h, [...Mleft,...Mraf,...Mright], [...Qleft,...Qraf,...Qright], [...Nleft,...Nraf,...Nright], NP, supportA, supportB);
+  renderFrameDiagram(b,h,allM,allQ,allN,NP,supportA,supportB);
 }
 
 
@@ -1953,6 +2166,7 @@ function setDiagMode(sys, mode){
 }
 
 // Store last computed diagram data per system
+const diagMode = { beam:'M', cant:'M', cont:'M', frame:'M' };
 const diagData = {};
 
 // Colors
@@ -2161,15 +2375,25 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
       const E = (parseFloat(document.getElementById(E_id)?.value)||210)*1e6;
       const Iy_cm4 = (parseFloat(document.getElementById(Iy_id)?.value)||10)*1e3;
       const EI = E * Iy_cm4 * 1e-8;
-      // Numerical integration (simply supported assumption per member)
       const n = mem.M.length-1, dx = L/n;
       const phi = mem.M.map(m => m/EI);
-      const theta = new Array(n+1).fill(0);
-      for(let i=1;i<=n;i++) theta[i]=theta[i-1]+phi[i-1]*dx;
-      const wRaw = new Array(n+1).fill(0);
-      for(let i=1;i<=n;i++) wRaw[i]=wRaw[i-1]+theta[i-1]*dx;
-      const C1 = -wRaw[n]/L;
-      wVals = wRaw.map((v,i) => (v+C1*i*dx)*1000);
+      if(isCol){
+        // Column: fixed at base (w=0, w'=0), cantilever BC
+        const theta = new Array(n+1).fill(0);
+        for(let i=1;i<=n;i++) theta[i]=theta[i-1]+phi[i-1]*dx;
+        const w = new Array(n+1).fill(0);
+        for(let i=1;i<=n;i++) w[i]=w[i-1]+theta[i-1]*dx;
+        // Negate: positive M → deflects toward frame interior (inward)
+        wVals = w.map(v=>-v*1000);
+      } else {
+        // Rafter: simply supported (w=0 at both ends)
+        const theta = new Array(n+1).fill(0);
+        for(let i=1;i<=n;i++) theta[i]=theta[i-1]+phi[i-1]*dx;
+        const wRaw = new Array(n+1).fill(0);
+        for(let i=1;i<=n;i++) wRaw[i]=wRaw[i-1]+theta[i-1]*dx;
+        const C1=-wRaw[n]/L;
+        wVals = wRaw.map((v,i)=>(v+C1*i*dx)*1000);
+      }
     } else if(sys==='cant') {
       wVals = computeDeflectionCant(sys, mem.M, L);
     } else {
@@ -2345,7 +2569,7 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB){
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [
       { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mleft,  Q:Qleft,  N:Nleft  },
-      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:true,  isColumn:false, memberLen:b, M:Mraf,   Q:Qraf,   N:Nraf   },
+      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:false, isColumn:false, memberLen:b, M:Mraf,   Q:Qraf,   N:Nraf   },
       { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mright, Q:Qright, N:Nright }
     ]
   };
