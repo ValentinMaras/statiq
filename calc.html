@@ -41,6 +41,9 @@
     .nav::-webkit-scrollbar { display: none; }
     .nav-tab { padding: 11px 16px; font-size: 13px; font-weight: 500; color: var(--text2); border: none; background: none; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s; font-family:DM Sans, sans-serif; letter-spacing: 0.1px; }
     .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .nd-item { display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text);font-family:DM Sans,sans-serif;margin-bottom:2px;transition:background 0.1s; }
+    .nd-item:hover { background:var(--border); }
+    .nd-item.active { color:var(--accent);font-weight:600;background:rgba(37,99,235,0.08); }
 
     .main { padding: 1rem; max-width: 480px; margin: 0 auto; }
     .card { background: rgba(255,255,255,0.88); border: 1px solid var(--border-dark); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9); }
@@ -284,12 +287,49 @@
   <div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;letter-spacing:0.5px;">v0.5.5</div>
 </header>
 
-<nav class="nav">
-  <button class="nav-tab active" onclick="showTab('beam')">Simply Supported</button>
-  <button class="nav-tab" onclick="showTab('cantilever')">Cantilever</button>
-  <button class="nav-tab" onclick="showTab('cont')">Continuous Beam</button>
-  <button class="nav-tab" onclick="showTab('frame')">Frame</button>
+<nav class="nav" style="display:flex;align-items:center;padding:0 16px;gap:10px">
+  <span id="nav-current-label" style="font-size:13px;font-weight:600;color:var(--accent);font-family:DM Sans,sans-serif;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Simply Supported</span>
+  <button id="nav-save-btn" onclick="saveFrameCalc()" style="display:none;background:none;border:none;font-size:19px;cursor:pointer;padding:8px 2px;line-height:1" title="Save">💾</button>
+  <button onclick="toggleNavMenu()" style="background:none;border:none;cursor:pointer;padding:10px 2px;font-size:22px;color:var(--text2);line-height:1" title="Menu">☰</button>
 </nav>
+
+<!-- ══ Navigation Drawer ══ -->
+<div id="nav-overlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.35)" onclick="closeNavMenu()"></div>
+<div id="nav-drawer" style="display:none;position:fixed;top:0;right:0;width:270px;height:100%;z-index:201;background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,0.18);overflow-y:auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 14px;border-bottom:1px solid var(--border)">
+    <span style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:2px">STATIQ</span>
+    <button onclick="closeNavMenu()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text2);line-height:1">✕</button>
+  </div>
+
+  <div style="padding:14px 18px 4px">
+    <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;font-family:DM Mono,monospace;margin-bottom:10px">STATIQ · CALC</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:6px;padding-left:2px">1 · Statische Systeme</div>
+    <button onclick="closeNavMenu();showTab('beam')" class="nd-item" id="nm-beam">1.1 &nbsp; Einfeldträger</button>
+    <button onclick="closeNavMenu();showTab('cantilever')" class="nd-item" id="nm-cantilever">1.2 &nbsp; Kragarm</button>
+    <button onclick="closeNavMenu();showTab('cont')" class="nd-item" id="nm-cont">1.3 &nbsp; Durchlaufträger</button>
+    <button onclick="closeNavMenu();showTab('frame')" class="nd-item" id="nm-frame">1.4 &nbsp; Rahmen</button>
+  </div>
+
+  <div style="padding:12px 18px 4px;border-top:1px solid var(--border);margin-top:6px">
+    <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;font-family:DM Mono,monospace;margin-bottom:8px">GESPEICHERT</div>
+    <button onclick="closeNavMenu();showTab('saved')" class="nd-item">💾 &nbsp; Gespeicherte Berechnungen</button>
+  </div>
+
+  <div style="padding:12px 18px 4px;border-top:1px solid var(--border);margin-top:6px">
+    <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;font-family:DM Mono,monospace;margin-bottom:8px">DEMNÄCHST</div>
+    <div class="nd-item" style="color:var(--text-muted);cursor:default;opacity:0.6">statiq·size &nbsp;<span style="font-size:9px;background:var(--border);padding:2px 6px;border-radius:10px">SOON</span></div>
+    <div class="nd-item" style="color:var(--text-muted);cursor:default;opacity:0.6">statiq·ref &nbsp;<span style="font-size:9px;background:var(--border);padding:2px 6px;border-radius:10px">SOON</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════ SAVED TAB ═══════════════ -->
+<main class="main hidden" id="tab-saved" style="padding:20px 16px">
+  <div class="card-title" style="margin-bottom:16px">💾 SAVED CALCULATIONS</div>
+  <div id="saved-calcs-list"></div>
+  <div id="saved-empty" style="color:var(--text-muted);font-size:12px;font-family:DM Mono,monospace;padding:20px;text-align:center;display:none">
+    No saved calculations yet.<br>Calculate and press 💾 Save.
+  </div>
+</main>
 
 <!-- ═══════════════ BEAM TAB ═══════════════ -->
 <main class="main" id="tab-beam">
@@ -497,13 +537,19 @@
       <button class="info-btn" onclick="openModal('frame')">i</button>
     </div>
     <div class="beam-svg-wrap" style="overflow-x:auto">
-      <svg id="frame-svg" viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"></svg>
+      <svg id="frame-svg" viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"></svg>
     </div>
     <div class="field-row">
       <div class="field"><label>Width b <span class="unit">m</span></label>
         <input type="number" id="fB" value="5" step="0.1" min="0.5" oninput="drawFrame()"></div>
       <div class="field"><label>Height h <span class="unit">m</span></label>
-        <input type="number" id="fH" value="4" step="0.1" min="0.5" oninput="drawFrame()"></div>
+        <input type="number" id="fH" value="4" step="0.1" min="0.5" oninput="syncFrameHeights('h')"></div>
+    </div>
+    <div class="field-row" style="margin-top:4px">
+      <div class="field"><label>h<sub>A</sub> <span class="unit">m</span></label>
+        <input type="number" id="fHA" value="4" step="0.1" min="0.5" oninput="syncFrameHeights('A')"></div>
+      <div class="field"><label>h<sub>B</sub> <span class="unit">m</span></label>
+        <input type="number" id="fHB" value="4" step="0.1" min="0.5" oninput="syncFrameHeights('B')"></div>
     </div>
 
     <!-- Individual support conditions -->
@@ -559,6 +605,7 @@
   </div>
 
   <button class="calc-btn" onclick="calculateFrame()">Calculate</button>
+  <button class="calc-btn" style="margin-top:8px;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);font-size:12px;padding:10px" onclick="saveFrameCalc()">💾 Save Calculation</button>
 
   <div id="frame-results" class="hidden">
     <div class="results-grid">
@@ -635,15 +682,41 @@ function initSpanData() {
 }
 
 // ── Tabs ──────────────────────────────────────────
+function toggleNavMenu(){
+  const overlay=document.getElementById('nav-overlay');
+  const drawer=document.getElementById('nav-drawer');
+  const open=drawer.style.display!=='none';
+  overlay.style.display=open?'none':'block';
+  drawer.style.display=open?'none':'block';
+}
+function closeNavMenu(){
+  document.getElementById('nav-overlay').style.display='none';
+  document.getElementById('nav-drawer').style.display='none';
+}
+
 function showTab(name) {
-  ['beam','cantilever','cont','frame'].forEach(t =>
+  ['beam','cantilever','cont','frame','saved'].forEach(t =>
     document.getElementById('tab-'+t).classList.toggle('hidden', t !== name));
-  document.querySelectorAll('.nav-tab').forEach((b,i) =>
-    b.classList.toggle('active', ['beam','cantilever','cont','frame'][i] === name));
+
+  // Update drawer active state
+  const labels = {beam:'1.1 Einfeldträger', cantilever:'1.2 Kragarm', cont:'1.3 Durchlaufträger', frame:'1.4 Rahmen', saved:'Gespeichert'};
+  document.querySelectorAll('.nd-item').forEach(b=>b.classList.remove('active'));
+  const activeBtn=document.getElementById('nm-'+name);
+  if(activeBtn) activeBtn.classList.add('active');
+
+  // Update top bar label
+  const lbl=document.getElementById('nav-current-label');
+  if(lbl) lbl.textContent=labels[name]||name;
+
+  // Show save button only on frame tab
+  const saveBtn=document.getElementById('nav-save-btn');
+  if(saveBtn) saveBtn.style.display=name==='frame'?'block':'none';
+
   if(name==='beam') drawBeam();
   if(name==='cantilever') setTimeout(drawCantilever, 30);
   if(name==='cont') { renderContUI(); setTimeout(drawContinuous, 30); }
   if(name==='frame') { renderFrameUI(); setTimeout(drawFrame, 30); }
+  if(name==='saved') renderSavedTab();
 }
 
 // ── Modal ─────────────────────────────────────────
@@ -1141,7 +1214,7 @@ function calculateBeam() {
         Q-=qa*t+(q_xe-qa)*t/2; M-=qa*t*(x-(da+t/2))+(q_xe-qa)*t/2*(x-(da+t*2/3));}
     });
     horizs.forEach(hl=>{ if(x>=(hl.values.a||0)){N-=(hl.values.H||0); M+=hl.values.Me||0;} });
-    Qv.push(+(Q).toFixed(3)); Mv.push(+(-M).toFixed(3)); Nv.push(+N.toFixed(3));
+    Qv.push(+(-Q).toFixed(3)); Mv.push(+(-M).toFixed(3)); Nv.push(+N.toFixed(3));
   }
   // Close Q at A side: Q starts from 0
   xs.unshift(0); Qv.unshift(0); Mv.unshift(0); Nv.unshift(Nv[0]);
@@ -1192,8 +1265,8 @@ function calculateCantilever() {
   const Mmax=Math.max(...Mv.map(Math.abs)),Qmax=Math.max(...Qv.map(Math.abs)),Nmax=Math.max(...Nv.map(Math.abs));
   document.getElementById('c-res-V').textContent=VA.toFixed(2);
   document.getElementById('c-res-HA').textContent=HA_c.toFixed(2);
-  document.getElementById('c-res-M').textContent=MA.toFixed(2);
-  document.getElementById('c-res-Mmax').textContent=Mmax.toFixed(2);
+  document.getElementById('c-res-M').textContent=(-MA).toFixed(2);
+  document.getElementById('c-res-Mmax').textContent=(-Mmax).toFixed(2);
   document.getElementById('c-res-Qmax').textContent=Qmax.toFixed(2);
   document.getElementById('c-res-Nmax').textContent=Nmax.toFixed(2);
   document.getElementById('cant-results').classList.remove('hidden');
@@ -1736,22 +1809,206 @@ function drawFrame(){
 // FRAME CALCULATION — Force Method
 // Handles all statically (in)determinate combinations
 // ══════════════════════════════════════════════════
-function calculateFrame(){
-  const b  = parseFloat(document.getElementById('fB').value)||5;
-  const h  = parseFloat(document.getElementById('fH').value)||4;
+// ── FRAME HEIGHT SYNC ─────────────────────────────────────────────
+// h = master height; hA/hB can diverge independently
+function syncFrameHeights(changed){
+  const hEl=document.getElementById('fH');
+  const hAEl=document.getElementById('fHA');
+  const hBEl=document.getElementById('fHB');
+  if(!hEl||!hAEl||!hBEl) return;
+  if(changed==='h'){
+    // master h changed → update hA and hB only if they were equal to old h
+    hAEl.value=hEl.value;
+    hBEl.value=hEl.value;
+  } else if(changed==='A'||changed==='B'){
+    // individual height changed → update master h to average (for display)
+    const avg=((parseFloat(hAEl.value)||4)+(parseFloat(hBEl.value)||4))/2;
+    hEl.value=avg.toFixed(2);
+  }
+  drawFrame();
+}
+
+// ── STATIQ DATA FORMAT (SDF) — Save/Load ─────────────────────────
+// Standard format for sharing data between statiq·calc and statiq·size
+function buildSDF(){
+  const b  = parseFloat(document.getElementById('fB')?.value)||5;
+  const h  = parseFloat(document.getElementById('fH')?.value)||4;
   const hA = parseFloat(document.getElementById('fHA')?.value)||h;
   const hB = parseFloat(document.getElementById('fHB')?.value)||h;
-  if(!b||b<=0||!h||h<=0){alert('Please enter valid dimensions.');return;}
 
-  const n = frameIndeterminacy();
-  if(n<0){alert('This system is a mechanism.');return;}
-  document.getElementById('f-res-indet').textContent = n===0?'0 (det.)':n;
+  // Collect loads
+  const vLoads_raw = frameLoads.vert.filter(l=>l.enabled).map(l=>({...l.values}));
+  const hLoads_raw = frameLoads.horiz.filter(l=>l.enabled).map(l=>({...l.values}));
+  const hinges = frameHinges.map(hg=>({member:hg.member, pos:hg.pos}));
 
+  // Collect results if available
+  const Mmax = document.getElementById('f-res-Mmax')?.textContent;
+  const Qmax = document.getElementById('f-res-Qmax')?.textContent;
+  const Nmax = document.getElementById('f-res-Nmax')?.textContent;
+  const reactions = [];
+  document.querySelectorAll('#frame-reactions-body tr').forEach(tr=>{
+    const cells=[...tr.querySelectorAll('td')].map(td=>td.textContent);
+    if(cells.length) reactions.push({support:cells[0],H:cells[1],V:cells[2],M:cells[3]});
+  });
+
+  // Member M/Q/N arrays from last diagram render
+  const memberData = {};
+  if(diagData.frame?.members){
+    const mems = diagData.frame.members;
+    ['left_col','rafter','right_col'].forEach((name,i)=>{
+      if(mems[i]) memberData[name]={
+        M: mems[i].Morig || mems[i].M,
+        Q: mems[i].Q,
+        N: mems[i].N
+      };
+    });
+  }
+
+  return {
+    statiq_version: '0.5.5',
+    timestamp: new Date().toISOString(),
+    module: 'calc',
+    system: {
+      type: 'frame',
+      geometry: {b, h, hA, hB},
+      supports: {A: supportA, B: supportB, head: supportHead},
+      hinges,
+      loads: {vertical: vLoads_raw, horizontal: hLoads_raw}
+    },
+    results: {
+      Mmax: parseFloat(Mmax)||0,
+      Qmax: parseFloat(Qmax)||0,
+      Nmax: parseFloat(Nmax)||0,
+      reactions,
+      members: memberData
+    }
+  };
+}
+
+function saveFrameCalc(){
+  const sdf = buildSDF();
+  if(sdf.results.Mmax===0 && sdf.results.Qmax===0){
+    alert('Please calculate first before saving.');
+    return;
+  }
+  // Generate name from system description
+  const name = `Frame ${sdf.system.supports.A}+${sdf.system.supports.B} b=${sdf.system.geometry.b}m h=${sdf.system.geometry.hA}/${sdf.system.geometry.hB}m`;
+  const key = 'statiq_sdf_' + Date.now();
+  try {
+    localStorage.setItem(key, JSON.stringify({name, sdf}));
+    // Show brief confirmation
+    const btn = document.querySelector('[onclick="saveFrameCalc()"]');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Saved!';
+    setTimeout(()=>btn.textContent=orig, 1500);
+  } catch(e){
+    alert('Storage full. Please delete old calculations first.');
+  }
+}
+
+function showSavedCalcs(){ showTab('saved'); }
+
+function renderSavedTab(){
+  const list = document.getElementById('saved-calcs-list');
+  const empty = document.getElementById('saved-empty');
+  if(!list) return;
+
+  const entries=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k.startsWith('statiq_sdf_')) continue;
+    try{
+      const {name,sdf}=JSON.parse(localStorage.getItem(k));
+      entries.push({k, name, sdf});
+    }catch(e){}
+  }
+  entries.sort((a,b)=>b.k.localeCompare(a.k));
+
+  if(!entries.length){
+    list.innerHTML='';
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+
+  list.innerHTML = entries.map(({k,name,sdf})=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${name}</div>
+      <div style="font-size:11px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:10px">
+        M<sub>max</sub>=${sdf.results.Mmax.toFixed(1)} kNm &nbsp;·&nbsp;
+        Q<sub>max</sub>=${sdf.results.Qmax.toFixed(1)} kN &nbsp;·&nbsp;
+        N<sub>max</sub>=${sdf.results.Nmax.toFixed(1)} kN<br>
+        ${new Date(sdf.timestamp).toLocaleString()}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="loadSDF('${k}')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--accent);background:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">↩ Load</button>
+        <button onclick="exportSDF('${k}')" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;font-size:12px">↓ JSON</button>
+        <button onclick="deleteSDF('${k}',this.closest('div[style]'))" style="padding:8px 10px;border-radius:8px;border:none;background:none;color:#e74c3c;cursor:pointer;font-size:14px">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadSDF(key){
+  try{
+    const {sdf} = JSON.parse(localStorage.getItem(key));
+    const g=sdf.system.geometry;
+    // Restore geometry
+    document.getElementById('fB').value=g.b;
+    document.getElementById('fH').value=g.h;
+    if(document.getElementById('fHA')) document.getElementById('fHA').value=g.hA||g.h;
+    if(document.getElementById('fHB')) document.getElementById('fHB').value=g.hB||g.h;
+    // Restore supports
+    if(sdf.system.supports.A) setSupportA(sdf.system.supports.A);
+    if(sdf.system.supports.B) setSupportB(sdf.system.supports.B);
+    // Restore loads
+    frameLoads.vert=[]; frameLoads.horiz=[];
+    sdf.system.loads.vertical.forEach(v=>{ frameLoads.vert.push({id:Date.now()+Math.random(),enabled:true,values:v}); });
+    sdf.system.loads.horizontal.forEach(h=>{ frameLoads.horiz.push({id:Date.now()+Math.random(),enabled:true,values:h}); });
+    renderFrameLoads('vert'); renderFrameLoads('horiz');
+    drawFrame();
+    showTab('frame');
+  }catch(e){ alert('Failed to load: '+e.message); }
+}
+
+function exportSDF(key){
+  try{
+    const {name,sdf}=JSON.parse(localStorage.getItem(key));
+    const blob=new Blob([JSON.stringify(sdf,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=name.replace(/[^a-z0-9]/gi,'_')+'.sdf.json';
+    a.click();
+  }catch(e){ alert('Export failed: '+e.message); }
+}
+
+function deleteSDF(key, el){
+  localStorage.removeItem(key);
+  if(el) el.remove();
+  renderSavedTab();
+}
+
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║  STATIQ · FRAME CALCULATOR                                       ║
+// ║  Architecture:                                                    ║
+// ║  1. frameLoadSummary()   — sum loads, compute VA/VB              ║
+// ║  2. frameSolveDet()      — statically determinate  (n=0)         ║
+// ║  3. frameSolveIndet()    — statically indeterminate (n≥1)        ║
+// ║  4. frameInternalForces()— M/Q/N per member                      ║
+// ║  5. calculateFrame()     — orchestrator                           ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+// ── 1. LOAD SUMMARY ────────────────────────────────────────────────
+// Returns: { Vtot, VA, VB, Htot, vLoads, hLoads }
+// Sign convention: x+ = right, y+ = up
+// H on left col in UI: positive value = leftward arrow → stored as negative in global x
+function frameLoadSummary(b, hA, hB){
   const vLoads = frameLoads.vert.filter(l=>l.enabled);
   const hLoads = frameLoads.horiz.filter(l=>l.enabled);
 
-  // ── Vertical loads on rafter ──────────────────────────────
-  let Vtot=0, Mvert_A=0, Mvert_B=0;
+  // Sum vertical loads on rafter
+  let Vtot=0, Mvert_A=0;
   vLoads.forEach(dl=>{
     if((dl.values.member||'rafter')!=='rafter') return;
     const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
@@ -1760,260 +2017,240 @@ function calculateFrame(){
     const R2=(qb_-qa)*len/2, x2=a+len*2/3;
     Vtot+=R1+R2;
     Mvert_A+=R1*x1+R2*x2;
-    Mvert_B+=R1*(b-x1)+R2*(b-x2);
   });
 
-  // Horizontal loads on columns
-  let Htot=0, Mhoriz_A_col=0;
-  hLoads.forEach(hl=>{
-    const F=hl.values.H||hl.values.F||0;
+  // Sum horizontal loads (with correct sign convention)
+  let Htot=0;
+  const hLoadsNorm = hLoads.map(hl=>{
+    const Fraw=hl.values.H||hl.values.F||0;
     const z=hl.values.z||0;
     const mem=hl.values.member||'left';
+    const F = mem==='left' ? -Fraw : Fraw;  // leftward UI arrow → negative global x
     Htot+=F;
-    if(mem==='left') Mhoriz_A_col+=F*z;
+    return {...hl, _F:F, _z:z, _mem:mem};
   });
 
-  // ── Vertical reactions (simple beam, independent of H) ──
-  let VA=0, VB=0;
-  VB = Mvert_A / b;
-  VA = Vtot - VB;
+  // Vertical reactions: ΣM_A = 0
+  // Horizontal F at height z contributes moment about A:
+  // M = r×F = (0,z)×(Fx,0) = -z·Fx (CW negative in CCW+ convention)
+  // → +z·|Fx| CCW for leftward F (F negative)
+  // General: contribution to CCW moment = -F·z (since F already signed)
+  let Mhoriz_A = 0;
+  hLoadsNorm.forEach(hl=>{
+    if(hl._mem==='left')  Mhoriz_A += -hl._F * hl._z;  // CCW contribution
+    if(hl._mem==='right') Mhoriz_A += -hl._F * hl._z;  // same formula
+  });
+  const VB = (Mvert_A - Mhoriz_A) / b;
+  const VA = Vtot - VB;
 
-  // ── Horizontal reactions + fixed-end moments ──────────────
-  // Computed using exact force method (Castigliano ∂U/∂H=0)
+  return {Vtot, VA, VB, Htot, vLoads, hLoads:hLoadsNorm};
+}
+
+// ── 2. STATICALLY DETERMINATE (n=0) ───────────────────────────────
+// Returns: { HA, HB, MA_r, MB_r }
+// Uses only equilibrium equations (ΣF=0, ΣM=0)
+function frameSolveDet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
+  const {pinA,pinB,fixA,fixB,rolA,rolB,rafHinge,leftHinge,rightHinge} = config;
   let HA=0, HB=0, MA_r=0, MB_r=0;
 
-  const fixA=supportA==='fixed', fixB=supportB==='fixed';
-  const pinA=supportA==='pin',   pinB=supportB==='pin';
-  const rolA=supportA==='roller', rolB=supportB==='roller';
-
-  // Hinge info
-  const rafHinge  = frameHinges.find(hg=>hg.member==='rafter');
-  const leftHinge = frameHinges.find(hg=>hg.member==='left');
-  const rightHinge= frameHinges.find(hg=>hg.member==='right');
-
-  // Helper: Mq_xh = moment of vert loads left of xh about xh (from left)
+  // Helper: moment of vertical loads left of xh about xh
   function Mq_at(xh){
     let m=0;
     vLoads.forEach(dl=>{
       if((dl.values.member||'rafter')!=='rafter') return;
       const a=dl.values.a, bE=Math.min(dl.values.b,xh), len=bE-a; if(len<=0)return;
       const qa=dl.values.qa, qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(len/(dl.values.b-dl.values.a||1));
-      m+= qa*len*(xh-(a+len/2)) + (qb_-qa)*len/2*(xh-(a+len*2/3));
+      m += qa*len*(xh-(a+len/2)) + (qb_-qa)*len/2*(xh-(a+len*2/3));
     }); return m;
   }
 
-  // Horizontal loads contribution to hinge condition
-  function Mhoriz_at(xh){
+  // Helper: moment contribution of horizontal loads at hinge (left col only)
+  // ΣM_hinge_left = 0: HA·hA - VA·xh + Mq_at(xh) + Mhoriz_hinge = 0
+  // → HA = (VA·xh - Mq_at(xh) - Mhoriz_hinge) / hA
+  function Mhoriz_hinge(){
     let m=0;
     hLoads.forEach(hl=>{
-      const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
-      if((hl.values.member||'left')==='left') m+=F*(hA-z);
+      if(hl._mem!=='left') return;
+      // Moment of F about hinge point at top of left col (y=hA):
+      // M = F·(y_F - y_hinge) = F·(z - hA)
+      m += hl._F * (hl._z - hA);
     }); return m;
   }
 
-  if(n===0){
-    // ── STATISCH BESTIMMT ─────────────────────────────────
-    if(rolB){
-      // Pin A + Roller B OR Fixed A + Roller B
-      HB=0; HA=Htot;
-      if(rafHinge){
-        // Hinge at xh: ΣM_hinge_left = 0
-        // MA_r + HA*hA + VA*xh - Mq(xh) + Mhoriz = 0
-        // For pin A: MA_r=0 → HA = (VA*xh - Mq_xh + Mhoriz) / hA
-        const xh=parseFloat(rafHinge.pos)||b/2;
-        const Mq_xh=Mq_at(xh);
-        const Mh_xh=Mhoriz_at(xh);
-        if(pinA){ HA=(VA*xh-Mq_xh+Mh_xh)/hA; MA_r=0; }
-        else if(fixA){
-          // Fixed A: MA_r determined from ΣM_A_full frame + hinge condition
-          // Two equations: ΣM_A=0 for full frame, hinge condition
-          // From hinge: MA_r = -(HA*hA + VA*xh - Mq_xh + Mh_xh)
-          // But ΣM_A = MA_r - VB*b + Mvert_A + HA*hA ... simplified
-          HA=(VA*xh-Mq_xh+Mh_xh)/hA;
-          MA_r=0; // hinge makes fixed base like pin for moment
-        }
-        HB=Htot-HA;
-      } else {
-        // No hinge
-        if(pinA){ MA_r=0; }
-        else if(fixA){ MA_r=-(HA*hA); } // will be 0 for Htot=0
-      }
-    } else if(pinA && pinB && rafHinge){
-      // Zweigelenkrahmen + Gelenk = 3-Gelenk-Rahmen (n=0)
+  if(rolB){
+    // ── Roller at B: HB=0, HA from equilibrium ─────────────────
+    HB=0; HA=Htot;  // ΣFx=0: HA = Htot (all horizontal taken by A)
+    if(rafHinge){
       const xh=parseFloat(rafHinge.pos)||b/2;
-      const Mq_xh=Mq_at(xh);
-      const Mh_xh=Mhoriz_at(xh);
-      // ΣM_hinge_left = HA*hA + VA*xh - Mq_xh + Mh_xh = 0
-      HA=(VA*xh-Mq_xh+Mh_xh)/hA;
-      HB=Htot-HA; MA_r=0; MB_r=0;
+      // ΣM_hinge_left = 0: VA·xh - HA·hA - Mq_at(xh) + Mhoriz_hinge() = 0
+      HA = (VA*xh - Mq_at(xh) - Mhoriz_hinge()) / hA;
+      MA_r = fixA ? -(Htot*hA) : 0;  // fixed A with roller B: MA from ΣM_A
     } else {
-      // Generic determinate
-      HA=Htot; HB=0; MA_r=0; MB_r=0;
+      MA_r = fixA ? -(HA*hA) : 0;
     }
+    MB_r = 0;
+
+  } else if(pinA && pinB && rafHinge){
+    // ── 3-Hinge Frame (pinA + pinB + rafter hinge) ──────────────
+    // ΣM_hinge_left = 0: VA·xh - HA·hA - Mq_at(xh) + Mhoriz_hinge() = 0
+    const xh=parseFloat(rafHinge.pos)||b/2;
+    HA = (VA*xh - Mq_at(xh) - Mhoriz_hinge()) / hA;
+    HB = -Htot - HA;  // ΣFx=0: HA + HB + Htot = 0
+    MA_r=0; MB_r=0;
 
   } else {
-    // ── STATISCH UNBESTIMMT ────────────────────────────────
-    // Exact force method (Castigliano ∂U/∂X=0) with correct EI weighting
-    // k = (EI_R / EI_S) · (h / l)   [Holschemacher Abkürzung]
+    // ── Generic determinate (e.g. pinA + rolB, no hinge) ─────────
+    HA=Htot; HB=0; MA_r=0; MB_r=0;
+  }
 
-    // Read EI values from inputs (same fields used for deflection diagram)
-    const EI_R = (parseFloat(document.getElementById('frame-E-raf')?.value)||210)
-               * (parseFloat(document.getElementById('frame-Iy-raf')?.value)||10);
-    const EI_S = (parseFloat(document.getElementById('frame-E-col')?.value)||210)
-               * (parseFloat(document.getElementById('frame-Iy-col')?.value)||10);
-    // kappa: stiffness ratio (Holschemacher k = IR/IS · h/l)
-    const kappa = (EI_R / EI_S) * (hA / b);
+  return {HA, HB, MA_r, MB_r};
+}
 
-    const NP_fm=50;
-    const dx_fm=b/NP_fm;
-    const dh_fm=hA/NP_fm;
+// ── 3. STATICALLY INDETERMINATE (n≥1) ─────────────────────────────
+// Uses Force Method (Castigliano ∂U/∂Xᵢ = 0)
+// Returns: { HA, HB, MA_r, MB_r }
+function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
+  const {pinA,pinB,fixA,fixB,rolA,rolB,rafHinge} = config;
 
-    // Helper: rafter load-moment integral ∫₀ᵇ f(x)·(-VA·x + Mq(x)) dx
-    // weight fn w_x applied to each sample (trapezoidal rule)
-    function rafIntegral(weightFn){
-      let s=0;
-      for(let i=0;i<=NP_fm;i++){
-        const x=i/NP_fm*b;
-        const w=(i===0||i===NP_fm)?0.5:1;
-        let Mq_x=0;
+  // EI values (from UI inputs)
+  const EI_R = (parseFloat(document.getElementById('frame-E-raf')?.value)||210)
+             * (parseFloat(document.getElementById('frame-Iy-raf')?.value)||10);
+  const EI_S = (parseFloat(document.getElementById('frame-E-col')?.value)||210)
+             * (parseFloat(document.getElementById('frame-Iy-col')?.value)||10);
+
+  const NP=50;
+  const dx=b/NP, dh=hA/NP;
+
+  // Primary structure moment on rafter: M_P(x) = -VA·x + Mq(x)
+  // (simply-supported rafter, no horizontal thrust)
+  function Mq(x){
+    let m=0;
+    vLoads.forEach(dl=>{
+      if((dl.values.member||'rafter')!=='rafter') return;
+      const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
+      const qa=dl.values.qa, qb_=dl.values.qb;
+      if(x>a){const t=Math.min(x-a,len),q_=len>0?qa+(qb_-qa)*t/len:qa;
+        m+=qa*t*(x-(a+t/2))+(q_-qa)*t/2*(x-(a+t*2/3));}
+    }); return m;
+  }
+
+  // Numerical integral: ∫₀ᵇ weightFn(x)·M_P(x) dx
+  function rafInt(weightFn){
+    let s=0;
+    for(let i=0;i<=NP;i++){
+      const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
+      s+=w*weightFn(x)*(-VA*x+Mq(x))*dx;
+    }
+    return s;
+  }
+
+  // Horizontal load contribution to compatibility integrals (left column)
+  // M_P_col(y) = F·(y-z) for y≥z (moment from horizontal load in primary structure)
+  function hloadColInt(weightFn_y){
+    let s=0;
+    hLoads.forEach(hl=>{
+      if(hl._mem!=='left') return;
+      const F=hl._F, z=hl._z;
+      for(let i=0;i<=NP;i++){
+        const y=i/NP*hA; if(y<=z) continue;
+        const w=(i===0||i===NP)?0.5:1;
+        s+=w*weightFn_y(y)*F*(y-z)/EI_S*dh;
+      }
+    });
+    return s;
+  }
+
+  let HA=0, HB=0, MA_r=0, MB_r=0;
+
+  if(pinA && pinB){
+    // ── ZWEIGELENKRAHMEN (n=1) — Holschemacher 3.1 ───────────────
+    // Redundant X₁ = H (horizontal thrust)
+    // ∂U/∂H = 0:
+    //   δ₁₁·H = -Δ₁P
+    // where:
+    //   δ₁₁ = ∫cols y²/EI_S dy ×2 + ∫raf hA²/EI_R dx
+    //        = 2hA³/(3EI_S) + hA²b/EI_R
+    //   Δ₁P  = ∫raf hA·M_P/EI_R dx + ∫col y·M_P_col/EI_S dy
+    const delta11 = 2*hA*hA*hA/(3*EI_S) + hA*hA*b/EI_R;
+    const Delta1P = hA/EI_R * rafInt(()=>1) + hloadColInt(y=>y);
+    HA = -Delta1P / delta11;
+    HB = -Htot - HA;
+    MA_r=0; MB_r=0;
+
+  } else if(fixA && fixB){
+    // ── EINSPANNRAHMEN (n=3) — Holschemacher 3.2 ─────────────────
+    // Redundants X₁=H, X₂=M₀ (symmetric end moments)
+    // ∂U/∂H=0 and ∂U/∂M₀=0 → 2×2 linear system:
+    //   [δ₁₁ δ₁₂][H ] = [-Δ₁P]
+    //   [δ₂₁ δ₂₂][M₀]   [-Δ₂P]
+    const d11 = 2*hA*hA*hA/(3*EI_S) + hA*hA*b/EI_R;
+    const d22 = 2*hA/EI_S           + b/EI_R;
+    const d12 = hA*hA/EI_S          + hA*b/EI_R;  // = d21
+    const D1P = hA/EI_R * rafInt(()=>1) + hloadColInt(y=>y);
+    const D2P =  1/EI_R * rafInt(()=>1) + hloadColInt(()=>1);
+    const det = d11*d22 - d12*d12;
+    HA   = (-D1P*d22 + D2P*d12) / det;
+    MA_r = (-D2P*d11 + D1P*d12) / det;
+    HB   = -Htot - HA;
+    MB_r = MA_r;  // symmetric for equal column heights
+
+  } else if(fixA && rolB){
+    // ── FIXED A + ROLLER B (n=1) ──────────────────────────────────
+    // HB=0 (roller), HA=Htot from ΣFx
+    // Redundant X₁=MA_r
+    // ∂U/∂MA_r = 0:
+    //   MA_r·(hA/EI_S + b/EI_R) + HA·(hA²/(2EI_S) + hA·b/EI_R) + Δ_raf = 0
+    HA=Htot; HB=0;
+    const c1 = hA/EI_S + b/EI_R;
+    const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
+    const c3 = rafInt(()=>1) / EI_R;
+    MA_r = -(c2 + c3) / c1;
+    MB_r = 0;
+
+  } else if(fixA && pinB){
+    // ── FIXED A + PIN B (n=1) ─────────────────────────────────────
+    // Distribute horizontal loads by stiffness ratio
+    const kA=3*EI_S/(hA*hA*hA), kB=3*EI_S/(hB*hB*hB);
+    HA=Htot*kA/(kA+kB); HB=-Htot-HA;
+    const c1 = hA/EI_S + b/EI_R;
+    const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
+    const c3 = rafInt(()=>1) / EI_R;
+    MA_r = -(c2 + c3) / c1;
+    MB_r = 0;
+
+    if(rafHinge){
+      // Hinge makes it determinate — use equilibrium
+      const Mq_at = xh => {
+        let m=0;
         vLoads.forEach(dl=>{
           if((dl.values.member||'rafter')!=='rafter') return;
-          const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0)return;
-          const qa=dl.values.qa, qb_=dl.values.qb;
-          if(x>a){const t=Math.min(x-a,len),q_=len>0?qa+(qb_-qa)*t/len:qa;
-            Mq_x+=qa*t*(x-(a+t/2))+(q_-qa)*t/2*(x-(a+t*2/3));}
-        });
-        s+=w*weightFn(x)*(-VA*x+Mq_x)*dx_fm;
-      }
-      return s;
-    }
-
-    if(pinA && pinB){
-      // ── ZWEIGELENKRAHMEN (n=1) — Holschemacher 3.1 ───────
-      // ∂U/∂H = 0:
-      //   ∫_cols H·y²/EI_S dy  +  ∫_raf (H·hA - VA·x + Mq)·hA/EI_R dx = 0
-      //
-      // H · [2·hA³/(3·EI_S) + hA²·b/EI_R]
-      //   = hA/EI_R · ∫₀ᵇ (VA·x - Mq(x)) dx
-      //     + hload contributions from columns
-      //
-      // Dividing through by hA²/EI_R:
-      //   H · [2hA/(3·EI_S/EI_R) + b] · hA/EI_R
-      //   = hA/EI_R · load_integral
-      //
-      // With k = (EI_R/EI_S)·(hA/b):
-      //   denom = hA²·(2hA/(3·EI_S) + b/EI_R)  [absolute, no EI cancel needed]
-
-      const load_integral = rafIntegral(()=>1); // ∫(-VA·x+Mq)dx
-
-      // Horizontal load column contribution: ∫_z^hA F·(y-z)·y/EI_S dy
-      let hload_int=0;
-      hLoads.forEach(hl=>{
-        if((hl.values.member||'left')!=='left') return;
-        const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
-        const h1=hA;
-        // ∫_z^h1 F(y-z)·y dy = F·[h1³/3 - z·h1²/2 - z³/3 + z³/2]
-        hload_int += F/EI_S * (h1*h1*h1/3 - z*h1*h1/2 - z*z*z/3 + z*z*z/2);
-      });
-
-      // denom = ∫_cols y²/EI_S dy (×2) + ∫_raf hA²/EI_R dx
-      const denom = 2*hA*hA*hA/(3*EI_S) + hA*hA*b/EI_R;
-      HA = (-hA/EI_R * load_integral - hload_int) / denom;
-      HB = Htot - HA; MA_r = 0; MB_r = 0;
-
-    } else if(fixA && fixB){
-      // ── EINSPANNRAHMEN (n=3) — Holschemacher 3.2 ─────────
-      // Two redundants: H (horizontal thrust) and M₀ (equal end moments, symmetric)
-      // ∂U/∂H = 0  and  ∂U/∂M₀ = 0
-      //
-      // Primary structure: simply supported rafter + pinned columns (H=0, M₀=0)
-      // M_P_raf(x) = -VA·x + Mq(x)
-      //
-      // δ₁₁ = ∫y²/EI_S dy (×2 cols) + ∫hA²/EI_R dx = 2hA³/(3EI_S) + hA²b/EI_R
-      // δ₂₂ = ∫1/EI_S dy (×2 cols)  + ∫1/EI_R dx   = 2hA/EI_S + b/EI_R
-      // δ₁₂ = ∫hA/EI_S dy (×2 cols) + ∫hA/EI_R dx  = hA²/EI_S + hA·b/EI_R (= δ₂₁·hA?)
-      //      Actually δ₁₂ = ∫(∂M/∂H)(∂M/∂M₀)/EI ds
-      //      col: ∂M/∂H=y, ∂M/∂M₀=1 → ∫y dy/EI_S ×2 = hA²/EI_S
-      //      raf: ∂M/∂H=hA, ∂M/∂M₀=1 → hA·b/EI_R
-      //      δ₁₂ = hA²/EI_S + hA·b/EI_R
-      //
-      // Δ₁P = ∫hA·M_P_raf/EI_R dx  (cols have M_P=0)
-      // Δ₂P = ∫M_P_raf/EI_R dx
-      //
-      // System: [δ₁₁ δ₁₂][H ] = [-Δ₁P]
-      //         [δ₁₂ δ₂₂][M₀]   [-Δ₂P]
-
-      const Δ1P = rafIntegral(()=>hA) / EI_R;  // hA·∫M_P dx / EI_R
-      const Δ2P = rafIntegral(()=>1)  / EI_R;  // ∫M_P dx / EI_R
-
-      // Horizontal load contributions from columns:
-      let hΔ1P=0, hΔ2P=0;
-      hLoads.forEach(hl=>{
-        if((hl.values.member||'left')!=='left') return;
-        const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
-        for(let i=0;i<=NP_fm;i++){
-          const y=i/NP_fm*hA; if(y<=z) continue;
-          const w=(i===0||i===NP_fm)?0.5:1;
-          const M_P=F*(y-z);
-          hΔ1P += w*y*M_P/EI_S*dh_fm*2;
-          hΔ2P += w*1*M_P/EI_S*dh_fm*2;
-        }
-      });
-
-      const d11 = 2*hA*hA*hA/(3*EI_S) + hA*hA*b/EI_R;
-      const d22 = 2*hA/EI_S           + b/EI_R;
-      const d12 = hA*hA/EI_S          + hA*b/EI_R;
-
-      const rhs1 = -(Δ1P + hΔ1P);
-      const rhs2 = -(Δ2P + hΔ2P);
-
-      // Solve 2×2: [d11 d12][H ] = [rhs1]
-      //            [d12 d22][M₀]   [rhs2]
-      const det = d11*d22 - d12*d12;
-      HA   = (rhs1*d22 - rhs2*d12) / det;
-      MA_r = (d11*rhs2 - d12*rhs1) / det;
-      HB   = Htot - HA;
-      MB_r = MA_r; // symmetric frame: M₁ᴱ = M₂ᴱ
-
-    } else if(fixA && rolB){
-      // ── FIXED A + ROLLER B (n=1) ──────────────────────────
-      // H is determined by global equilibrium (HB=0, HA=Htot)
-      // Redundant: MA_r
-      // ∂U/∂MA_r = 0:
-      //   ∫col (MA_r + HA·y)·1/EI_S dy + ∫raf (MA_r + HA·hA - VA·x + Mq)·1/EI_R dx = 0
-      //   MA_r·(hA/EI_S + b/EI_R) + HA·(hA²/(2EI_S) + hA·b/EI_R) + Δ2P_raf = 0
-      HA=Htot; HB=0;
-      const Δ2P_raf = rafIntegral(()=>1) / EI_R;
-      const c1 = hA/EI_S + b/EI_R;
-      const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
-      MA_r = -(c2 + Δ2P_raf) / c1;
-      MB_r = 0;
-
-    } else if(fixA && pinB){
-      // ── FIXED A + FESTLAGER B (n=1) ───────────────────────
-      // Same as fixA+rolB for vertical loads (HB takes horizontal from right)
-      // Stiffness-based H distribution for horizontal loads:
-      const kA=3*EI_S/(hA*hA*hA), kB=3*EI_S/(hB*hB*hB);
-      HA=Htot*kA/(kA+kB); HB=Htot-HA;
-      const Δ2P_raf = rafIntegral(()=>1) / EI_R;
-      const c1 = hA/EI_S + b/EI_R;
-      const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
-      MA_r = -(c2 + Δ2P_raf) / c1;
-      MB_r = 0;
-
-      if(rafHinge){
-        const xh=parseFloat(rafHinge.pos)||b/2;
-        const Mq_xh=Mq_at(xh);
-        const Mh_xh=Mhoriz_at(xh);
-        HA=(VA*xh-Mq_xh+Mh_xh)/hA;
-        HB=Htot-HA; MA_r=0;
-      }
+          const a=dl.values.a, bE=Math.min(dl.values.b,xh), len=bE-a; if(len<=0)return;
+          const qa=dl.values.qa, qb_=dl.values.qa+(dl.values.qb-dl.values.qa)*(len/(dl.values.b-dl.values.a||1));
+          m += qa*len*(xh-(a+len/2)) + (qb_-qa)*len/2*(xh-(a+len*2/3));
+        }); return m;
+      };
+      const Mh_hinge = hLoads.reduce((s,hl)=>hl._mem==='left'?s+hl._F*(hl._z-hA):s, 0);
+      const xh=parseFloat(rafHinge.pos)||b/2;
+      HA=(VA*xh - Mq_at(xh) - Mh_hinge)/hA;
+      HB=-Htot-HA; MA_r=0;
     }
   }
 
-  // ── Internal forces: M/Q/N per member ──────────────────────
+  return {HA, HB, MA_r, MB_r};
+}
+
+// ── 4. INTERNAL FORCES (M/Q/N per member) ─────────────────────────
+// Returns: { Mleft, Qleft, Nleft, Mraf, Qraf, Nraf, Mright, Qright, Nright }
+// Sign convention for display:
+//   Mleft:  negated  → positive M draws outward (left)  with flip:false
+//   Mright: negated  → positive M draws outward (right) with flip:true
+//   Mraf:   as-is    → positive M draws downward (sagging) with flip:false
+function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
+                              vLoads, hLoads, config){
+  const {fixA, fixB, rafHinge} = config;
   const NP=100;
 
+  // Rafter load helpers
   function Mq(x){
     let m=0;
     vLoads.forEach(dl=>{
@@ -2034,69 +2271,38 @@ function calculateFrame(){
         q+=qa*t+(q_-qa)*t/2;}
     }); return q;
   }
-  function Mq_right(x){
-    let m=0;
-    vLoads.forEach(dl=>{
-      if((dl.values.member||'rafter')!=='rafter') return;
-      const a=dl.values.a, bE=Math.min(dl.values.b,b);
-      const xS=Math.max(a,x), xE=bE, len=xE-xS; if(len<=0)return;
-      const t0=(xS-a)/(bE-a||1), qa_s=dl.values.qa+(dl.values.qb-dl.values.qa)*t0;
-      const t1=(xE-a)/(bE-a||1), qb_s=dl.values.qa+(dl.values.qb-dl.values.qa)*t1;
-      const R1=qa_s*len, xc1=xS+len/2;
-      const R2=(qb_s-qa_s)*len/2, xc2=xS+len*2/3;
-      m+=R1*(xc1-x)+R2*(xc2-x);
-    }); return m;
-  }
 
-  // LEFT COLUMN: x=0 at base (A), x=hA at top
-  const Mleft=[],Qleft=[],Nleft=[];
+  // Left column: base (y=0) → top (y=hA)
+  const Mleft=[], Qleft=[], Nleft=[];
   for(let k=0;k<=NP;k++){
     const y=k/NP*hA;
     let M=(fixA?MA_r:0)+HA*y;
     let Q=HA;
     hLoads.forEach(hl=>{
-      if((hl.values.member||'left')!=='left') return;
-      const F=hl.values.H||hl.values.F||0, z=hl.values.z||0;
-      if(y>=z){M+=F*(y-z); Q-=F;}
+      if(hl._mem!=='left') return;
+      if(y>=hl._z){ M+=hl._F*(y-hl._z); Q-=hl._F; }
     });
-    if(!fixA) M=0+HA*y; // pin: no MA_r
-    Mleft.push(+M.toFixed(3));
-    Qleft.push(+Q.toFixed(3));
+    Mleft.push(+(-M).toFixed(3));   // negated for display
+    Qleft.push(+(Q).toFixed(3));
     Nleft.push(+(-VA).toFixed(3));
   }
   if(!fixA) Mleft[0]=0;
   frameHinges.filter(hg=>hg.member==='left').forEach(hg=>{
-    const ki=Math.round((parseFloat(hg.pos)||hA/2)/hA*NP);
-    Mleft[ki]=0;
+    Mleft[Math.round((parseFloat(hg.pos)||hA/2)/hA*NP)]=0;
   });
 
-  // RAFTER: x=0 at left, x=b at right
-  // Equilibrium freebody LEFT of cut (sagging = tension-bottom = positive):
-  //   M_raf(x) = VA*x - (MA_r + HA*hA) - Mq(x)
-  //            = VA*x - M_corner_left - Mq(x)
-  // Corner moments (same sign as column top, consistent with column formula):
-  const Mraf=[],Qraf=[],Nraf=[];
-  const M_corner_left  = (fixA ? MA_r : 0) + HA*hA;
-  const M_corner_right = (fixB ? MB_r : 0) + HB*hB;
+  // Rafter corner moments (include all contributions)
+  let M_cL = (fixA?MA_r:0) + HA*hA;
+  hLoads.forEach(hl=>{ if(hl._mem==='left') M_cL += hl._F*(hA-hl._z); });
+  const M_cR = (fixB?MB_r:0) + HB*hB;
 
+  // Rafter: x=0 (left) → x=b (right)
+  // M(x) = VA·x - M_cL - Mq(x)   [from-left freebody]
+  const Mraf=[], Qraf=[], Nraf=[];
   for(let k=0;k<=NP;k++){
     const x=k/NP*b;
-    let M,Q;
-    if(rafHinge){
-      const xh=parseFloat(rafHinge.pos)||b/2;
-      const ki=Math.round(xh/b*NP);
-      if(k<=ki){
-        M = VA*x - M_corner_left - Mq(x);
-      } else {
-        // From right freebody: M(x) = VB*(b-x) - M_corner_right - Mq_right(x)
-        M = VB*(b-x) - M_corner_right - Mq_right(x);
-      }
-    } else {
-      M = VA*x - M_corner_left - Mq(x);
-    }
-    Q=VA-Qq(x);
-    Mraf.push(+M.toFixed(3));
-    Qraf.push(+Q.toFixed(3));
+    Mraf.push(+(VA*x - M_cL - Mq(x)).toFixed(3));
+    Qraf.push(+(VA-Qq(x)).toFixed(3));
     Nraf.push(+(-HA).toFixed(3));
   }
   if(rafHinge){
@@ -2104,45 +2310,83 @@ function calculateFrame(){
     Mraf[ki]=0;
   }
 
-  // RIGHT COLUMN: x=0 at top (rafter level), x=hB at base (B)
-  // Interpolate between M_corner_right (top) and MB_r or 0 (base)
-  const Mright=[],Qright=[],Nright=[];
+  // Right column: top (x=0) → base (x=hB)
+  // M interpolates from M_cR (top) to MB_r or 0 (base)
+  const Mright=[], Qright=[], Nright=[];
   for(let k=0;k<=NP;k++){
     const x=k/NP*hB;
-    const M = M_corner_right + ((fixB ? MB_r : 0) - M_corner_right)*x/hB;
-    Mright.push(+M.toFixed(3));
+    const M = M_cR + ((fixB?MB_r:0) - M_cR)*x/hB;
+    Mright.push(+(-M).toFixed(3));  // negated for display
     Qright.push(+(HB).toFixed(3));
     Nright.push(+(-VB).toFixed(3));
   }
   if(!fixB) Mright[NP]=0;
   if(!fixA) Mleft[0]=0;
   frameHinges.filter(hg=>hg.member==='right').forEach(hg=>{
-    const ki=Math.round((parseFloat(hg.pos)||hB/2)/hB*NP);
-    Mright[ki]=0;
+    Mright[Math.round((parseFloat(hg.pos)||hB/2)/hB*NP)]=0;
   });
 
-  // ── Results ────────────────────────────────────────────────
+  return {Mleft, Qleft, Nleft, Mraf, Qraf, Nraf, Mright, Qright, Nright, NP};
+}
+
+// ── 5. ORCHESTRATOR ────────────────────────────────────────────────
+function calculateFrame(){
+  const b  = parseFloat(document.getElementById('fB').value)||5;
+  const h  = parseFloat(document.getElementById('fH').value)||4;
+  const hA = parseFloat(document.getElementById('fHA')?.value)||h;
+  const hB = parseFloat(document.getElementById('fHB')?.value)||h;
+  if(!b||b<=0||!h||h<=0){alert('Please enter valid dimensions.');return;}
+
+  const n = frameIndeterminacy();
+  if(n<0){alert('This system is a mechanism.');return;}
+  document.getElementById('f-res-indet').textContent = n===0?'0 (det.)':n;
+
+  // Support types
+  const fixA=supportA==='fixed', fixB=supportB==='fixed';
+  const pinA=supportA==='pin',   pinB=supportB==='pin';
+  const rolA=supportA==='roller', rolB=supportB==='roller';
+  const rafHinge   = frameHinges.find(hg=>hg.member==='rafter');
+  const leftHinge  = frameHinges.find(hg=>hg.member==='left');
+  const rightHinge = frameHinges.find(hg=>hg.member==='right');
+  const config = {fixA,fixB,pinA,pinB,rolA,rolB,rafHinge,leftHinge,rightHinge};
+
+  // Step 1: Loads & vertical reactions
+  const {Vtot, VA, VB, Htot, vLoads, hLoads} =
+    frameLoadSummary(b, hA, hB);
+
+  // Step 2: Horizontal reactions & fixed-end moments
+  let reactions;
+  if(n===0){
+    reactions = frameSolveDet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config);
+  } else {
+    reactions = frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config);
+  }
+  const {HA, HB, MA_r, MB_r} = reactions;
+
+  // Step 3: Internal forces per member
+  const forces = frameInternalForces(
+    b, hA, hB, VA, VB, HA, HB, MA_r, MB_r, vLoads, hLoads, config);
+  const {Mleft,Qleft,Nleft,Mraf,Qraf,Nraf,Mright,Qright,Nright,NP} = forces;
+
+  // Step 4: Results & render
   const allM=[...Mleft,...Mraf,...Mright];
   const allQ=[...Qleft,...Qraf,...Qright];
   const allN=[...Nleft,...Nraf,...Nright];
-  const Mmax=Math.max(...allM.map(Math.abs));
-  const Qmax=Math.max(...allQ.map(Math.abs));
-  const Nmax=Math.max(...allN.map(Math.abs));
 
-  document.getElementById('f-res-Mmax').textContent=Mmax.toFixed(2);
-  document.getElementById('f-res-Qmax').textContent=Qmax.toFixed(2);
-  document.getElementById('f-res-Nmax').textContent=Nmax.toFixed(2);
+  document.getElementById('f-res-Mmax').textContent=Math.max(...allM.map(Math.abs)).toFixed(2);
+  document.getElementById('f-res-Qmax').textContent=Math.max(...allQ.map(Math.abs)).toFixed(2);
+  document.getElementById('f-res-Nmax').textContent=Math.max(...allN.map(Math.abs)).toFixed(2);
 
-  const H_head=supportHead!=='none'?(Htot-HA-HB):0;
+  const H_head = supportHead!=='none' ? (-Htot-HA-HB) : 0;
   document.getElementById('frame-reactions-body').innerHTML=
     `<tr><td>A</td><td>${HA.toFixed(2)}</td><td>${VA.toFixed(2)}</td><td>${fixA?MA_r.toFixed(2):'—'}</td></tr>`+
     `<tr><td>B</td><td>${HB.toFixed(2)}</td><td>${VB.toFixed(2)}</td><td>${fixB?MB_r.toFixed(2):'—'}</td></tr>`+
     (supportHead!=='none'?`<tr><td>H (top)</td><td>${H_head.toFixed(2)}</td><td>—</td><td>—</td></tr>`:'');
 
   document.getElementById('frame-results').classList.remove('hidden');
-  renderFrameDiagram(b,h,allM,allQ,allN,NP,supportA,supportB);
+  const rafHingeIdx = rafHinge ? Math.round((parseFloat(rafHinge.pos)||b/2)/b*NP) : null;
+  renderFrameDiagram(b,h,allM,allQ,allN,NP,supportA,supportB,rafHingeIdx);
 }
-
 
 function setDiagMode(sys, mode){
   diagMode[sys] = mode;
@@ -2241,7 +2485,16 @@ function renderDiagram(sys, data){
   let maxVal = 0;
   members.forEach(m => { if(m[mode]) m[mode].forEach(v => { if(Math.abs(v) > maxVal) maxVal = Math.abs(v); }); });
   if(maxVal < 0.001) maxVal = 1;
-  const SCALE = 50 / maxVal;
+  let SCALE;
+  if(sys==='frame'){
+    // Auto-pick clean scale: 1 large square (50px) = round kNm value
+    // Choose smallest clean unit where max extent <= 80px (frame diagram is compact)
+    const cleanUnits=[2,5,10,15,20,25,30,50,100];
+    const chosen=cleanUnits.find(u=>(50/u)*maxVal<=80) || cleanUnits[cleanUnits.length-1];
+    SCALE=50/chosen;
+  } else {
+    SCALE=50/maxVal;
+  }
 
   let h = '';
 
@@ -2260,7 +2513,8 @@ function renderDiagram(sys, data){
   h += `<rect width="${W}" height="${H}" fill="url(#grid5-${sys})"/>`;
 
   // ── Draw each member ──
-  members.forEach(mem => {
+  members.forEach((mem,mi) => {
+    const [cox,coy] = [0,0];
     const dx = mem.x1-mem.x0, dy = mem.y1-mem.y0;
     const len = Math.sqrt(dx*dx+dy*dy);
     if(len < 0.001) return;
@@ -2271,10 +2525,13 @@ function renderDiagram(sys, data){
     const n = vals.length-1;
     if(n < 1) return;
 
-    // Detect jump positions (abs change > 20% of maxVal between adjacent points)
+    // Detect jump positions (abs change > 15% of maxVal between adjacent points)
+    // Skip hinge positions (smooth zero crossing, not a real jump)
     const jumpThreshold = maxVal * 0.15;
+    const hingeIdx = mem.hingeIdx ?? null;
     const jumps = new Set();
     for(let i=1;i<=n;i++){
+      if(hingeIdx!==null && Math.abs(i-hingeIdx)<=1) continue; // skip hinge
       if(Math.abs(vals[i]-vals[i-1]) > jumpThreshold) jumps.add(i);
     }
 
@@ -2292,7 +2549,7 @@ function renderDiagram(sys, data){
       let pts_fwd=[], pts_back=[];
       for(let i=s;i<=e;i++){
         const t=i/n;
-        const bx=mem.x0+t*dx, by=mem.y0+t*dy;
+        const bx=mem.x0+t*dx+cox, by=mem.y0+t*dy+coy;
         const useFlip = mode==='Q' && mem.qFlip ? true : (mem.flip!==false);
         const offset=(useFlip ? -vals[i] : vals[i])*SCALE;
         pts_fwd.push([bx+offset*nx, by+offset*ny]);
@@ -2302,6 +2559,8 @@ function renderDiagram(sys, data){
       h+=`<polygon points="${poly.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="${fill}" stroke="none"/>`;
       const lineStr=pts_fwd.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
       h+=`<path d="${lineStr}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+
+
     });
 
     // Jump vertical lines
@@ -2324,7 +2583,7 @@ function renderDiagram(sys, data){
     // Max value label
     const maxIdx=vals.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
     const t=maxIdx/n;
-    const bx=mem.x0+t*dx, by=mem.y0+t*dy;
+    const bx=mem.x0+t*dx+cox, by=mem.y0+t*dy+coy;
     const useFlipLbl = mode==='Q' && mem.qFlip ? true : (mem.flip!==false);
     const v=vals[maxIdx], offset=(useFlipLbl ? -v : v)*SCALE;
     const lx=bx+offset*nx, ly=by+offset*ny;
@@ -2336,6 +2595,12 @@ function renderDiagram(sys, data){
 
   // Overlay (supports etc)
   if(data.overlay) h+=data.overlay;
+
+  // Corner value labels for frame
+  if(data.cornerLabelsFn && (mode==='M'||mode==='Q'||mode==='N')){
+    const diagColors2 = {M:'#2d6a4f',Q:'#1d4ed8',N:'#92400e'};
+    h+=data.cornerLabelsFn(mode, diagColors2[mode]||'#666');
+  }
 
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.setAttribute('height', H);
@@ -2376,17 +2641,33 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
       const Iy_cm4 = (parseFloat(document.getElementById(Iy_id)?.value)||10)*1e3;
       const EI = E * Iy_cm4 * 1e-8;
       const n = mem.M.length-1, dx = L/n;
-      const phi = mem.M.map(m => m/EI);
+      const Mforphi = (sys==='frame' && mem.Morig) ? mem.Morig : mem.M;
+      const phi = Mforphi.map(m => m/EI);
       if(isCol){
-        // Column: fixed at base (w=0, w'=0), cantilever BC
+        // Column: cantilever from base (w=0, θ=0 at base)
+        // Left col runs bottom→top, right col runs top→bottom
+        // We integrate from the fixed end in each case
+        const isRight = mem.x0 > mem.x1 || (mem.x0===mem.x1 && mem.y0<mem.y1);
         const theta = new Array(n+1).fill(0);
-        for(let i=1;i<=n;i++) theta[i]=theta[i-1]+phi[i-1]*dx;
         const w = new Array(n+1).fill(0);
-        for(let i=1;i<=n;i++) w[i]=w[i-1]+theta[i-1]*dx;
-        // Negate: positive M → deflects toward frame interior (inward)
-        wVals = w.map(v=>-v*1000);
+        if(!isRight){
+          // Left column: index 0=base, n=top → integrate forward
+          for(let i=1;i<=n;i++) theta[i]=theta[i-1]+phi[i-1]*dx;
+          for(let i=1;i<=n;i++) w[i]=w[i-1]+theta[i-1]*dx;
+          // w is lateral displacement (positive = rightward = inward for left col)
+          wVals = w.map(v=>v*1000);
+        } else {
+          // Right column: index 0=top, n=base → integrate backward from base
+          const phiR=[...phi].reverse();
+          const thetaR=new Array(n+1).fill(0), wR=new Array(n+1).fill(0);
+          for(let i=1;i<=n;i++) thetaR[i]=thetaR[i-1]+phiR[i-1]*dx;
+          for(let i=1;i<=n;i++) wR[i]=wR[i-1]+thetaR[i-1]*dx;
+          // Reverse back so index 0=top, n=base; negate so inward=positive
+          const wRev=[...wR].reverse();
+          wVals = wRev.map(v=>-v*1000);
+        }
       } else {
-        // Rafter: simply supported (w=0 at both ends)
+        // Rafter: simply supported BC (w=0 at both ends), correct for slope offset
         const theta = new Array(n+1).fill(0);
         for(let i=1;i<=n;i++) theta[i]=theta[i-1]+phi[i-1]*dx;
         const wRaw = new Array(n+1).fill(0);
@@ -2400,29 +2681,63 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
       wVals = computeDeflection(sys, mem.M, L);
     }
 
-    const maxW = Math.max(...wVals.map(Math.abs), 0.001);
-    const SCALE = 45 / maxW;
+    // Store wVals on member for global scaling pass
+    mem._wVals = wVals;
+  });
+
+  // ── Global scale: use max across ALL members for proportional display ──
+  const globalMaxW = Math.max(...data.members.map(m=>Math.max(...(m._wVals||[0]).map(Math.abs))), 0.001);
+  const GLOBAL_SCALE = 35 / globalMaxW;
+
+  // For frame: track corner displacements so members connect seamlessly
+  // cornerOffset[i] = [dx,dy] displacement of the start-node of member i
+  const cornerOffsets = sys==='frame' ? [[0,0],[0,0],[0,0]] : null;
+  if(sys==='frame'){
+    // Left col top displacement = last point of left col
+    const mL=data.members[0], wL=mL._wVals;
+    if(wL){
+      const dxL=mL.x1-mL.x0, dyL=mL.y1-mL.y0, lenL=Math.sqrt(dxL*dxL+dyL*dyL);
+      const nxL=-dyL/lenL, nyL=dxL/lenL;
+      const offL=-wL[wL.length-1]*GLOBAL_SCALE;
+      cornerOffsets[1]=[offL*nxL, offL*nyL]; // rafter start = left col top
+    }
+    // Right col top displacement = last point of rafter
+    const mR2=data.members[1], wR2=mR2._wVals;
+    if(wR2){
+      const dxR2=mR2.x1-mR2.x0, dyR2=mR2.y1-mR2.y0, lenR2=Math.sqrt(dxR2*dxR2+dyR2*dyR2);
+      const nxR2=-dyR2/lenR2, nyR2=dxR2/lenR2;
+      const offR2=-wR2[wR2.length-1]*GLOBAL_SCALE;
+      cornerOffsets[2]=[offR2*nxR2, offR2*nyR2]; // right col start = rafter end
+    }
+  }
+
+  data.members.forEach((mem,mi) => {
+    const wVals = mem._wVals;
+    if(!wVals) return;
+    const SCALE = GLOBAL_SCALE;
 
     const dx=mem.x1-mem.x0, dy=mem.y1-mem.y0;
     const len=Math.sqrt(dx*dx+dy*dy);
     const tx=dx/len, ty=dy/len, nx=-ty, ny=tx;
     const n=wVals.length-1;
 
+    // Corner offset for this member (displacement inherited from previous member end)
+    const [cox, coy] = (cornerOffsets && cornerOffsets[mi]) ? cornerOffsets[mi] : [0,0];
+
     let pts_fwd=[], pts_back=[];
     for(let i=0;i<=n;i++){
       const t=i/n;
-      const bx=mem.x0+t*dx, by=mem.y0+t*dy;
-      const offset=-wVals[i]*SCALE; // flip: positive deflection = downward in SVG
+      const bx=mem.x0+t*dx+cox, by=mem.y0+t*dy+coy;  // shift baseline by corner offset
+      const offset=-wVals[i]*SCALE;
       pts_fwd.push([bx+offset*nx, by+offset*ny]);
       pts_back.push([bx,by]);
     }
 
+    // Store pts for connected outline (frame only)
+    if(sys==='frame') mem._wPts = pts_fwd;
+
     const poly=[...pts_fwd,...pts_back.reverse()];
     h+=`<polygon points="${poly.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="${fill}" stroke="none"/>`;
-
-    // Deflection curve (dashed)
-    const lineStr=pts_fwd.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-    h+=`<path d="${lineStr}" fill="none" stroke="${color}" stroke-width="1.8" stroke-dasharray="5,3"/>`;
 
     // Member baseline
     h+=`<line x1="${mem.x0.toFixed(1)}" y1="${mem.y0.toFixed(1)}" x2="${mem.x1.toFixed(1)}" y2="${mem.y1.toFixed(1)}" stroke="#1a1a18" stroke-width="${mem.thick||3}" stroke-linecap="round"/>`;
@@ -2436,6 +2751,21 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
     h+=`<rect x="${(lx-20).toFixed(1)}" y="${(ly-11).toFixed(1)}" width="40" height="11" rx="2" fill="white" opacity="0.85"/>`;
     h+=`<text x="${lx.toFixed(1)}" y="${(ly-2).toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">w=${wVals[maxIdx].toFixed(2)}mm</text>`;
   });
+
+  // Draw deflection curve(s)
+  const _mems = data.members;
+  if(sys==='frame' && _mems.every(m=>m._wPts)){
+    // Connected single path for frame
+    const allPts = [..._mems[0]._wPts, ..._mems[1]._wPts, ..._mems[2]._wPts];
+    const lineStr = allPts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    h+=`<path d="${lineStr}" fill="none" stroke="${color}" stroke-width="1.8" stroke-dasharray="5,3"/>`;
+  } else {
+    _mems.forEach(mem=>{
+      if(!mem._wPts) return;
+      const lineStr=mem._wPts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+      h+=`<path d="${lineStr}" fill="none" stroke="${color}" stroke-width="1.8" stroke-dasharray="5,3"/>`;
+    });
+  }
 
   if(data.overlay) h+=data.overlay;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
@@ -2489,9 +2819,7 @@ function renderCantDiagram(L, Qv, Mv, Nv=null){
     }],
     totalL: L
   };
-  // Flip M and Q for display: cant tension on top = diagram goes UP
-  data.members[0].M = Mv.map(v => v);  // keep as-is, flip:false handles direction
-  data.members[0].Q = Qv.map(v => v);
+  // flip:false → negative M values draw upward (Zugfaser oben) ✓
   diagData['cant'] = data;
   renderDiagram('cant', data);
 }
@@ -2532,10 +2860,10 @@ function renderContDiagram(Ls, Qv_all, Mv_all){
 }
 
 // ── Frame diagram ──────────────────────────────────
-function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB){
-  const SVG_W=300, SVG_H=220, PAD=40;
-  const col_bot=185, col_top=col_bot-120;
-  const col_L=PAD+20, col_R=SVG_W-PAD-20;
+function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=null){
+  const SVG_W=340, SVG_H=240, PAD=55;
+  const col_bot=195, col_top=col_bot-130;
+  const col_L=PAD+10, col_R=SVG_W-PAD-10;
   const rafW=col_R-col_L;
 
   // Split arrays into 3 members
@@ -2565,14 +2893,55 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB){
   ov+=`<text x="${(col_L+col_R)/2}" y="${col_bot+35}" text-anchor="middle" font-size="7" fill="#a8a7a2" font-family="DM Mono,monospace">b=${b}m</text>`;
   ov+=`<text x="${col_L-30}" y="${(col_bot+col_top)/2}" text-anchor="middle" font-size="7" fill="#a8a7a2" font-family="DM Mono,monospace">h=${h}m</text>`;
 
+  // ── Corner value labels (shown in current diagram mode, added to overlay after rendering) ──
+  // These are stored and injected after data is set, via a callback stored on data
+  // We store the raw arrays so renderDiagram overlay can add them
+  // Corner indices: left base=0, left top=NP, rafter mid=NP/2, right top=0, right base=NP
+  function addCornerLabels(mode, color){
+    const vals = {
+      M: { L: Mleft, R: Mraf, C: Mright },
+      Q: { L: Qleft, R: Qraf, C: Qright },
+      N: { L: Nleft, R: Nraf, C: Nright }
+    }[mode];
+    if(!vals) return '';
+    let s='';
+    const fmt = v => Math.abs(v)<0.05 ? '0' : v.toFixed(1);
+    const lbl = (x,y,v,anchor='middle') => {
+      const bg=`<rect x="${(x-(anchor==='start'?0:14)).toFixed(1)}" y="${(y-10).toFixed(1)}" width="28" height="10" rx="2" fill="white" opacity="0.85"/>`;
+      const tx=`<text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" text-anchor="${anchor}" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">${fmt(v)}</text>`;
+      return bg+tx;
+    };
+    // Left base (A) — below and left of support
+    s+=lbl(col_L-2, col_bot-8, vals.L[0], 'end');
+    // Left corner — outside top-left, above rafter
+    s+=lbl(col_L-2, col_top-4, vals.L[NP], 'end');
+    // Rafter midspan — above or below rafter depending on sign
+    const midIdx=Math.round(NP/2);
+    const midV=vals.R[midIdx];
+    s+=lbl((col_L+col_R)/2, col_top+(midV>=0?16:-8), midV);
+    // Right corner — outside top-right, above rafter
+    s+=lbl(col_R+2, col_top-4, vals.C[0], 'start');
+    // Right base (B) — below and right of support
+    s+=lbl(col_R+2, col_bot-8, vals.C[NP], 'start');
+    return s;
+  }
+  // Store callback on data so renderDiagram can call it after mode is known
+  // We inject it via a special overlay extension
+  const _addCornerLabels = addCornerLabels;
+
+  // Morig: un-negated M values for correct curvature integration in w-diagram
+  const Mleft_orig  = Mleft.map(v=>-v);   // undo display negation
+  const Mright_orig = Mright.map(v=>-v);  // undo display negation
   const data = {
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [
-      { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mleft,  Q:Qleft,  N:Nleft  },
-      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:false, isColumn:false, memberLen:b, M:Mraf,   Q:Qraf,   N:Nraf   },
-      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:true,  isColumn:true,  memberLen:h, M:Mright, Q:Qright, N:Nright }
+      { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mleft,  Morig:Mleft_orig,  Q:Qleft,  N:Nleft  },
+      { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:false, isColumn:false, memberLen:b, M:Mraf,   Morig:Mraf,        Q:Qraf,   N:Nraf,
+        hingeIdx: rafHingeIdx },
+      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:true,  isColumn:true,  memberLen:h, M:Mright, Morig:Mright_orig, Q:Qright, N:Nright }
     ]
   };
+  data.cornerLabelsFn = _addCornerLabels;
   diagData['frame'] = data;
   renderDiagram('frame', data);
 }
