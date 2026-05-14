@@ -2192,6 +2192,19 @@ function renderReport(name, sdf){
   const vloads=(sdf.system.loads?.vertical||[]).map(l=>`q=${l.qa}${l.qb!==l.qa?`–${l.qb}`:''} kN/m`).join(', ');
   const hloads=(sdf.system.loads?.horizontal||[]).map(l=>`H=${Math.abs(l.H||l.F||0)} kN`).join(', ');
 
+  // For non-frame: get reactions from result elements
+  if((!r.reactions||!r.reactions.length) && sdf.system.type!=='frame'){
+    const sys=sdf.system.type;
+    const vaEl=document.getElementById(sys==='beam'?'b-res-VA':sys==='cantilever'?'c-res-VA':null);
+    const vbEl=document.getElementById(sys==='beam'?'b-res-VB':null);
+    if(vaEl||vbEl){
+      r.reactions=[
+        {support:'A', H:'—', V:vaEl?.textContent||'—', M:'—'},
+        ...(vbEl?[{support:'B', H:'—', V:vbEl?.textContent||'—', M:'—'}]:[])
+      ];
+    }
+  }
+
   // Reactions table
   const reactionRows=(r.reactions||[]).map(rx=>`
     <tr>
@@ -2326,10 +2339,16 @@ function renderReportDiagrams(sdf){
   const colors = {M:'#2d6a4f', Q:'#1d4ed8', N:'#92400e', w:'#7c3aed'};
   const fills  = {M:'rgba(45,106,79,0.12)', Q:'rgba(29,78,216,0.12)', N:'rgba(146,64,14,0.12)', w:'rgba(124,58,237,0.12)'};
 
+  // Detect structure: frame has left_col/rafter/right_col, others have member_0/1/...
+  const isFrame = 'left_col' in members || 'rafter' in members;
+  const memberKeys = isFrame
+    ? ['left_col','rafter','right_col']
+    : Object.keys(members).sort();
+
   // Collect all arrays for each mode across all members
   function getAllVals(mode){
     const out=[];
-    ['left_col','rafter','right_col'].forEach(name=>{
+    memberKeys.forEach(name=>{
       const mem=members[name];
       if(!mem||!mem[mode]) return;
       out.push(...mem[mode]);
@@ -2348,14 +2367,19 @@ function renderReportDiagrams(sdf){
     const maxV=Math.max(...allVals.map(Math.abs),0.001);
     const SCALE=(H/2-PAD)/maxV;
 
-    // Build path from concatenated member arrays
+    // Build path — distribute segments evenly, frame uses weighted widths
     let pts=[], x=PAD;
-    ['left_col','rafter','right_col'].forEach((name,mi)=>{
+    const totalW=W-2*PAD;
+    memberKeys.forEach((name,mi)=>{
       const mem=members[name];
       if(!mem||!mem[mode]) return;
       const arr=mem[mode];
       const n=arr.length;
-      const segW=(mi===1)?(W-2*PAD)*0.55:(W-2*PAD)*0.225; // rafter wider
+      // Frame: left_col=22.5%, rafter=55%, right_col=22.5%
+      // Others: equal segments
+      let segW;
+      if(isFrame){ segW=mi===1?totalW*0.55:totalW*0.225; }
+      else { segW=totalW/memberKeys.length; }
       arr.forEach((v,i)=>{
         pts.push([x+i/(n-1)*segW, bY-v*SCALE]);
       });
@@ -2398,12 +2422,12 @@ function renderReportDiagrams(sdf){
       const maxV=Math.max(...allM.map(Math.abs),0.001);
       const SCALE=(H/2-PAD)/maxV;
       let pts=[],x=PAD;
-      ['left_col','rafter','right_col'].forEach((name,mi)=>{
+      memberKeys.forEach((name,mi)=>{
         const mem=members[name];
         if(!mem?.M) return;
         const arr=mem.M;
         const n=arr.length;
-        const segW=mi===1?(W-2*PAD)*0.55:(W-2*PAD)*0.225;
+        const segW=isFrame?(mi===1?(W-2*PAD)*0.55:(W-2*PAD)*0.225):(W-2*PAD)/memberKeys.length;
         // w ~ ∫∫M/EI — approximate as double integral of M (qualitative shape)
         let cumTheta=0, cumW=0, wArr=[];
         arr.forEach((v,i)=>{
