@@ -41,9 +41,14 @@
     .nav::-webkit-scrollbar { display: none; }
     .nav-tab { padding: 11px 16px; font-size: 13px; font-weight: 500; color: var(--text2); border: none; background: none; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all 0.15s; font-family:DM Sans, sans-serif; letter-spacing: 0.1px; }
     .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .nd-item { display:block;width:100%;text-align:left;padding:9px 10px;border-radius:8px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text);font-family:DM Sans,sans-serif;margin-bottom:2px;transition:background 0.1s; }
+    .nd-item { display:flex;align-items:center;width:100%;text-align:left;padding:9px 10px;border-radius:8px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text);font-family:DM Sans,sans-serif;margin-bottom:2px;transition:background 0.1s; }
     .nd-item:hover { background:var(--border); }
     .nd-item.active { color:var(--accent);font-weight:600;background:rgba(37,99,235,0.08); }
+    .nd-module { padding:12px 10px;gap:12px; }
+    .nd-module-icon { font-size:20px;width:32px;text-align:center;flex-shrink:0; }
+    .nd-mono-tag { width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:DM Mono,monospace;flex-shrink:0;letter-spacing:0.5px; }
+    .nd-sys-icon { display:inline-block;width:55px;text-align:center;font-size:15px;flex-shrink:0;color:var(--text2); }
+    .nd-sys-label { font-size:13px;color:var(--text);font-family:DM Sans,sans-serif; }
 
     .main { padding: 1rem; max-width: 480px; margin: 0 auto; }
     .card { background: rgba(255,255,255,0.88); border: 1px solid var(--border-dark); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9); }
@@ -147,6 +152,17 @@
     .diagram-svg-wrap { background: var(--surface2); border-radius: var(--radius-sm); overflow: auto; min-height: 140px; }
     .diagram-svg-wrap svg { display: block; }
     .diagram-label { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; text-align: center; margin-top: 6px; }
+  
+    @media print {
+      nav, #nav-overlay, #nav-drawer,
+      #saved-list-view, .calc-btn,
+      button:not(.print-keep) { display:none!important; }
+      #tab-saved { display:block!important; }
+      #saved-report-view { display:block!important; }
+      #report-content { padding:0; }
+      body { background:white; }
+      .card { box-shadow:none; border:1px solid #ddd; }
+    }
   </style>
 </head>
 <body>
@@ -288,46 +304,103 @@
 </header>
 
 <nav class="nav" style="display:flex;align-items:center;padding:0 16px;gap:10px">
-  <span id="nav-current-label" style="font-size:13px;font-weight:600;color:var(--accent);font-family:DM Sans,sans-serif;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Simply Supported</span>
-  <button id="nav-save-btn" onclick="saveFrameCalc()" style="display:none;background:none;border:none;font-size:19px;cursor:pointer;padding:8px 2px;line-height:1" title="Save">💾</button>
+  <span id="nav-current-label" style="font-size:13px;font-weight:600;color:var(--accent);font-family:DM Sans,sans-serif;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+
   <button onclick="toggleNavMenu()" style="background:none;border:none;cursor:pointer;padding:10px 2px;font-size:22px;color:var(--text2);line-height:1" title="Menu">☰</button>
 </nav>
 
-<!-- ══ Navigation Drawer ══ -->
+<!-- ══ Navigation Drawer (2-level) ══ -->
 <div id="nav-overlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.35)" onclick="closeNavMenu()"></div>
 <div id="nav-drawer" style="display:none;position:fixed;top:0;right:0;width:270px;height:100%;z-index:201;background:var(--surface);box-shadow:-4px 0 24px rgba(0,0,0,0.18);overflow-y:auto">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 14px;border-bottom:1px solid var(--border)">
-    <span style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:2px">STATIQ</span>
+
+  <!-- Drawer header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="nd-back-btn" onclick="navMenuBack()" style="display:none;background:none;border:none;cursor:pointer;font-size:18px;color:var(--text2);padding:0 4px 0 0;line-height:1">←</button>
+      <span id="nd-title" style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);letter-spacing:2px">STATIQ</span>
+    </div>
     <button onclick="closeNavMenu()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--text2);line-height:1">✕</button>
   </div>
 
-  <div style="padding:14px 18px 4px">
-    <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;font-family:DM Mono,monospace;margin-bottom:10px">STATIQ · CALC</div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:6px;padding-left:2px">1 · Statische Systeme</div>
-    <button onclick="closeNavMenu();showTab('beam')" class="nd-item" id="nm-beam">1.1 &nbsp; Einfeldträger</button>
-    <button onclick="closeNavMenu();showTab('cantilever')" class="nd-item" id="nm-cantilever">1.2 &nbsp; Kragarm</button>
-    <button onclick="closeNavMenu();showTab('cont')" class="nd-item" id="nm-cont">1.3 &nbsp; Durchlaufträger</button>
-    <button onclick="closeNavMenu();showTab('frame')" class="nd-item" id="nm-frame">1.4 &nbsp; Rahmen</button>
+  <!-- Level 1: Modules -->
+  <div id="nd-level1" style="padding:12px 18px">
+    <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;font-family:DM Mono,monospace;margin-bottom:10px">MODULE</div>
+
+    <button onclick="navMenuOpen('calc')" class="nd-item nd-module">
+      <span class="nd-mono-tag" style="background:var(--accent);color:white">SC</span>
+      <div><div style="font-weight:600">statiq·calc</div><div class="nd-mod-sub" style="font-size:11px;color:var(--text-muted)" data-i18n="modCalcSub">Schnittgrößen &amp; Verformungen</div></div>
+      <span style="margin-left:auto;color:var(--text-muted)">›</span>
+    </button>
+
+    <button class="nd-item nd-module" style="opacity:0.4;cursor:not-allowed">
+      <span class="nd-mono-tag" style="background:var(--border);color:var(--text-muted)">SS</span>
+      <div><div style="font-weight:600">statiq·size</div><div class="nd-mod-sub" style="font-size:11px;color:var(--text-muted)" data-i18n="modSizeSub">Bemessung nach Eurocodes</div></div>
+      <span style="margin-left:auto;font-size:9px;background:var(--border);padding:2px 6px;border-radius:4px;color:var(--text-muted);font-family:DM Mono,monospace">SOON</span>
+    </button>
+
+    <button class="nd-item nd-module" style="opacity:0.4;cursor:not-allowed">
+      <span class="nd-mono-tag" style="background:var(--border);color:var(--text-muted)">SR</span>
+      <div><div style="font-weight:600">statiq·ref</div><div class="nd-mod-sub" style="font-size:11px;color:var(--text-muted)" data-i18n="modRefSub">Profile, Tabellen, Eurocodes</div></div>
+      <span style="margin-left:auto;font-size:9px;background:var(--border);padding:2px 6px;border-radius:4px;color:var(--text-muted);font-family:DM Mono,monospace">SOON</span>
+    </button>
+
+    <div style="height:1px;background:var(--border);margin:12px 0"></div>
+
+    <button onclick="closeNavMenu();showTab('saved')" class="nd-item nd-module">
+      <span class="nd-mono-tag" style="background:var(--border);color:var(--text)">💾</span>
+      <div><div class="nd-saved-label" style="font-weight:600" data-i18n="saved">Gespeichert</div><div class="nd-mod-sub" style="font-size:11px;color:var(--text-muted)" data-i18n="savedSub">Berechnungen &amp; Berichte</div></div>
+      <span style="margin-left:auto;color:var(--text-muted)">›</span>
+    </button>
   </div>
 
-  <div style="padding:12px 18px 4px;border-top:1px solid var(--border);margin-top:6px">
-    <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;font-family:DM Mono,monospace;margin-bottom:8px">GESPEICHERT</div>
-    <button onclick="closeNavMenu();showTab('saved')" class="nd-item">💾 &nbsp; Gespeicherte Berechnungen</button>
+  <!-- Level 2: statiq·calc systems -->
+  <div id="nd-level2-calc" style="display:none;padding:12px 18px">
+    <button onclick="closeNavMenu();showTab('beam')" class="nd-item" id="nm-beam">
+      <span class="nd-sys-icon">━━</span><span class="nd-sys-label">Einfeldträger</span>
+    </button>
+    <button onclick="closeNavMenu();showTab('cantilever')" class="nd-item" id="nm-cantilever">
+      <span class="nd-sys-icon">┗━</span><span class="nd-sys-label">Kragarm</span>
+    </button>
+    <button onclick="closeNavMenu();showTab('cont')" class="nd-item" id="nm-cont">
+      <span class="nd-sys-icon">┿━</span><span class="nd-sys-label">Durchlaufträger</span>
+    </button>
+    <button onclick="closeNavMenu();showTab('frame')" class="nd-item" id="nm-frame">
+      <span class="nd-sys-icon" style="font-size:17px;transform:scaleX(1.4);display:inline-block">⊓</span><span class="nd-sys-label">Rahmen</span>
+    </button>
   </div>
 
-  <div style="padding:12px 18px 4px;border-top:1px solid var(--border);margin-top:6px">
-    <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:1.5px;font-family:DM Mono,monospace;margin-bottom:8px">DEMNÄCHST</div>
-    <div class="nd-item" style="color:var(--text-muted);cursor:default;opacity:0.6">statiq·size &nbsp;<span style="font-size:9px;background:var(--border);padding:2px 6px;border-radius:10px">SOON</span></div>
-    <div class="nd-item" style="color:var(--text-muted);cursor:default;opacity:0.6">statiq·ref &nbsp;<span style="font-size:9px;background:var(--border);padding:2px 6px;border-radius:10px">SOON</span></div>
-  </div>
+
 </div>
 
 <!-- ═══════════════ SAVED TAB ═══════════════ -->
-<main class="main hidden" id="tab-saved" style="padding:20px 16px">
-  <div class="card-title" style="margin-bottom:16px">💾 SAVED CALCULATIONS</div>
-  <div id="saved-calcs-list"></div>
-  <div id="saved-empty" style="color:var(--text-muted);font-size:12px;font-family:DM Mono,monospace;padding:20px;text-align:center;display:none">
-    No saved calculations yet.<br>Calculate and press 💾 Save.
+<main class="main hidden" id="tab-saved">
+
+  <!-- List view -->
+  <div id="saved-list-view" style="padding:16px">
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button onclick="saveFilterTab('calc')" id="sf-calc" style="font-size:11px;padding:5px 16px;border-radius:20px;border:1.5px solid var(--accent);background:var(--accent);color:white;cursor:pointer;font-family:DM Mono,monospace;font-weight:600">calc</button>
+      <button onclick="saveFilterTab('size')" id="sf-size" style="font-size:11px;padding:5px 16px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;font-family:DM Mono,monospace">size</button>
+    </div>
+    <div id="saved-calcs-list"></div>
+    <div id="saved-empty" style="color:var(--text-muted);font-size:12px;font-family:DM Mono,monospace;padding:40px 20px;text-align:center">
+      Noch keine Berechnungen gespeichert.<br><br>
+      Berechnung durchführen und 💾 drücken.
+    </div>
+  </div>
+
+  <!-- Report view (shown when a calc is opened) -->
+  <div id="saved-report-view" style="display:none">
+    <!-- Report header toolbar -->
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10">
+      <button onclick="closeReport()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text2);padding:4px;line-height:1">←</button>
+      <span id="report-title-bar" style="font-size:13px;font-weight:600;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bericht</span>
+      <button onclick="window.print()" style="background:var(--accent);color:white;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif">↓ PDF</button>
+    </div>
+
+    <!-- Printable report content -->
+    <div id="report-content" style="padding:20px 16px">
+      <!-- filled by renderReport() -->
+    </div>
   </div>
 </main>
 
@@ -358,6 +431,7 @@
     <button class="add-load-btn" onclick="addLoad('beam','horiz')">＋ Add H / M<sub>e</sub></button>
   </div>
   <button class="calc-btn" onclick="calculateBeam()">Calculate</button>
+  <button class="calc-btn" style="margin-top:8px;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);font-size:12px;padding:10px" onclick="saveCalc('beam')">💾 Save Calculation</button>
   <div id="beam-results" class="hidden">
     <div class="results-grid">
       <div class="metric"><div class="m-label">Reaction V<sub>A</sub></div><div class="m-value" id="b-res-A">—</div><div class="m-unit">kN</div></div>
@@ -393,7 +467,7 @@
       <div class="diagram-label" id="diag-label-beam">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.5 · Simply Supported Beam</div>
+  <div class="footnote">Statiq v0.5.5</div>
 </main>
 
 <!-- ═══════════════ CANTILEVER TAB ═══════════════ -->
@@ -423,6 +497,7 @@
     <button class="add-load-btn" onclick="addLoad('cant','horiz')">＋ Add H / M<sub>e</sub></button>
   </div>
   <button class="calc-btn" onclick="calculateCantilever()">Calculate</button>
+  <button class="calc-btn" style="margin-top:8px;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);font-size:12px;padding:10px" onclick="saveCalc('cantilever')">💾 Save Calculation</button>
   <div id="cant-results" class="hidden">
     <div class="results-grid">
       <div class="metric"><div class="m-label">Reaction V<sub>A</sub></div><div class="m-value" id="c-res-V">—</div><div class="m-unit">kN</div></div>
@@ -485,6 +560,7 @@
   <div id="span-load-cards"></div>
 
   <button class="calc-btn" onclick="calculateContinuous()">Calculate</button>
+  <button class="calc-btn" style="margin-top:8px;background:var(--surface);color:var(--accent);border:1.5px solid var(--accent);font-size:12px;padding:10px" onclick="saveCalc('cont')">💾 Save Calculation</button>
 
   <div id="cont-results" class="hidden">
     <div class="results-grid">
@@ -682,16 +758,49 @@ function initSpanData() {
 }
 
 // ── Tabs ──────────────────────────────────────────
+function navSave(){
+  const active=['beam','cantilever','cont','frame'].find(t=>
+    !document.getElementById('tab-'+t)?.classList.contains('hidden'));
+  if(active==='frame') saveFrameCalc();
+  else if(active) saveCalc(active);
+}
+
 function toggleNavMenu(){
   const overlay=document.getElementById('nav-overlay');
   const drawer=document.getElementById('nav-drawer');
   const open=drawer.style.display!=='none';
-  overlay.style.display=open?'none':'block';
-  drawer.style.display=open?'none':'block';
+  if(open){ closeNavMenu(); return; }
+  // Reset to level 1
+  navMenuReset();
+  overlay.style.display='block';
+  drawer.style.display='block';
 }
 function closeNavMenu(){
-  document.getElementById('nav-overlay').style.display='none';
-  document.getElementById('nav-drawer').style.display='none';
+  const o=document.getElementById('nav-overlay');
+  const d=document.getElementById('nav-drawer');
+  if(o) o.style.display='none';
+  if(d) d.style.display='none';
+  navMenuReset();
+}
+function navMenuReset(){
+  const el=id=>document.getElementById(id);
+  if(el('nd-level1')) el('nd-level1').style.display='block';
+  if(el('nd-level2-calc')) el('nd-level2-calc').style.display='none';
+  if(el('nd-level2-saved')) el('nd-level2-saved').style.display='none';
+  if(el('nd-back-btn')) el('nd-back-btn').style.display='none';
+  if(el('nd-title')) el('nd-title').textContent='STATIQ';
+}
+function navMenuOpen(section){
+  const el=id=>document.getElementById(id);
+  if(el('nd-level1')) el('nd-level1').style.display='none';
+  if(el('nd-level2-calc')) el('nd-level2-calc').style.display=section==='calc'?'block':'none';
+  if(el('nd-level2-saved')) el('nd-level2-saved').style.display=section==='saved'?'block':'none';
+  if(el('nd-back-btn')) el('nd-back-btn').style.display='block';
+  const titles={calc:'STATIQ·CALC', saved:'GESPEICHERT'};
+  if(el('nd-title')) el('nd-title').textContent=titles[section]||'STATIQ';
+}
+function navMenuBack(){
+  navMenuReset();
 }
 
 function showTab(name) {
@@ -699,7 +808,15 @@ function showTab(name) {
     document.getElementById('tab-'+t).classList.toggle('hidden', t !== name));
 
   // Update drawer active state
-  const labels = {beam:'1.1 Einfeldträger', cantilever:'1.2 Kragarm', cont:'1.3 Durchlaufträger', frame:'1.4 Rahmen', saved:'Gespeichert'};
+  // Use i18n tab names if available, else fallback
+  const i18nTabs = window._i18n?.tabs || ['Simply Supported','Cantilever','Continuous Beam','Frame'];
+  const labels = {
+    beam: i18nTabs[0]||'Einfeldträger',
+    cantilever: i18nTabs[1]||'Kragarm',
+    cont: i18nTabs[2]||'Durchlaufträger',
+    frame: i18nTabs[3]||'Rahmen',
+    saved: window._i18n?.saved||'Gespeichert'
+  };
   document.querySelectorAll('.nd-item').forEach(b=>b.classList.remove('active'));
   const activeBtn=document.getElementById('nm-'+name);
   if(activeBtn) activeBtn.classList.add('active');
@@ -710,7 +827,7 @@ function showTab(name) {
 
   // Show save button only on frame tab
   const saveBtn=document.getElementById('nav-save-btn');
-  if(saveBtn) saveBtn.style.display=name==='frame'?'block':'none';
+  if(saveBtn) saveBtn.style.display=['beam','cantilever','cont','frame'].includes(name)?'block':'none';
 
   if(name==='beam') drawBeam();
   if(name==='cantilever') setTimeout(drawCantilever, 30);
@@ -1864,6 +1981,10 @@ function buildSDF(){
     });
   }
 
+  // Capture frame SVG snapshot
+  const frameSvgEl=document.getElementById('frame-svg');
+  const frameSvgSnapshot=frameSvgEl?`<svg viewBox="${frameSvgEl.getAttribute('viewBox')||'0 0 340 240'}" xmlns="http://www.w3.org/2000/svg">${frameSvgEl.innerHTML}</svg>`:'';
+
   return {
     statiq_version: '0.5.5',
     timestamp: new Date().toISOString(),
@@ -1873,7 +1994,8 @@ function buildSDF(){
       geometry: {b, h, hA, hB},
       supports: {A: supportA, B: supportB, head: supportHead},
       hinges,
-      loads: {vertical: vLoads_raw, horizontal: hLoads_raw}
+      loads: {vertical: vLoads_raw, horizontal: hLoads_raw},
+      svgSnapshot: frameSvgSnapshot
     },
     results: {
       Mmax: parseFloat(Mmax)||0,
@@ -1883,6 +2005,61 @@ function buildSDF(){
       members: memberData
     }
   };
+}
+
+function saveCalc(sys){
+  // Generic save for any system
+  const sysLabels={beam:'Einfeldträger',cantilever:'Kragarm',cont:'Durchlaufträger',frame:'Rahmen'};
+  if(sys==='frame'){ saveFrameCalc(); return; }
+
+  // For beam/cant/cont: build SDF from diagData
+  const data=diagData[sys==='cantilever'?'cant':sys];
+  if(!data){ alert('Bitte zuerst berechnen.'); return; }
+
+  // Read geometry
+  let geom={}, results={Mmax:0,Qmax:0,Nmax:0,reactions:[]};
+  if(sys==='beam'){
+    geom={L:parseFloat(document.getElementById('bL')?.value||5)};
+  } else if(sys==='cantilever'){
+    geom={L:parseFloat(document.getElementById('cL')?.value||3)};
+  } else if(sys==='cont'){
+    geom={spans: contSpans?.length||2};
+  }
+
+  // Get Mmax/Qmax from results display
+  const mEl=document.getElementById(sys==='beam'?'b-res-Mmax':sys==='cantilever'?'c-res-Mmax':'cont-res-Mmax');
+  const qEl=document.getElementById(sys==='beam'?'b-res-Qmax':sys==='cantilever'?'c-res-Qmax':'cont-res-Qmax');
+  if(mEl) results.Mmax=Math.abs(parseFloat(mEl.textContent)||0);
+  if(qEl) results.Qmax=Math.abs(parseFloat(qEl.textContent)||0);
+
+  // Member data
+  const memberData={};
+  if(data.members){
+    data.members.forEach((mem,i)=>{
+      memberData['member_'+i]={M:mem.M, Q:mem.Q, N:mem.N||[]};
+    });
+  }
+  results.members=memberData;
+
+  // Capture system SVG snapshot
+  const svgIds={beam:'beam-svg',cantilever:'cant-svg',cont:'cont-svg'};
+  const svgEl=document.getElementById(svgIds[sys]);
+  const svgSnapshot=svgEl ? `<svg viewBox="${svgEl.getAttribute('viewBox')||'0 0 320 100'}" xmlns="http://www.w3.org/2000/svg">${svgEl.innerHTML}</svg>` : '';
+
+  const sdf={
+    statiq_version:'0.5.5',
+    timestamp:new Date().toISOString(),
+    module:'calc',
+    system:{type:sys, geometry:geom, svgSnapshot},
+    results
+  };
+  const name=`${sysLabels[sys]||sys} L=${geom.L||'?'}m`;
+  const key='statiq_sdf_'+Date.now();
+  try{
+    localStorage.setItem(key, JSON.stringify({name,sdf}));
+    const btn=document.querySelector(`[onclick="saveCalc('${sys}')"]`);
+    if(btn){ const o=btn.textContent; btn.textContent='✅ Gespeichert!'; setTimeout(()=>btn.textContent=o,1500); }
+  }catch(e){ alert('Speicher voll.'); }
 }
 
 function saveFrameCalc(){
@@ -1908,10 +2085,27 @@ function saveFrameCalc(){
 
 function showSavedCalcs(){ showTab('saved'); }
 
+let _savedFilter='calc';
+function setSavedFilter(f){ _savedFilter=f; }
+function saveFilterTab(f){
+  _savedFilter=f;
+  const c=document.getElementById('sf-calc');
+  const s=document.getElementById('sf-size');
+  if(c){ c.style.background=f==='calc'?'var(--accent)':'none'; c.style.color=f==='calc'?'white':'var(--text-muted)'; c.style.borderColor=f==='calc'?'var(--accent)':'var(--border)'; }
+  if(s){ s.style.background=f==='size'?'var(--accent)':'none'; s.style.color=f==='size'?'white':'var(--text-muted)'; s.style.borderColor=f==='size'?'var(--accent)':'var(--border)'; }
+  renderSavedTab();
+}
+
 function renderSavedTab(){
   const list = document.getElementById('saved-calcs-list');
   const empty = document.getElementById('saved-empty');
   if(!list) return;
+
+  // Close report if open
+  const lv=document.getElementById('saved-list-view');
+  const rv=document.getElementById('saved-report-view');
+  if(lv) lv.style.display='block';
+  if(rv) rv.style.display='none';
 
   const entries=[];
   for(let i=0;i<localStorage.length;i++){
@@ -1919,34 +2113,321 @@ function renderSavedTab(){
     if(!k.startsWith('statiq_sdf_')) continue;
     try{
       const {name,sdf}=JSON.parse(localStorage.getItem(k));
-      entries.push({k, name, sdf});
+      if(sdf.module===_savedFilter||_savedFilter==='calc'&&sdf.module==='calc')
+        entries.push({k,name,sdf});
     }catch(e){}
   }
   entries.sort((a,b)=>b.k.localeCompare(a.k));
 
   if(!entries.length){
     list.innerHTML='';
-    if(empty) empty.style.display='block';
+    empty.style.display='block';
     return;
   }
-  if(empty) empty.style.display='none';
+  empty.style.display='none';
 
   list.innerHTML = entries.map(({k,name,sdf})=>`
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${name}</div>
-      <div style="font-size:11px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:10px">
-        M<sub>max</sub>=${sdf.results.Mmax.toFixed(1)} kNm &nbsp;·&nbsp;
-        Q<sub>max</sub>=${sdf.results.Qmax.toFixed(1)} kN &nbsp;·&nbsp;
-        N<sub>max</sub>=${sdf.results.Nmax.toFixed(1)} kN<br>
-        ${new Date(sdf.timestamp).toLocaleString()}
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:start;gap:8px;margin-bottom:8px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">${name}</div>
+          <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace">${new Date(sdf.timestamp).toLocaleString()}</div>
+        </div>
+        <button onclick="deleteSDF('${k}',this.closest('div[style*=border-radius]'))" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:16px;padding:0;line-height:1">✕</button>
+      </div>
+      ${sdf.system.svgSnapshot ? `<div style="background:var(--bg);border-radius:8px;padding:8px 4px;margin-bottom:10px;overflow:hidden;display:flex;align-items:center;justify-content:center">${sdf.system.svgSnapshot.replace(/<svg /, '<svg style="width:100%;height:auto;display:block" ')}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace">M<sub>max</sub></div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${sdf.results.Mmax.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--text-muted)">kNm</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace">Q<sub>max</sub></div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${sdf.results.Qmax.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--text-muted)">kN</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace">N<sub>max</sub></div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${sdf.results.Nmax.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--text-muted)">kN</div>
+        </div>
       </div>
       <div style="display:flex;gap:8px">
-        <button onclick="loadSDF('${k}')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--accent);background:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">↩ Load</button>
-        <button onclick="exportSDF('${k}')" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;font-size:12px">↓ JSON</button>
-        <button onclick="deleteSDF('${k}',this.closest('div[style]'))" style="padding:8px 10px;border-radius:8px;border:none;background:none;color:#e74c3c;cursor:pointer;font-size:14px">✕</button>
+        <button onclick="openReport('${k}')" style="flex:2;padding:9px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer;font-size:12px;font-weight:600;font-family:DM Sans,sans-serif">Bericht</button>
+        <button onclick="loadSDF('${k}')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--accent);background:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">Laden</button>
+        <button onclick="exportSDF('${k}')" style="padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;font-size:12px">↓</button>
       </div>
     </div>
   `).join('');
+}
+
+function openReport(key){
+  try{
+    const {name,sdf}=JSON.parse(localStorage.getItem(key));
+    document.getElementById('saved-list-view').style.display='none';
+    document.getElementById('saved-report-view').style.display='block';
+    document.getElementById('report-title-bar').textContent=name;
+    renderReport(name, sdf);
+  }catch(e){ alert('Fehler: '+e.message); }
+}
+
+function closeReport(){
+  document.getElementById('saved-list-view').style.display='block';
+  document.getElementById('saved-report-view').style.display='none';
+}
+
+function renderReport(name, sdf){
+  const g=sdf.system.geometry;
+  const r=sdf.results;
+  const sup=sdf.system.supports;
+  const date=new Date(sdf.timestamp).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  // System type label
+  const sysLabel={
+    beam:'Einfeldträger', cantilever:'Kragarm', cont:'Durchlaufträger', frame:'Rahmen'
+  }[sdf.system.type]||sdf.system.type;
+
+  // Loads summary
+  const vloads=(sdf.system.loads?.vertical||[]).map(l=>`q=${l.qa}${l.qb!==l.qa?`–${l.qb}`:''} kN/m`).join(', ');
+  const hloads=(sdf.system.loads?.horizontal||[]).map(l=>`H=${Math.abs(l.H||l.F||0)} kN`).join(', ');
+
+  // Reactions table
+  const reactionRows=(r.reactions||[]).map(rx=>`
+    <tr>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border);font-weight:600">${rx.support}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:right;font-family:DM Mono,monospace">${rx.H||'—'}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:right;font-family:DM Mono,monospace">${rx.V||'—'}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid var(--border);text-align:right;font-family:DM Mono,monospace">${rx.M||'—'}</td>
+    </tr>`).join('');
+
+  document.getElementById('report-content').innerHTML=`
+    <!-- Report: printable A4-style layout -->
+    <div style="max-width:680px;margin:0 auto;font-family:DM Sans,sans-serif">
+
+      <!-- Header -->
+      <div style="border-bottom:3px solid var(--accent);padding-bottom:12px;margin-bottom:20px">
+        <div style="display:flex;align-items:end;justify-content:space-between">
+          <div>
+            <div style="font-family:Bebas Neue,sans-serif;font-size:28px;color:var(--accent);letter-spacing:3px;line-height:1">STATIQ</div>
+            <div style="font-size:13px;color:var(--text-muted);font-family:DM Mono,monospace">statiq·calc · Berechnungsprotokoll</div>
+          </div>
+          <div style="text-align:right;font-size:11px;color:var(--text-muted);font-family:DM Mono,monospace">
+            <div>${date}</div>
+            <div>v${sdf.statiq_version||'—'}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System info -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:8px">SYSTEM</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:2px">Typ</div>
+            <div style="font-size:14px;font-weight:600">${sysLabel}</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:2px">Geometrie</div>
+            <div style="font-size:13px;font-weight:600;font-family:DM Mono,monospace">
+              ${g.b?`b = ${g.b} m`:''}${g.hA?` &nbsp; h<sub>A</sub> = ${g.hA} m`:''}${g.hB&&g.hB!==g.hA?` &nbsp; h<sub>B</sub> = ${g.hB} m`:''}
+            </div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:2px">Lagerung</div>
+            <div style="font-size:13px;font-weight:600">A: ${sup.A||'—'} &nbsp; B: ${sup.B||'—'}</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:2px">Einwirkungen</div>
+            <div style="font-size:12px;font-family:DM Mono,monospace">${[vloads,hloads].filter(Boolean).join(' · ')||'—'}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schnittgrößen max -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:8px">MAXIMALE SCHNITTGRÖSSEN</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="background:rgba(45,106,79,0.08);border:1.5px solid #2d6a4f;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;color:#2d6a4f;font-family:DM Mono,monospace;font-weight:700;margin-bottom:4px">M<sub>max</sub></div>
+            <div style="font-size:22px;font-weight:700;color:#2d6a4f">${r.Mmax.toFixed(2)}</div>
+            <div style="font-size:11px;color:#2d6a4f">kNm</div>
+          </div>
+          <div style="background:rgba(29,78,216,0.08);border:1.5px solid #1d4ed8;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;color:#1d4ed8;font-family:DM Mono,monospace;font-weight:700;margin-bottom:4px">Q<sub>max</sub></div>
+            <div style="font-size:22px;font-weight:700;color:#1d4ed8">${r.Qmax.toFixed(2)}</div>
+            <div style="font-size:11px;color:#1d4ed8">kN</div>
+          </div>
+          <div style="background:rgba(146,64,14,0.08);border:1.5px solid #92400e;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;color:#92400e;font-family:DM Mono,monospace;font-weight:700;margin-bottom:4px">N<sub>max</sub></div>
+            <div style="font-size:22px;font-weight:700;color:#92400e">${r.Nmax.toFixed(2)}</div>
+            <div style="font-size:11px;color:#92400e">kN</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reactions table -->
+      ${reactionRows?`
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:8px">AUFLAGERREAKTIONEN</div>
+        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="background:var(--surface)">
+              <th style="padding:8px 10px;text-align:left;font-family:DM Mono,monospace;font-weight:700;border-bottom:1px solid var(--border)">Lager</th>
+              <th style="padding:8px 10px;text-align:right;font-family:DM Mono,monospace;font-weight:700;border-bottom:1px solid var(--border)">H [kN]</th>
+              <th style="padding:8px 10px;text-align:right;font-family:DM Mono,monospace;font-weight:700;border-bottom:1px solid var(--border)">V [kN]</th>
+              <th style="padding:8px 10px;text-align:right;font-family:DM Mono,monospace;font-weight:700;border-bottom:1px solid var(--border)">M [kNm]</th>
+            </tr></thead>
+            <tbody>${reactionRows}</tbody>
+          </table>
+        </div>
+      </div>`:''}
+
+      <!-- Diagrams placeholder — rendered after content is set -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);font-family:DM Mono,monospace;margin-bottom:8px">SCHNITTGRÖSSENVERLÄUFE</div>
+        <div id="report-diagrams" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px">
+            <div style="font-size:10px;font-weight:700;color:#2d6a4f;font-family:DM Mono,monospace;margin-bottom:4px">M — Biegemoment [kNm]</div>
+            <svg id="report-svg-M" viewBox="0 0 300 140" style="width:100%;height:auto"></svg>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px">
+            <div style="font-size:10px;font-weight:700;color:#1d4ed8;font-family:DM Mono,monospace;margin-bottom:4px">Q — Querkraft [kN]</div>
+            <svg id="report-svg-Q" viewBox="0 0 300 140" style="width:100%;height:auto"></svg>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px">
+            <div style="font-size:10px;font-weight:700;color:#92400e;font-family:DM Mono,monospace;margin-bottom:4px">N — Normalkraft [kN]</div>
+            <svg id="report-svg-N" viewBox="0 0 300 140" style="width:100%;height:auto"></svg>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px">
+            <div style="font-size:10px;font-weight:700;color:#7c3aed;font-family:DM Mono,monospace;margin-bottom:4px">w — Durchbiegung [mm]</div>
+            <svg id="report-svg-w" viewBox="0 0 300 140" style="width:100%;height:auto"></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:DM Mono,monospace">
+        <span>statiq·calc · valentinmaras.github.io/statiq</span>
+        <span>${date}</span>
+      </div>
+    </div>
+  `;
+
+  // Re-render diagrams into report SVGs using stored data
+  // Load the SDF back into diagData and render
+  setTimeout(()=>renderReportDiagrams(sdf), 100);
+}
+
+function renderReportDiagrams(sdf){
+  const members = sdf.results?.members;
+  if(!members) return;
+
+  const colors = {M:'#2d6a4f', Q:'#1d4ed8', N:'#92400e', w:'#7c3aed'};
+  const fills  = {M:'rgba(45,106,79,0.12)', Q:'rgba(29,78,216,0.12)', N:'rgba(146,64,14,0.12)', w:'rgba(124,58,237,0.12)'};
+
+  // Collect all arrays for each mode across all members
+  function getAllVals(mode){
+    const out=[];
+    ['left_col','rafter','right_col'].forEach(name=>{
+      const mem=members[name];
+      if(!mem||!mem[mode]) return;
+      out.push(...mem[mode]);
+    });
+    return out;
+  }
+
+  ['M','Q','N'].forEach(mode=>{
+    const svg=document.getElementById('report-svg-'+mode);
+    if(!svg) return;
+
+    const allVals=getAllVals(mode);
+    if(!allVals.length){ svg.innerHTML='<text x="150" y="70" text-anchor="middle" font-size="10" fill="#aaa">—</text>'; return; }
+
+    const W=300, H=140, PAD=20, bY=H/2;
+    const maxV=Math.max(...allVals.map(Math.abs),0.001);
+    const SCALE=(H/2-PAD)/maxV;
+
+    // Build path from concatenated member arrays
+    let pts=[], x=PAD;
+    ['left_col','rafter','right_col'].forEach((name,mi)=>{
+      const mem=members[name];
+      if(!mem||!mem[mode]) return;
+      const arr=mem[mode];
+      const n=arr.length;
+      const segW=(mi===1)?(W-2*PAD)*0.55:(W-2*PAD)*0.225; // rafter wider
+      arr.forEach((v,i)=>{
+        pts.push([x+i/(n-1)*segW, bY-v*SCALE]);
+      });
+      x+=segW;
+    });
+
+    if(!pts.length) return;
+    const lineD=pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    const fillD=lineD+` L${pts[pts.length-1][0].toFixed(1)},${bY} L${pts[0][0].toFixed(1)},${bY} Z`;
+
+    // Grid lines
+    let grid='';
+    for(let i=1;i<4;i++){
+      const y=(H/4)*i;
+      grid+=`<line x1="${PAD}" y1="${y}" x2="${W-PAD}" y2="${y}" stroke="#e2e8f0" stroke-width="0.5"/>`;
+    }
+    grid+=`<line x1="${PAD}" y1="${bY}" x2="${W-PAD}" y2="${bY}" stroke="#94a3b8" stroke-width="1"/>`;
+
+    // Value labels
+    const maxLabel=maxV.toFixed(1);
+    const midIdx=Math.round(pts.length/2);
+    const midPt=pts[midIdx]||pts[0];
+
+    svg.innerHTML=`
+      ${grid}
+      <path d="${fillD}" fill="${fills[mode]}" stroke="none"/>
+      <path d="${lineD}" fill="none" stroke="${colors[mode]}" stroke-width="1.8" stroke-linejoin="round"/>
+      <text x="${W-PAD}" y="${PAD-4}" text-anchor="end" font-size="9" fill="${colors[mode]}" font-family="DM Mono,monospace" font-weight="600">${maxLabel}</text>
+      <text x="${W-PAD}" y="${H-4}" text-anchor="end" font-size="9" fill="${colors[mode]}" font-family="DM Mono,monospace" font-weight="600">−${maxLabel}</text>
+    `;
+  });
+
+  // w-diagram: use M as proxy (deflection proportional to M for simple systems)
+  // For a proper w we'd need EI — use a note instead
+  const svgW=document.getElementById('report-svg-w');
+  if(svgW){
+    const allM=getAllVals('M');
+    if(allM.length){
+      const W=300,H=140,PAD=20,bY=H*0.35;
+      const maxV=Math.max(...allM.map(Math.abs),0.001);
+      const SCALE=(H/2-PAD)/maxV;
+      let pts=[],x=PAD;
+      ['left_col','rafter','right_col'].forEach((name,mi)=>{
+        const mem=members[name];
+        if(!mem?.M) return;
+        const arr=mem.M;
+        const n=arr.length;
+        const segW=mi===1?(W-2*PAD)*0.55:(W-2*PAD)*0.225;
+        // w ~ ∫∫M/EI — approximate as double integral of M (qualitative shape)
+        let cumTheta=0, cumW=0, wArr=[];
+        arr.forEach((v,i)=>{
+          cumTheta+=v/n;
+          cumW+=cumTheta/n;
+          wArr.push(cumW);
+        });
+        const wMax=Math.max(...wArr.map(Math.abs),0.001);
+        const wScale=(H*0.4)/wMax;
+        arr.forEach((_,i)=>{ pts.push([x+i/(n-1)*segW, bY+wArr[i]*wScale]); });
+        x+=segW;
+      });
+      if(pts.length){
+        const lineD=pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+        const fillD=lineD+` L${pts[pts.length-1][0].toFixed(1)},${bY} L${pts[0][0].toFixed(1)},${bY} Z`;
+        svgW.innerHTML=`
+          <line x1="${PAD}" y1="${bY}" x2="${W-PAD}" y2="${bY}" stroke="#94a3b8" stroke-width="1"/>
+          <path d="${fillD}" fill="${fills.w}" stroke="none"/>
+          <path d="${lineD}" fill="none" stroke="${colors.w}" stroke-width="1.8" stroke-linejoin="round"/>
+          <text x="${W/2}" y="${H-4}" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="DM Mono,monospace">qualitativ (EI erforderlich)</text>
+        `;
+      }
+    }
+  }
 }
 
 function loadSDF(key){
@@ -2979,7 +3460,11 @@ const calcTranslations = {
     rafter: 'Rafter', leftCol: 'Left column', rightCol: 'Right column',
     spans: 'Spans', addSpan: '＋', removeSpan: '−',
     fixed: 'Fixed ⊞', pinned: 'Pin △', roller: 'Roller ○',
-    on: 'On', off: 'Off',
+    on: 'On', off: 'Off', save: 'Save Calculation', saved: 'Saved',
+    modCalcSub: 'Internal forces &amp; deflections',
+    modSizeSub: 'Design to Eurocodes',
+    modRefSub: 'Sections, tables, Eurocodes',
+    savedSub: 'Calculations &amp; reports',
     // Modal titles
     modalBeamTitle: 'Simply Supported Beam — Theory',
     modalCantTitle: 'Cantilever — Theory',
@@ -3036,7 +3521,11 @@ const calcTranslations = {
     rafter: 'Riegel', leftCol: 'Linker Stiel', rightCol: 'Rechter Stiel',
     spans: 'Felder', addSpan: '＋', removeSpan: '−',
     fixed: 'Einspannung ⊞', pinned: 'Festlager △', roller: 'Loslager ○',
-    on: 'An', off: 'Aus',
+    on: 'An', off: 'Aus', save: 'Berechnung speichern', saved: 'Gespeichert',
+    modCalcSub: 'Schnittgrößen &amp; Verformungen',
+    modSizeSub: 'Bemessung nach Eurocodes',
+    modRefSub: 'Profile, Tabellen, Eurocodes',
+    savedSub: 'Berechnungen &amp; Berichte',
     modalBeamTitle: 'Einfeldträger — Theorie',
     modalCantTitle: 'Kragarm — Theorie',
     modalContTitle: 'Durchlaufträger — Theorie',
@@ -3176,12 +3665,41 @@ const calcTranslations = {
 function applyCalcTranslations(){
   const t = calcTranslations[calcLang] || calcTranslations.en;
 
-  // Nav tabs
+  // Nav tabs (legacy, may not exist)
   const tabs = document.querySelectorAll('.nav-tab');
   t.tabs.forEach((label,i)=>{ if(tabs[i]) tabs[i].textContent=label; });
 
+  // Update drawer system labels
+  const drawerIds=['nm-beam','nm-cantilever','nm-cont','nm-frame'];
+  drawerIds.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el){
+      const lbl=el.querySelector('.nd-sys-label');
+      if(lbl && t.tabs[i]) lbl.textContent=t.tabs[i];
+    }
+  });
+
+  // Update drawer data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.getAttribute('data-i18n');
+    if(t[key]) el.innerHTML=t[key];
+  });
+
+  // Update nav-current-label for active tab
+  const _activeTab=['beam','cantilever','cont','frame','saved'].find(
+    tt=>!document.getElementById('tab-'+tt)?.classList.contains('hidden'))||'beam';
+  const _tabMap={beam:t.tabs[0],cantilever:t.tabs[1],cont:t.tabs[2],frame:t.tabs[3],saved:'Gespeichert'};
+  const _navLbl=document.getElementById('nav-current-label');
+  if(_navLbl) _navLbl.textContent=_tabMap[_activeTab]||t.tabs[0]||'';
+
+  // Also update Save buttons text
+  document.querySelectorAll('[onclick*="saveCalc"],[onclick*="saveFrameCalc"]').forEach(b=>{
+    if(b.textContent.includes('Save')||b.textContent.includes('Speich'))
+      b.textContent='💾 '+t.save||'💾 Speichern';
+  });
+
   // Calc buttons
-  document.querySelectorAll('.calc-btn').forEach(b=>b.textContent=t.calculate);
+  document.querySelectorAll('.calc-btn').forEach(b=>{ if(b.textContent.trim().toUpperCase()==='CALCULATE'||b.textContent.trim()===t.calculate) b.textContent=t.calculate; });
 
   // System card titles
   const allCardTitles = document.querySelectorAll('.card-title');
@@ -3293,7 +3811,8 @@ function applyCalcTranslations(){
 
 // ── Init language ──────────────────────────────────
 window.addEventListener('DOMContentLoaded', ()=>{
-  if(calcLang !== 'en') applyCalcTranslations();
+  // Always apply translations (even EN) to set nav label and drawer texts
+  applyCalcTranslations();
 });
 
 // ══════════════════════════════════════════════════
