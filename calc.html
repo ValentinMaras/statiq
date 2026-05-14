@@ -2570,7 +2570,7 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB){
     members: [
       { x0:col_L, y0:col_bot, x1:col_L, y1:col_top, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mleft,  Q:Qleft,  N:Nleft  },
       { x0:col_L, y0:col_top, x1:col_R, y1:col_top, thick:3, flip:false, isColumn:false, memberLen:b, M:Mraf,   Q:Qraf,   N:Nraf   },
-      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:false, isColumn:true,  memberLen:h, M:Mright, Q:Qright, N:Nright }
+      { x0:col_R, y0:col_top, x1:col_R, y1:col_bot, thick:3, flip:true,  isColumn:true,  memberLen:h, M:Mright, Q:Qright, N:Nright }
     ]
   };
   diagData['frame'] = data;
