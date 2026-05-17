@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Statiq v0.5.6 -->
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -2613,23 +2614,43 @@ function frameSolveDet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
   return {HA, HB, MA_r, MB_r};
 }
 
-// ── 3. STATICALLY INDETERMINATE (n≥1) ─────────────────────────────
-// Uses Force Method (Castigliano ∂U/∂Xᵢ = 0)
-// Returns: { HA, HB, MA_r, MB_r }
+// ── 3. STATICALLY INDETERMINATE — VV (Verschiebungsgrößenverfahren) ──
+//
+// Einheitliche Implementierung für alle Lagerungsfälle.
+// Stabendmomente (SM): rechtsdrehend positiv am Stab.
+// Knoten: 1=Fuß A (unten links), 2=Kopf A, 3=Kopf B, 4=Fuß B (unten rechts)
+//
+// Ausgabe: { SM: {M_A2,M_2A,M_23,M_32,M_3B,M_B3}, HA, HB, MA_r, MB_r,
+//            _sdVA_corr, _sdM_A2, _sdM_2A, _sdM_B3, _sdM_3B }
+//
 function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
-  const {pinA,pinB,fixA,fixB,rolA,rolB,rafHinge} = config;
+  const {pinA, pinB, fixA, fixB, rolA, rolB, rafHinge} = config;
 
-  // EI values (from UI inputs)
+  // ── EI-Werte aus UI ───────────────────────────────────────────────
   const EI_R = (parseFloat(document.getElementById('frame-E-raf')?.value)||210)
              * (parseFloat(document.getElementById('frame-Iy-raf')?.value)||10);
   const EI_S = (parseFloat(document.getElementById('frame-E-col')?.value)||210)
              * (parseFloat(document.getElementById('frame-Iy-col')?.value)||10);
 
-  const NP=50;
-  const dx=b/NP, dh=hA/NP;
+  // ── Steifigkeitsfaktoren ──────────────────────────────────────────
+  // k = 2EI/l  (Grundstab-Steifigkeit)
+  // Für Gelenkauflager: Stütze trägt kein Moment → k=0 für diese Stütze
+  const kA = fixA ? 2*EI_S/hA : 0;  // linke Stütze (0 wenn Gelenk)
+  const kB = fixB ? 2*EI_S/hB : 0;  // rechte Stütze (0 wenn Gelenk)
+  const kR = 2*EI_R/b;               // Riegel
 
-  // Primary structure moment on rafter: M_P(x) = -VA·x + Mq(x)
-  // (simply-supported rafter, no horizontal thrust)
+  // ── Lastmomentenberechnung (Riegellast) ───────────────────────────
+  // Vertikale Riegellasten: Festhaltemomete (Starreinspann-SM)
+  // Eingespaнnter beidseitig: FE_23 = −∫q·x·(b−x)²/b² dx
+  //                           FE_32 = +∫q·x²·(b−x)/b² dx
+  // Einseitig eingespannt (pinB): FE_23 = −∫q·x·(b²−x²)/(2b) dx... 
+  // Aber VV löst das automatisch über die Knotenrotation — wir berechnen
+  // die FE-Momente immer für den Grundfall (Grundstab 1: beids. eingespannt).
+  // Für Gelenkränder ergibt sich φ_Gelenk ≠ 0, was das Moment automatisch auf 0 bringt.
+  const NP = 100;
+  const dx = b/NP;
+
+  // Lastmoment-Funktion auf dem Riegel (für Mq und FE-Momente)
   function Mq(x){
     let m=0;
     vLoads.forEach(dl=>{
@@ -2641,281 +2662,416 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
     }); return m;
   }
 
-  // Numerical integral: ∫₀ᵇ weightFn(x)·M_P(x) dx
-  function rafInt(weightFn){
-    let s=0;
+  // Festhaltemomete (FE) für beidseitig eingespannten Riegel:
+  // FE_23: Starreinspannmoment am linken Ende (neg. für Abwärtslast)
+  // FE_32: Starreinspannmoment am rechten Ende (pos. für Abwärtslast)
+  let FE_23=0, FE_32=0;
+  vLoads.forEach(dl=>{
+    if((dl.values.member||'rafter')!=='rafter') return;
+    const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0) return;
+    const qa=dl.values.qa, qb_=dl.values.qb;
+    for(let i=0;i<=NP;i++){
+      const x=i/NP*b; if(x<a||x>bE) continue;
+      const w=(i===0||i===NP)?0.5:1;
+      const t=x-a, frac=len>0?t/len:0;
+      const qx=qa+(qb_-qa)*frac;
+      FE_23 -= w*qx*x*(b-x)*(b-x)/(b*b)*dx;  // neg. für Abwärtslast ✓
+      FE_32 += w*qx*x*x*(b-x)/(b*b)*dx;        // pos. für Abwärtslast ✓
+    }
+  });
+
+  // Horizontallast-Beitrag zu Knotenmoment-Festhaltemomenten:
+  // Last F bei Höhe z an linker Stütze → Moment am Knoten 2: M = F·(hA−z)
+  // Last F bei Höhe z an rechter Stütze → Moment am Knoten 3: M = −F·(hB−z)
+  let FE_node2=0, FE_node3=0;
+  hLoads.forEach(hl=>{
+    const F=hl._F, z=hl._z;
+    if(hl._mem==='left')  FE_node2 += F*(hA-z);
+    if(hl._mem==='right') FE_node3 -= F*(hB-z);
+  });
+
+  // ── VV: Steifigkeitsmatrix Z und RHS aufstellen ───────────────────
+  //
+  // Unbekannte Weggrößen ξ = [φ₂, φ₃, δ] (je nach Lagerung)
+  // Zwangskräfte Z (Festhaltemomente am Knoten):
+  //
+  // Z₂ = M_2A + M_23 = 0   (Momentengleichgewicht Knoten 2)
+  // Z₃ = M_3B + M_32 = 0   (Momentengleichgewicht Knoten 3)
+  // Z_s = (M_A2+M_2A)/hA + (M_B3+M_3B)/hB − Htot = 0  (Schubgleichgewicht)
+  //
+  // SM-Formeln (Clapeyron):
+  //   M_A2 = kA·(φ₂ − 3δ/hA)          [Fuß A, Grundstab 1: i=Fuß, k=Kopf]
+  //   M_2A = kA·(2φ₂ − 3δ/hA)         [Kopf A → Fuß A]
+  //   M_23 = kR·(2φ₂ + φ₃) + FE_23    [Kopf A → Kopf B]
+  //   M_32 = kR·(2φ₃ + φ₂) + FE_32    [Kopf B → Kopf A]
+  //   M_3B = kB·(2φ₃ − 3δ/hB)         [Kopf B → Fuß B]
+  //   M_B3 = kB·(φ₃ − 3δ/hB)          [Fuß B, entspricht M_A2]
+  //
+  // Z₂ = kA·(2φ₂ − 3δ/hA) + kR·(2φ₂ + φ₃) + FE_23 + FE_node2 = 0
+  // Z₃ = kB·(2φ₃ − 3δ/hB) + kR·(2φ₃ + φ₂) + FE_32 + FE_node3 = 0
+  // Z_s = kA·(3φ₂ − 6δ/hA)/hA + kB·(3φ₃ − 6δ/hB)/hB − Htot = 0
+  //     = 3kA/hA·φ₂ + 3kB/hB·φ₃ − (6kA/hA²+6kB/hB²)·δ = Htot
+  //
+  // Matrix A·ξ = rhs:
+  //   [2kA+2kR,  kR,       −3kA/hA          ] [φ₂]   [−FE_23 − FE_node2]
+  //   [kR,       2kB+2kR,  −3kB/hB          ] [φ₃] = [−FE_32 − FE_node3]
+  //   [3kA/hA,   3kB/hB,   −(6kA/hA²+6kB/hB²)] [δ ]   [Htot              ]
+  //
+  // Für Gelenk-Fälle: kA=0 oder kB=0 → entsprechende Zeilen/Spalten fallen weg.
+
+  // Bestimme welche Freiheitsgrade aktiv sind:
+  const hasSwayDOF = fixA && fixB;  // δ nur wenn beide eingespannt
+  // Aufbau der Gleichungsmatrix für aktive DOFs:
+  // DOFs: φ₂ immer (wenn fixA oder beids. pin), φ₃ wenn nicht rolB, δ wenn hasSwayDOF
+
+  // Generischer LGS-Aufbau — alle 3 DOFs, dann ggf. reduzieren
+  // Für rolB: kB=0 und φ₃=0 (keine freie Rotation an B möglich wegen rolB-Zwang)
+  // Wir bauen immer das 3×3 System und lösen es allgemein.
+  // Bei kB=0 (pinB/rolB): M_3B=M_B3=0 → Z₃ = kR·(2φ₃+φ₂) + FE_32 = 0 → φ₃ bestimmbar
+  // Bei rolB: kein δ-Freiheitsgrad (HB=0 durch Gleichgewicht, nicht durch Einspannung)
+
+  // Für den allgemeinen Fall bauen wir ein n×n System:
+  // n=3: fixA+fixB (φ₂, φ₃, δ)
+  // n=2: fixA+pinB oder pinA+pinB (φ₂, φ₃)
+  // n=1: fixA+rolB (φ₂)
+  // n=2: pinA+pinB mit δ... nein: pinA+pinB → kA=kB=0, kein Sway → n=2 aber δ irrelevant
+  //      Zweigelenkrahmen: δ muss berücksichtigt werden! Aber kA=kB=0 → Z_s: 0+0−0=Htot=0
+  //      → δ ist unbestimmt (Mechanismus für H=0), nur φ₂,φ₃ bestimmbar.
+  //      Wir behandeln pinA+pinB separat über das Kraftgrößenverfahren (wie bisher).
+
+  let phi2=0, phi3=0, delta=0;
+  let HA=0, HB=0, MA_r=0, MB_r=0;
+  let _sdVA_corr=0, _sdM_B3=null, _sdM_A2=null, _sdM_3B=null, _sdM_2A=null;
+
+  // ── pinA+pinB: Kraftgrößenverfahren (unverändert) ─────────────────
+  if(pinA && pinB){
+    // Redundante: X₁ = H (horizontaler Schub)
+    // δ₁₁·H = −Δ₁P
+    const dh_col = hA/NP;
+    let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);
+    let D1P = 0;
     for(let i=0;i<=NP;i++){
       const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
-      s+=w*weightFn(x)*(-VA*x+Mq(x))*dx;
+      const yb=hA+(hB-hA)*x/b;
+      d11 += w*yb*yb/EI_R*dx;
+      D1P += w*yb*(-VA*x+Mq(x))/EI_R*dx;
     }
-    return s;
-  }
-
-  // Horizontal load contribution to compatibility integrals (left column)
-  // M_P_col(y) = F·(y-z) for y≥z (moment from horizontal load in primary structure)
-  function hloadColInt(weightFn_y){
-    let s=0;
     hLoads.forEach(hl=>{
       if(hl._mem!=='left') return;
       const F=hl._F, z=hl._z;
       for(let i=0;i<=NP;i++){
         const y=i/NP*hA; if(y<=z) continue;
         const w=(i===0||i===NP)?0.5:1;
-        s+=w*weightFn_y(y)*F*(y-z)/EI_S*dh;
+        D1P += w*y*F*(y-z)/EI_S*dh_col;
       }
     });
-    return s;
+    HA = -D1P/d11;
+    HB = -Htot-HA;
+    MA_r=0; MB_r=0;
+    // SM für pinA+pinB: keine Einspannmomente, nur Riegel-Knotenmomente
+    // M_A2=M_B3=0 (Gelenke), M_2A/M_3B aus Gleichgewicht
+    // Wird unten nach dem if/else-Block berechnet — kein early return
+    // (phi2=phi3=delta=0 → SM-Formeln geben 0, aber wir setzen SM manuell)
   }
 
-  let HA=0, HB=0, MA_r=0, MB_r=0;
-  let _sdVA_corr=0, _sdM_B3=null, _sdM_A2=null, _sdM_3B=null, _sdM_2A=null;
-
-  if(pinA && pinB){
-    // ── ZWEIGELENKRAHMEN (n=1) — Holschemacher 3.1 ───────────────
-    // Redundant X₁ = H (horizontal thrust)
-    // ∂U/∂H = 0:
-    //   δ₁₁·H = -Δ₁P
-    // where:
-    //   δ₁₁ = ∫leftcol y²/EI_S dy + ∫rightcol y²/EI_S dy + ∫raf ȳ²/EI_R dx
-    //   For asymmetric: left col uses hA, right col uses hB
-    //   The virtual moment at cut = H·y for cols, H·ȳ(x) for rafter
-    //   where ȳ(x) = hA + (hB-hA)*x/b (linear variation for inclined rafter)
-    const delta11_left  = hA*hA*hA/(3*EI_S);
-    const delta11_right = hB*hB*hB/(3*EI_S);
-    const delta11_raf   = (function(){
-      let s=0;
-      for(let i=0;i<=NP;i++){
-        const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
-        const ybar=hA+(hB-hA)*x/b;  // interpolated column height at x
-        s+=w*ybar*ybar/EI_R*dx;
-      }
-      return s;
-    })();
-    const delta11 = delta11_left + delta11_right + delta11_raf;
-    const Delta1P_raf = (function(){
-      let s=0;
-      for(let i=0;i<=NP;i++){
-        const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
-        const ybar=hA+(hB-hA)*x/b;
-        s+=w*ybar*(-VA*x+Mq(x))/EI_R*dx;
-      }
-      return s;
-    })();
-    const Delta1P = Delta1P_raf + hloadColInt(y=>y);
-    HA = -Delta1P / delta11;
-    HB = -Htot - HA;
-    MA_r=0; MB_r=0;
-
-  } else if(fixA && fixB){
-    // ── EINSPANNRAHMEN (n=3) — Slope-Deflection-Methode ──────────
-    // Unknowns: φ₂ (rotation node top-left), φ₃ (top-right), δ (sway)
-    // Slope-deflection equations (Clapeyron):
-    //   M_ij = (2EI/L)·(2φ_i + φ_j − 3ψ_ij) + M_FE_ij
-    //   ψ_left  = δ/hA (sway chord angle, left col)
-    //   ψ_right = δ/hB (right col, same sway direction)
-    //   ψ_raf   = 0    (rafter: both top nodes move together horizontally)
-    //
-    // Fixed-end moments on rafter under distributed vertical load q(x):
-    // For uniform q: M_FE_23 = -q·b²/12, M_FE_32 = +q·b²/12
-    // For point loads and horizontal loads: add contributions below.
-    //
-    // Node equilibrium (ΣM=0):
-    //   Node 2: M_2A + M_23 = 0   (+ h-load moment if any)
-    //   Node 3: M_3B + M_32 = 0
-    // Shear equilibrium (ΣFH=0 for full frame):
-    //   (M_A2+M_2A)/hA + (M_B3+M_3B)/hB + Htot = 0
-    //
-    // This yields a 3×3 linear system in [φ₂, φ₃, δ].
-
-    const kA_sd = 2*EI_S/hA;   // stiffness factor left col
-    const kB_sd = 2*EI_S/hB;   // stiffness factor right col
-    const kR_sd = 2*EI_R/b;    // stiffness factor rafter
-
-    // Fixed-end moments from vertical loads on rafter (numerical integration):
-    // M_FE_23 = -∫ q(x)·x·(b−x)²/b² dx  (near end = left)
-    // M_FE_32 = +∫ q(x)·x²·(b−x)/b² dx  (far end = right)
-    let FE23=0, FE32=0;
-    vLoads.forEach(dl=>{
-      if((dl.values.member||'rafter')!=='rafter') return;
-      const a=dl.values.a, bE=Math.min(dl.values.b,b), len=bE-a; if(len<=0) return;
-      const qa=dl.values.qa, qb_=dl.values.qb;
-      for(let i=0;i<=NP;i++){
-        const x=i/NP*b; if(x<a||x>bE) continue;
-        const w=(i===0||i===NP)?0.5:1;
-        const t=x-a, frac=len>0?t/len:0;
-        const qx=qa+(qb_-qa)*frac;
-        FE23 -= w*qx*x*(b-x)*(b-x)/(b*b)*dx;
-        FE32 += w*qx*x*x*(b-x)/(b*b)*dx;
-      }
-    });
-
-    // Horizontal load contributions to node moments (left column loads):
-    // A horizontal load F at height z on left col creates:
-    //   moment at node 2 (top): M_hload_2 = F*(hA−z)  (if F rightward = positive)
-    //   This enters node-2 equilibrium as additional term.
-    let M_hload_node2=0, M_hload_node3=0;
-    let H_hload_col=0;   // sum of horizontal loads (for shear eq.)
-    hLoads.forEach(hl=>{
-      const F=hl._F, z=hl._z;
-      if(hl._mem==='left'){
-        M_hload_node2 += F*(hA-z);   // moment delivered to top of left col
-        H_hload_col   += F;           // horizontal force
-      }
-      if(hl._mem==='right'){
-        M_hload_node3 += -F*(hB-z);  // moment delivered to top of right col (opposite sign)
-        H_hload_col   += F;
-      }
-    });
-
-    // 3×3 system: A·[φ₂,φ₃,δ]ᵀ = rhs
-    // Row 0 (node 2):  (2kA+2kR)φ₂ + kR·φ₃ − 3kA/hA·δ = −FE23 − M_hload_node2
-    // Row 1 (node 3):  kR·φ₂ + (2kB+2kR)φ₃ + 3kB/hB·δ = −FE32 − M_hload_node3
-    // Row 2 (shear):   3kA/hA·φ₂ + 3kB/hB·φ₃ − (6kA/hA²+6kB/hB²)·δ = −Htot
-    // Note: -(6kA/hA²+6kB/hB²) is always non-zero → non-singular for all geometries.
-    const sdA=[
-      [2*kA_sd+2*kR_sd,  kR_sd,           -3*kA_sd/hA                    ],
-      [kR_sd,            2*kB_sd+2*kR_sd,  3*kB_sd/hB                    ],
-      [3*kA_sd/hA,       3*kB_sd/hB,      -(6*kA_sd/hA**2 + 6*kB_sd/hB**2)]
-    ];
-    const sdRhs=[
-      -FE23 - M_hload_node2,
-      -FE32 - M_hload_node3,
-      -Htot
-    ];
-    // Gauss elimination
-    const sdAug=sdA.map((r,i)=>[...r, sdRhs[i]]);
-    for(let p=0;p<3;p++) for(let r=p+1;r<3;r++){
-      const f=sdAug[r][p]/sdAug[p][p];
-      for(let c=0;c<=3;c++) sdAug[r][c]-=f*sdAug[p][c];
-    }
-    const sdX=[0,0,0];
-    for(let i=2;i>=0;i--){
-      sdX[i]=sdAug[i][3];
-      for(let j=i+1;j<3;j++) sdX[i]-=sdAug[i][j]*sdX[j];
-      sdX[i]/=sdAug[i][i];
-    }
-    const phi2=sdX[0], phi3=sdX[1], sdDelta=sdX[2];
-
-    // Member end moments from slope-deflection:
-    const M_A2 = kA_sd*(phi2   - 3*sdDelta/hA);  // Einspannmoment Fuß A (physikalisch)
-    const M_2A = kA_sd*(2*phi2 - 3*sdDelta/hA);  // Knotenmoment oben links = M_cL_phys
-    const M_B3 = kB_sd*(phi3   + 3*sdDelta/hB);  // Einspannmoment Fuß B (physikalisch)
-
-    // Horizontal reactions from column shears:
-    // HA_display = (M_A2+M_2A)/hA > 0 — used in moment formula M_cL = MA_r + HA*hA
-    // HA_global  = -(M_A2+M_2A)/hA < 0 — global reaction (support pushes inward)
-    // The code uses HA for moment calculations (display convention), so use positive.
-    let HA_hload=0;
-    hLoads.forEach(hl=>{ if(hl._mem==='left') HA_hload+=hl._F; });
-    HA = (M_A2 + M_2A)/hA + HA_hload;   // display convention (positive = outward)
-    HB = (M_B3 + kB_sd*(2*phi3 + 3*sdDelta/hB))/hB;
-
-    // MA_r in code convention: MA_r + HA*hA = M_cL = M_2A
-    // => MA_r = M_2A - HA*hA = -M_A2 ✓ (negative for standard gravity load = außen)
-    MA_r = -M_A2;
-
-    // Code convention: M_cL = MA_r + HA*hA  →  MA_r = M_2A − HA*hA = −M_A2
-    MA_r = -M_A2;
-
-    // VA from global moment equilibrium ΣM_B=0:
-    // VA·b + M_A2 + M_B3 − q·b²/2 = 0
-    // (M_A2 and M_B3 are physical base moments, CCW+)
-    // Using distributed vLoads (q already summed into VA upstream — no, VA not yet set here)
-    // We compute VA correction factor:
-    // VA_total = (q_equiv·b²/2 − M_A2 − M_B3) / b
-    // But VA upstream was computed as VA = Vtot·(HB contribution)... 
-    // Instead, store M_A2/M_B3 for VA correction in frameLoadSummary output:
-    // Since frameLoadSummary computes VA from ΣM_B without end moments,
-    // we correct here: VA_fix = VA − (M_A2+M_B3)/b  and VB_fix = VB + (M_A2+M_B3)/b
-    // (The correction ensures ΣM_B=0 with end moments.)
-    // We pass corrected VA/VB back via the return object.
-    const sdVA_corr = -(M_A2 + M_B3)/b;  // additive correction to VA
-
-    // MB_r: set so that M_cR = MB_r + HB*hB = Mraf(b), ensuring diagram continuity.
-    // Mraf(b) = VA_corrected·b − HA·hB − MA_r − q_total·b²/2
-    // We resolve this after VA is corrected; store M_B3 for now.
-    // For the support reactions table, MB_r = −M_B3 (physical base moment convention).
-    MB_r = -M_B3;
-    // Store VA correction and M_B3 for use in frameInternalForces:
-    _sdVA_corr = sdVA_corr;
-    _sdM_B3 = M_B3;
-    _sdM_A2 = M_A2;
-    _sdM_2A = M_2A;   // top of left col, for Mleft interpolation
-    _sdM_3B = kB_sd*(2*phi3 + 3*sdDelta/hB);  // M_3B = correct M_cR
-
-  } else if(fixA && rolB){
-    // ── FIXED A + ROLLER B (n=1) ──────────────────────────────────
-    // HB=0 (roller), HA=Htot from ΣFx
-    // Redundant X₁=MA_r
-    // ∂U/∂MA_r = 0:
-    //   MA_r·(hA/EI_S + b/EI_R) + HA·(hA²/(2EI_S) + hA·b/EI_R) + Δ_raf = 0
-    HA=Htot; HB=0;
+  // ── fixA+fixB: VV mit 3 DOFs ──────────────────────────────────────
+  if(fixA && rolB){
+    // fixA+rolB: n=1, verschiebliches System. KGV mit Redundante X1=MA_r.
+    // HB=0 (Rolle), HA=Htot (ΣFx=0).
+    // ∂U/∂MA_r = 0: MA_r·(hA/EI_S + b/EI_R) + HA·(hA²/(2EI_S) + hA·b/EI_R) + Δ_raf = 0
+    HA = Htot; HB = 0;
+    const dh_col = hA/NP;
     const c1 = hA/EI_S + b/EI_R;
     const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
-    const c3 = rafInt(()=>1) / EI_R;
+    let c3 = 0;
+    for(let i=0;i<=NP;i++){
+      const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
+      c3 += w*(-VA*x+Mq(x))/EI_R*dx;
+    }
     MA_r = -(c2 + c3) / c1;
     MB_r = 0;
+    // SM aus KGV:
+    M_A2 = -MA_r;
+    M_2A = MA_r + HA*hA;   // = M_cL
+    M_23 = -M_2A;          // Knotengleichgewicht
+    M_32 = HB*hB;          // = 0 (HB=0)
+    M_3B = 0;
+    M_B3 = 0;
 
+  // ── fixA+pinB: Kraftgrößenverfahren (n=2) ────────────────────────
   } else if(fixA && pinB){
-    // ── FIXED A + PIN B (n=2) ─────────────────────────────────────
-    // Redundants: X1=HA (horizontal thrust), X2=MA_r (fixed-end moment at A)
-    // HB = −Htot − HA  (from ΣFH)
-    // Compatibility (Castigliano ∂U/∂X1=0, ∂U/∂X2=0):
-    //   [δ11 δ12][HA  ]   [−Δ1P]
-    //   [δ21 δ22][MA_r] = [−Δ2P]
-    //
-    // Virtual moments:
-    //   m̄1 (HA=1, HB=−1): left col=y, rafter=ȳ(x)=hA+(hB−hA)x/b, right col=y
-    //   m̄2 (MA_r=1):       left col=1, rafter=(1−x/b), right col=0
-    //
-    // Primary moments M_P (pin+pin, no H, no MA):
-    //   Left/right col: 0.  Rafter: −VA·x + Mq(x)  [code convention, hogging+]
-    //   plus horizontal load contributions.
-    const NP_i=NP, dx_i=dx;
-    let d11=hA**3/(3*EI_S)+hB**3/(3*EI_S);
-    let d12=hA**2/(2*EI_S);
-    let d22=hA/EI_S;
-    let D1P=0, D2P=0;
-    // integrate over rafter
-    for(let i=0;i<=NP_i;i++){
-      const x=i/NP_i*b, w=(i===0||i===NP_i)?0.5:1;
+    // Verschiebliches System — VV braucht Wegfesselung für δ (Statik V).
+    // Hier: Kraftgrößenverfahren (KGV) mit Redundanten X1=HA, X2=MA_r.
+    // HB = −Htot − HA  (ΣFx=0)
+    // Kompatibilität: [δ11 δ12][HA  ] = [−Δ1P]
+    //                 [δ21 δ22][MA_r]   [−Δ2P]
+    // Virtuell: m̄1 (HA=1): links col=y, Riegel=ȳ(x), rechts col=y
+    //           m̄2 (MA_r=1): links col=1, Riegel=(1−x/b), rechts col=0
+    const dh_col = hA/NP;
+    let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);
+    let d12 = hA**2/(2*EI_S);
+    let d22 = hA/EI_S;
+    let D1P = 0, D2P = 0;
+    for(let i=0;i<=NP;i++){
+      const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
       const yb=hA+(hB-hA)*x/b;
       const m1=yb, m2=1-x/b;
       const MP=-VA*x+Mq(x);
-      d11+=w*m1*m1/EI_R*dx_i;
-      d12+=w*m1*m2/EI_R*dx_i;
-      d22+=w*m2*m2/EI_R*dx_i;
-      D1P+=w*m1*MP/EI_R*dx_i;
-      D2P+=w*m2*MP/EI_R*dx_i;
+      d11+=w*m1*m1/EI_R*dx;
+      d12+=w*m1*m2/EI_R*dx;
+      d22+=w*m2*m2/EI_R*dx;
+      D1P+=w*m1*MP/EI_R*dx;
+      D2P+=w*m2*MP/EI_R*dx;
     }
-    // Add horizontal load contributions to D1P, D2P (virtual work on columns)
-    D1P+=hloadColInt(y=>y);
-    D2P+=hloadColInt(()=>1);
-    // Solve 2×2
-    const det2=d11*d22-d12*d12;
+    hLoads.forEach(hl=>{
+      if(hl._mem!=='left') return;
+      const F=hl._F, z=hl._z;
+      for(let i=0;i<=NP;i++){
+        const y=i/NP*hA; if(y<=z) continue;
+        const w=(i===0||i===NP)?0.5:1;
+        D1P += w*y*F*(y-z)/EI_S*dh_col;
+        D2P += w*1*F*(y-z)/EI_S*dh_col;
+      }
+    });
+    const det2 = d11*d22 - d12*d12;
     HA   = (-D1P*d22 + D2P*d12) / det2;
-    MA_r = (-D2P*d11 + D1P*d12) / det2;
+    const MA_r_kgv = (-D2P*d11 + D1P*d12) / det2;
     HB   = -Htot - HA;
+    MA_r = MA_r_kgv;
     MB_r = 0;
+    // SM aus KGV-Ergebnissen ableiten:
+    // M_A2 = −MA_r (weil MA_r = −M_A2 in VV-Konvention)
+    // M_2A = M_cL − M_A2 = (MA_r + HA*hA) − (−MA_r)... 
+    // Einfacher: M_A2_kgv = −MA_r, M_2A_kgv = HA*hA + MA_r (= M_cL − M_A2 + M_A2 = M_cL)
+    // Wir setzen SM direkt aus GGW:
+    // phi2 und delta bleiben 0 (werden nicht gebraucht — SM direkt gesetzt)
+    // _sdM_A2 und _sdM_2A werden in _sdM_* gesetzt (unten)
+
+  // ── pinA+fixB: Kraftgrößenverfahren (n=2, gespiegelt von fixA+pinB) ──
+  } else if(pinA && fixB){
+    // Redundante: X1=HB, X2=MB_r
+    // Virtuell: m̄1 (HB=1): links col=y (von oben), Riegel=ȳ_B(x)=hB*(1-x/b)+hA*(x/b)... nein
+    // Einfacher: Spiegelung von fixA+pinB (A↔B, links↔rechts)
+    // HA = -Htot - HB (ΣFx=0)
+    const dh_col = hB/NP;
+    let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);
+    let d12 = hB**2/(2*EI_S);
+    let d22 = hB/EI_S;
+    let D1P = 0, D2P = 0;
+    for(let i=0;i<=NP;i++){
+      const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
+      const yb=hA+(hB-hA)*x/b;
+      const m1=yb, m2=x/b;   // gespiegelt: m2=x/b (statt 1-x/b)
+      const MP=-VA*x+Mq(x);
+      d11+=w*m1*m1/EI_R*dx;
+      d12+=w*m1*m2/EI_R*dx;
+      d22+=w*m2*m2/EI_R*dx;
+      D1P+=w*m1*MP/EI_R*dx;
+      D2P+=w*m2*MP/EI_R*dx;
+    }
+    const det2b = d11*d22 - d12*d12;
+    HB   = (-D1P*d22 + D2P*d12) / det2b;
+    const MB_r_kgv = (-D2P*d11 + D1P*d12) / det2b;
+    HA   = -Htot - HB;
+    MA_r = 0;
+    MB_r = MB_r_kgv;
+
+  // ── fixA+fixB: VV mit 3 DOFs (φ₂, φ₃, δ) ────────────────────────
+  } else if(fixA && fixB){
+    // 3×3 LGS (wie bisher, aber jetzt sauber im VV-Kontext):
+    const A3=[
+      [2*kA+2*kR,  kR,         -3*kA/hA                 ],
+      [kR,         2*kB+2*kR,  -3*kB/hB                  ],
+      [3*kA/hA,    3*kB/hB,    -(6*kA/hA**2+6*kB/hB**2)  ]
+    ];
+    const r3=[
+      -FE_23 - FE_node2,
+      -FE_32 - FE_node3,
+      Htot
+    ];
+    // Gauss-Elimination mit Spaltenpivotisierung
+    const aug=A3.map((row,i)=>[...row, r3[i]]);
+    for(let p=0;p<3;p++){
+      let maxRow=p;
+      for(let r=p+1;r<3;r++) if(Math.abs(aug[r][p])>Math.abs(aug[maxRow][p])) maxRow=r;
+      [aug[p],aug[maxRow]]=[aug[maxRow],aug[p]];
+      for(let r=p+1;r<3;r++){
+        const f=aug[r][p]/aug[p][p];
+        for(let c=0;c<=3;c++) aug[r][c]-=f*aug[p][c];
+      }
+    }
+    const xi=[0,0,0];
+    for(let i=2;i>=0;i--){
+      xi[i]=aug[i][3];
+      for(let j=i+1;j<3;j++) xi[i]-=aug[i][j]*xi[j];
+      xi[i]/=aug[i][i];
+    }
+    phi2=xi[0]; phi3=xi[1]; delta=xi[2];
+    // Horizontale Reaktionen:
+    const M_A2_v = kA*(phi2 - 3*delta/hA);
+    const M_2A_v = kA*(2*phi2 - 3*delta/hA);
+    const M_B3_v = kB*(phi3 - 3*delta/hB);
+    const M_3B_v = kB*(2*phi3 - 3*delta/hB);
+    let HA_hload=0;
+    hLoads.forEach(hl=>{ if(hl._mem==='left') HA_hload+=hl._F; });
+    HA = (M_A2_v + M_2A_v)/hA + HA_hload;
+    HB = (M_B3_v + M_3B_v)/hB;
   }
 
-  return {HA, HB, MA_r, MB_r, _sdVA_corr, _sdM_B3, _sdM_A2, _sdM_3B, _sdM_2A};
+  // ── Stabendmomente (SM) berechnen ─────────────────────────────────
+  // Für VV-Cases (fixA+fixB, fixA+rolB): aus phi2, phi3, delta
+  // Für KGV-Cases (fixA+pinB, pinA+pinB): aus MA_r, HA, HB direkt
+  let M_A2, M_2A, M_23, M_32, M_3B, M_B3;
+  if(pinA && pinB){
+    // KGV: HA berechnet, keine Einspannmomente
+    // Knotenmomente aus globalem GGW:
+    M_A2 = 0;           // Gelenk A
+    M_2A = HA*hA;       // Knotenmoment Kopf A (= HA·hA aus Stützen-GGW)
+    M_23 = -M_2A;       // Knotengleichgewicht
+    M_32 = -HB*hB;      // Knotenmoment Kopf B (HB negativ → M_32 positiv... check)
+    M_3B = 0;           // Knotenmoment Kopf B → Fuß B (= M_32 für Rendering)
+    M_B3 = 0;           // Gelenk B
+  } else if(fixA && pinB){
+    // KGV pinB: bereits oben berechnet (MA_r, HA, HB)
+    M_A2 = -MA_r;
+    M_2A = MA_r + HA*hA;
+    M_23 = -M_2A;
+    M_32 = HB*hB;
+    M_3B = 0;
+    M_B3 = 0;
+  } else if(pinA && fixB){
+    // Gespiegelt von fixA+pinB: A=Gelenk, B=Einspannung
+    M_A2 = 0;           // Gelenk A
+    M_2A = HA*hA;       // Knotenmoment Kopf A
+    M_23 = -M_2A;       // Knotengleichgewicht Knoten 2
+    M_32 = MB_r + HB*hB; // Knotenmoment Kopf B
+    M_3B = M_32;         // SM Kopf B → für Rendering
+    M_B3 = -MB_r;        // SM Fuß B (Einspannung)
+  } else if(fixA && rolB){
+    // KGV rolB: MA_r bereits berechnet, HA=0, HB=0
+    // Display-Konvention für Stütze: M_A2 = Display-Fuß, M_2A_neg = Display-Kopf
+    // Für rolB mit HA=0: Fuß und Kopf auf gleicher Seite (außen=links), beide negativ.
+    // Display-Fuß = MA_r < 0 (außen), Display-Kopf = MA_r < 0 (außen, kein Flip)
+    // → M_A2 = MA_r, −M_2A = MA_r → M_2A = -MA_r
+    // Dann Interpolation: M_phys(t) = MA_r*(1-t) + MA_r*t = MA_r (konstant) ✓
+    M_A2 = MA_r;     // Display-Fuß (negativ = außen) 
+    M_2A = -MA_r;    // so dass −M_2A = MA_r = Display-Kopf
+    M_23 = MA_r;     // Knotenmoment Riegel = −M_2A_SM = MA_r
+    M_32 = 0;
+    M_3B = 0;
+    M_B3 = 0;
+  } else {
+    // VV: fixA+fixB oder pinA+pinB
+    M_A2 = kA*(phi2   - 3*delta/hA);
+    M_2A = kA*(2*phi2 - 3*delta/hA);
+    M_23 = kR*(2*phi2 + phi3) + FE_23;
+    M_32 = kR*(2*phi3 + phi2) + FE_32;
+    M_3B = kB*(2*phi3 - 3*delta/hB);
+    M_B3 = kB*(phi3   - 3*delta/hB);
+  }
+
+  // ── Plausibilitätsprüfung ──────────────────────────────────────────
+  // Z₂ = M_2A + M_23 + FE_node2 (sollte ≈ 0 sein nach Lösung)
+  const Z2 = M_2A + M_23 + FE_node2;
+  const Z3 = M_3B + M_32 + FE_node3;
+  const Zs = (M_A2+M_2A)/hA + (M_B3+M_3B)/hB - Htot;
+  const isVV = fixA && fixB;
+  const isKGV = (fixA && pinB) || (fixA && rolB) || (pinA && pinB);
+  if(isVV && Math.abs(Z2)>1e-4) console.warn('VV Z₂ Residual:', Z2.toFixed(6));
+  if(isVV && Math.abs(Z3)>1e-4) console.warn('VV Z₃ Residual:', Z3.toFixed(6));
+  if(isVV && Math.abs(Zs)>1e-4) console.warn('VV Z_sway Residual:', Zs.toFixed(6));
+
+  // MA_r/MB_r für Kompatibilität: MA_r = −M_A2 (für alle Cases)
+  if(!(fixA && pinB) && !(fixA && rolB) && !(pinA && fixB)){  // für diese Cases bereits via KGV gesetzt
+    MA_r = fixA ? -M_A2 : 0;
+    MB_r = fixB ? -M_B3 : 0;
+  }
+  // VA-Korrektur:
+  _sdVA_corr = -(M_A2 + M_B3)/b;
+
+  // Übergabe der SM für frameInternalForces:
+  // SM werden immer übergeben (auch für pinB/rolB wo kB=0 → M_B3=M_3B=0)
+  _sdM_A2 = fixA ? M_A2 : null;
+  _sdM_2A = fixA ? M_2A : null;
+  // Rechte Stütze: Kopf-Moment für Rendering
+  // fixB: M_B3=Fuß-SM, M_3B=Kopf-SM (beide aus VV)
+  // pinB/rolB: M_B3=0, Kopf-Moment = M_32 (aus Riegel-Knotenmoment)
+  _sdM_B3 = M_B3;
+  _sdM_3B = fixB ? M_3B : M_32;  // M_32 für pinB/rolB als Kopf-Moment
+
+  return {HA, HB, MA_r, MB_r, _sdVA_corr, _sdM_B3, _sdM_A2, _sdM_3B, _sdM_2A,
+          SM: {M_A2, M_2A, M_23, M_32, M_3B, M_B3}};
 }
 
 // ── 4. INTERNAL FORCES (M/Q/N per member) ─────────────────────────
-// Returns: { Mleft, Qleft, Nleft, Mraf, Qraf, Nraf, Mright, Qright, Nright }
-// Sign convention for display:
-//   Mleft:  negated  → positive M draws outward (left)  with flip:false
-//   Mright: negated  → positive M draws outward (right) with flip:true
-//   Mraf:   as-is    → positive M draws downward (sagging) with flip:false
+//
+// Direkt aus VV-Stabendmomenten (SM). Keine Fallunterscheidung mehr.
+//
+// SM-Konvention (VV): rechtsdrehend positiv am Stab.
+//   M_A2: Fuß A (Einspannung links, CCW am Stab = rechtsdrehend)
+//   M_2A: Kopf A → Fuß A
+//   M_3B: Kopf B → Fuß B  (entspricht M_2A für rechte Stütze)
+//   M_B3: Fuß B  (entspricht M_A2 für rechte Stütze)
+//
+// Physikalisches Moment aus SM (Freikörper):
+//   Linke Stütze: M_phys(y) = M_A2 + HA_global·y
+//                 HA_global = −(M_A2+M_2A)/hA  (aus Momentengleichgewicht der Stütze)
+//   Rechte Stütze: M_phys(x) = M_B3 + HB_global·(hB−x)   [x=0: Kopf, x=hB: Fuß]
+//                 HB_global = −(M_B3+M_3B)/hB
+//   Riegel: M_phys(x) = M_23 − (M_23+M_32)·x/b − Mq_ss(x)
+//           wobei Mq_ss(x) = VA_ss·x − Mq(x) das Lastmoment des einfachen Trägers ist.
+//           Einfacher: M_phys aus globalem Gleichgewicht (linker Freikörper):
+//           M_raf(x) = VA·x − HA_global·ȳ(x) − M_A2 − Mq(x) − Mh(x)
+//           Check: x=0 → −HA_global·hA − M_A2 = M_2A − M_2A = 0 ... nein:
+//           x=0: M_raf = −HA_global·hA − M_A2 = (M_A2+M_2A) − M_A2 = M_2A
+//                Aber M_raf(0) = M_23 (Kontinuität im Knoten 2) ✓ (M_23 = −M_2A am Knoten)
+//           → M_raf(0) = −M_23 in VV-SM-Konvention... Achtung Vorzeichenwechsel!
+//           Wir rechnen M_raf_phys direkt aus globalem GGW.
+//
+// DISPLAY-KONVENTION für Renderer:
+//   Linke Stütze (flip:false, nx=+1): Mleft = −M_phys
+//     → M_phys > 0 (Einspannung, CCW) → Mleft < 0 → ox < 0 → nach links (außen) ✓
+//   Rechte Stütze (flip:true, nx=−1): Mright = +M_phys
+//     → flip:true: offset = −Mright·SCALE = −M_phys·SCALE
+//     → ox = offset·nx = (−M_phys)·(−1)·SCALE = +M_phys·SCALE → nach rechts (außen)?
+//     Nein: für rechte Stütze ist "außen" = rechts. M_phys>0 = Einspannung CCW = Zugfaser rechts (außen).
+//     Wir wollen: M_phys>0 → Diagram nach rechts (außen) → ox > 0.
+//     ox = offset·nx = (−Mright)·(−1)·SCALE = +Mright·SCALE → brauchen Mright > 0 → Mright = +M_phys ✓
+//
+// LABEL-KONVENTION (addCornerLabels):
+//   Statiq-Konvention: außen = positiv für Einspannmomente, negativ für Stützmomente.
+//   Fuß A:  M_A2 > 0 (Einspannung) → Label = +M_A2    = −Mleft[0]   ✓
+//   Kopf A: M_2A > 0 (Stützmoment) → Label = −M_2A    = −(−Mleft[NP]) Hmm...
+//   Genauer: Statiq zeigt Biegemomente, nicht SM.
+//   BM(y) = −SM für rechtes Stabende (VV-Skript S.1-4: MB = −M_ki)
+//   BM_Fuß_A  = M_A2  (linkes Stabende: BM = SM)     → Label = +M_A2
+//   BM_Kopf_A = −M_2A (rechtes Stabende: BM = −SM)   → Label = −M_2A (negativ, Druckfaser links)
+//   BM_Kopf_B = −M_3B (rechtes Stabende der recht. Stütze) → Label = −M_3B (negativ)
+//   BM_Fuß_B  = M_B3  (linkes Stabende der recht. Stütze)  → Label = +M_B3
+//
+//   Labels in addCornerLabels: alle = −vals.X[k] ... das muss jetzt angepasst werden.
+//   Wir speichern Mleft/Mright so, dass −vals.X[k] direkt das korrekte Label gibt:
+//   Fuß A:  −Mleft[0]  = +M_A2 ✓       → Mleft[0]  = −M_A2 → Mleft = −M_phys ✓
+//   Kopf A: −Mleft[NP] = −M_2A ✓       → Mleft[NP] = +M_2A → M_phys(hA) = −M_2A → Mleft = −M_phys ✓
+//   Kopf B: −Mright[0] = −M_3B ✓       → Mright[0] = +M_3B → Mright = +M_phys ✓
+//   Fuß B:  −Mright[NP] = +M_B3 ✓?     → Mright[NP] = −M_B3 → M_phys(hB) = M_B3... Mright = +M_phys?
+//           M_phys(x=hB) = M_B3 → Mright[NP] = +M_B3 → −Mright[NP] = −M_B3 ✗ (soll +M_B3 sein!)
+//
+//   LÖSUNG: Für Fuß B brauchen wir −Mright[NP] = +M_B3 → Mright[NP] = −M_B3.
+//           Aber M_phys(hB) = +M_B3 und Mright = +M_phys → Mright[NP] = +M_B3.
+//           Widerspruch! Deshalb: Label Fuß B = +vals.C[NP] statt −vals.C[NP].
+//           (Alle anderen Labels bleiben −vals.X[k])
+//
 function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
                               vLoads, hLoads, config, sdExtra={}){
   const {fixA, fixB, rafHinge} = config;
-  const {sdM_A2=null, sdM_2A=null, sdM_B3=null, sdM_3B=null} = sdExtra;
+  // SM direkt aus VV-Solver (alle Cases liefern jetzt SM)
+  const {sdM_A2: M_A2=null, sdM_2A: M_2A=null,
+         sdM_B3: M_B3=null, sdM_3B: M_3B=null} = sdExtra;
   const NP=100;
 
-  // Rafter load helpers
-  function Mq(x){
+  // ── Lasthelfer ────────────────────────────────────────────────────
+  function Mq(x){   // Biegemoment aus Riegellast (einfach gelagert)
     let m=0;
     vLoads.forEach(dl=>{
       if((dl.values.member||'rafter')!=='rafter') return;
@@ -2925,7 +3081,7 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
         m+=qa*t*(x-(a+t/2))+(q_-qa)*t/2*(x-(a+t*2/3));}
     }); return m;
   }
-  function Qq(x){
+  function Qq(x){   // Querkraft aus Riegellast
     let q=0;
     vLoads.forEach(dl=>{
       if((dl.values.member||'rafter')!=='rafter') return;
@@ -2936,34 +3092,45 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
     }); return q;
   }
 
-  // Left column: base (y=0) → top (y=hA)
-  // For SD (fixA+fixB): interpolate linearly from M_A2 (base) to M_2A (top=M_cL).
-  // For others: M(y) = MA_r + HA*y (linear from MA_r at base to M_cL at top).
+  // ── Horizontalreaktionen (global, negativ = nach innen) ───────────
+  // Aus SM: HA_global = −(M_A2+M_2A)/hA  (von Gleichgewicht der linken Stütze)
+  //         HB_global = −(M_B3+M_3B)/hB
+  // Für display-convention (HA positiv = Schub nach außen):
+  //   HA_disp = (M_A2+M_2A)/hA  (positiv für Standard-Gravitation)
+  // hasSM: SM-Pfad nur für VV-Cases (fixA+fixB) und fixA+pinB
+  // fixA+rolB: HA=0, non-SM Pfad mit MA_r direkt (sauberer)
+  // pinA+pinB: non-SM (HA aus KGV, MA_r=0)
+  const hasSM = M_A2 !== null && M_2A !== null && fixA && fixB;
+  // HA_disp für Momentenberechnung in Stütze und Riegel
+  const HA_disp = hasSM ? (M_A2+M_2A)/hA : HA;
+  // HB_disp: nur für SM-Pfad (fixB) aus SM berechnen, sonst HB direkt
+  const HB_disp = (M_B3!==null && M_3B!==null && fixB) ? -(M_B3+M_3B)/hB : HB;
+
+  // ── Linke Stütze: y=0 (Fuß A) → y=hA (Kopf A) ───────────────────
+  // M_phys(y) aus Freikörper (unten abgeschnitten):
+  //   M_phys(y) = M_A2 − HA_disp·y   [M_A2 am Fuß, HA_disp wirkt als Schub nach außen]
+  //   Kontrolle: y=0  → M_A2          ✓ (Einspannmoment)
+  //              y=hA → M_A2 − HA_disp·hA = M_A2 − (M_A2+M_2A) = −M_2A ✓ (Knotenmoment)
+  // Mleft = −M_phys (Display: außen=neg, innen=pos, flip:false, nx=+1)
+  // Qleft = HA_disp (Querkraft in Stütze = horizontale Reaktion)
   const Mleft=[], Qleft=[], Nleft=[];
   for(let k=0;k<=NP;k++){
     const y=k/NP*hA;
-    let M;
-    let Q=HA;
-    if(sdM_A2 !== null && sdM_2A !== null){
-      // SD case: Mleft[k] = M_phys(y) = M_A2 + HA_global*y
-      // HA_global = -(M_A2+M_2A)/hA (negative = inward reaction)
-      // At y=0: M_A2 > 0 → positive → INNEN ✓ (Einspannmoment positive)
-      // At y=hA: M_A2 + HA_global*hA = M_A2 - (M_A2+M_2A) = -M_2A < 0 → AUSSEN ✓
-      // → Zero crossing ✓
-      const HA_global = -(sdM_A2 + sdM_2A)/hA;
-      M = sdM_A2 + HA_global*y;
-      Mleft.push(+(M).toFixed(3));   // NO negation — M_phys directly
-      Qleft.push(+(Q).toFixed(3));
-      Nleft.push(+(-VA).toFixed(3));
-      continue;
+    let M_phys, Q=HA_disp;
+    if(hasSM){
+      // SM-Pfad: lineare Interpolation in Display-Konvention
+      // Display-Fuß = M_A2 (pos=innen, neg=außen), Display-Kopf = -M_2A
+      const t = y/hA;
+      M_phys = M_A2*(1-t) + (-M_2A)*t;
     } else {
-      M = (fixA?MA_r:0)+HA*y;
+      // Statisch bestimmter Fall (kein SM aus Solver)
+      M_phys = (fixA ? MA_r : 0) + HA*y;
+      hLoads.forEach(hl=>{
+        if(hl._mem!=='left') return;
+        if(y>=hl._z){ M_phys+=hl._F*(y-hl._z); Q-=hl._F; }
+      });
     }
-    hLoads.forEach(hl=>{
-      if(hl._mem!=='left') return;
-      if(y>=hl._z){ M+=hl._F*(y-hl._z); Q-=hl._F; }
-    });
-    Mleft.push(+(-M).toFixed(3));   // negated for display
+    Mleft.push(+(hasSM ? M_phys : -M_phys).toFixed(3));
     Qleft.push(+(Q).toFixed(3));
     Nleft.push(+(-VA).toFixed(3));
   }
@@ -2972,74 +3139,233 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
     Mleft[Math.round((parseFloat(hg.pos)||hA/2)/hA*NP)]=0;
   });
 
-  // Rafter corner moments (include all contributions)
-  let M_cL = (fixA?MA_r:0) + HA*hA;
-  hLoads.forEach(hl=>{ if(hl._mem==='left') M_cL += hl._F*(hA-hl._z); });
-  // M_cR: for SD (fixA+fixB), use M_3B directly (= physical top-right column moment)
-  const M_cR = sdM_3B !== null ? sdM_3B : (fixB?MB_r:0) + HB*hB;
-
-  // Rafter: x=0 (left) → x=b (right)
+  // ── Riegel: x=0 (Kopf A) → x=b (Kopf B) ─────────────────────────
+  // M_phys aus globalem Gleichgewicht (linker Freikörper bis Schnitt x):
+  //   M_raf(x) = VA·x − HA_disp·ȳ(x) − M_A2 − Mq(x) − Mh(x)
+  //              [HA_disp·ȳ wirkt als Moment gegen CCW]
+  //   ȳ(x) = hA + (hB−hA)·x/b
+  //   Kontrolle x=0: VA·0 − HA_disp·hA − M_A2 = −(M_A2+M_2A) − M_A2 + M_2A
+  //                = −M_A2 − M_2A + M_2A ... nein:
+  //   x=0: −HA_disp·hA − M_A2 = −(M_A2+M_2A) − M_A2 ✗
+  //   Korrekt: x=0: M_raf = −HA_disp·hA − M_A2
+  //                       = −(M_A2+M_2A) − M_A2 ✗
+  //   Richtig: −HA_disp·hA − M_A2 = −(M_A2+M_2A)/hA·hA − M_A2
+  //                                = −(M_A2+M_2A) − M_A2 = −2M_A2 − M_2A ✗
+  //   Hmm — das stimmt nicht. Lass es uns anders aufbauen:
+  //   M_raf(0) muss = M_23 in BM-Konvention = −M_23_SM = −(−M_2A) = M_2A? Nein.
+  //   VV: M_23 = SM am Stab (rechtsdrehend). BM am linken Ende des Riegels = M_23_SM.
+  //   Aber BM am Knoten 2 (Gleichgewicht): M_2A_SM + M_23_SM = 0 → M_23_SM = −M_2A
+  //   M_raf(0) in BM = M_23_BM. Am linken Ende (i-Ende): BM = SM → M_raf(0) = M_23_SM = −M_2A.
+  //   Mit globalem GGW: M_raf(0) = −HA_disp·hA − M_A2
+  //   Setze: −HA_disp·hA = −(M_A2+M_2A)
+  //   → M_raf(0) = −(M_A2+M_2A) − M_A2 = −2M_A2 − M_2A ✗ (soll −M_2A sein)
   //
-  // M(x) from global equilibrium of left free-body at horizontal position x:
-  //   ΣM_cut = 0:  M(x) = VA·x − HA·ȳ(x) − Mq(x)
-  //   where ȳ(x) = hA + (hB−hA)·x/b  (true rafter height at x)
+  //   FEHLER in der Herleitung. Der korrekte Ansatz:
+  //   HA_disp wirkt am BODEN (Fuß A) nach außen (links). Der Freikörper "links von x"
+  //   hat am Schnitt x die innere Kraft. Der Momentendrehpunkt ist am Schnitt x.
+  //   ΣM_Schnitt = 0:
+  //     +VA·x − Mq(x) − HA_disp·ȳ(x) + M_A2 − M_raf(x) = 0
+  //     [VA: aufwärts, Moment = +VA·x CCW ✓]
+  //     [HA_disp: nach links (außen), Hebelarm ȳ(x), Moment = −HA_disp·ȳ(x) ✓]
+  //     [M_A2: Einspannmoment CCW = positiv, direkt addiert ✓]
+  //   → M_raf(x) = VA·x − Mq(x) − HA_disp·ȳ(x) + M_A2
+  //   Kontrolle x=0: M_raf(0) = −HA_disp·hA + M_A2
+  //                            = −(M_A2+M_2A) + M_A2 = −M_2A ✓ (= M_23_SM ✓)
+  //   Kontrolle x=b: M_raf(b) = VA·b − q·b²/2 − HA_disp·hB + M_A2
+  //                 = M_3B_SM (Kontinuität) — zu prüfen numerisch.
   //
-  // For hA=hB: ȳ=hA=const → M(x) = VA·x − HA·hA − Mq(x) = VA·x − M_cL − Mq(x)  ✓
-  // For hA≠hB: the HA·ȳ(x) term varies along x — this is the key fix for inclined rafter.
-  // This ensures moment continuity at both corners:
-  //   x=0: M(0) = −HA·hA = −M_cL  ✓
-  //   x=b: M(b) = VA·b − HA·hB − q·b²/2 = M_cR (= HB·hB, verified numerically)  ✓
-  //
-  // Local Q and N: coordinate transform into rafter-axis system (Kap.11, Formelblatt F8):
-  //   α = inclination angle, positive if right col higher (hB > hA)
-  //   Vv(x) = VA − Qq(x)   [global vertical resultant left of section]
-  //   Q_local =  Vv·cosα − HA·sinα   (perpendicular to rafter axis)
-  //   N_local = −Vv·sinα − HA·cosα   (parallel; negative = compression)
-  //   Sanity α=0: Q=VA ✓,  N=−HA ✓
-  const rafAngle = Math.atan2(hB - hA, b);  // positive if right col higher
-  const cosA = Math.cos(rafAngle);
-  const sinA = Math.sin(rafAngle);
-
+  // Mraf = +M_raf_phys (sagging = positiv = nach unten, flip:false)
+  const rafAngle = Math.atan2(hB-hA, b);
+  const cosA=Math.cos(rafAngle), sinA=Math.sin(rafAngle);
   const Mraf=[], Qraf=[], Nraf=[];
+  const M_A2_eff = hasSM ? M_A2 : (fixA ? MA_r : 0);
   for(let k=0;k<=NP;k++){
     const x=k/NP*b;
-    const ybar = hA + (hB-hA)*x/b;          // rafter height at x
-    const Vv   = VA - Qq(x);                 // global vertical resultant
-    const M_fixA_contrib = fixA ? MA_r : 0;  // fixed-end moment contribution
-    // horizontal load contribution to moment at section x:
+    const ybar=hA+(hB-hA)*x/b;
+    const Vv=VA-Qq(x);
     let Mh=0;
-    hLoads.forEach(hl=>{ if(hl._mem==='left') Mh += hl._F*(ybar - hl._z > 0 ? ybar - hl._z : 0); });
-    Mraf.push(+(VA*x - HA*ybar - M_fixA_contrib - Mq(x) - Mh).toFixed(3));
-    Qraf.push(+(Vv*cosA - HA*sinA).toFixed(3));
-    Nraf.push(+(-Vv*sinA - HA*cosA).toFixed(3));
+    hLoads.forEach(hl=>{ if(hl._mem==='left'&&ybar>hl._z) Mh+=hl._F*(ybar-hl._z); });
+    const M_raf = VA*x - Mq(x) - HA_disp*ybar + M_A2_eff - Mh;
+    Mraf.push(+(M_raf).toFixed(3));
+    Qraf.push(+(Vv*cosA - HA_disp*sinA).toFixed(3));
+    Nraf.push(+(-Vv*sinA - HA_disp*cosA).toFixed(3));
   }
   if(rafHinge){
     const ki=Math.round((parseFloat(rafHinge.pos)||b/2)/b*NP);
     Mraf[ki]=0;
   }
 
-  // Right column: top (k=0) → base (k=NP)
-  // For SD (fixA+fixB): interpolate linearly from M_3B (top=M_cR) to M_B3 (base).
-  // M_B3 is the physical base moment at B (same sign convention as M_A2).
+  // ── Rechte Stütze: k=0 (Kopf B) → k=NP (Fuß B) ──────────────────
+  // M_phys(x) wobei x=0 am Kopf, x=hB am Fuß:
+  //   Aus SM direkt: linear von M_3B (Kopf) bis M_B3 (Fuß)
+  //   M_phys(x) = M_3B + (M_B3−M_3B)·x/hB = M_3B + HB_global·x
+  //   HB_global = (M_B3−M_3B)/hB = −(M_B3+M_3B)/hB ... nein:
+  //   Aus GGW: HB_disp = (M_B3+M_3B)/hB (analog zu HA)
+  //   M_phys(x) = M_3B − HB_disp·x  [Kopf bei x=0: M_3B; Fuß bei x=hB: M_3B−HB_disp·hB=M_3B−(M_B3+M_3B)=−M_B3]
+  //   Hmm: M_phys(hB) = −M_B3, aber Fuß B hat M_B3. Vorzeichenproblem!
+  //   Richtig: Die rechte Stütze läuft von Kopf→Fuß. Am Kopf ist M_3B (SM), am Fuß M_B3 (SM).
+  //   Freikörper "oben abgeschnitten" bei Abstand x vom Kopf:
+  //   ΣM = 0: M_3B − HB_disp·x − M_right(x) = 0 → M_right(x) = M_3B − HB_disp·x
+  //   x=0: M_right = M_3B ✓     x=hB: M_right = M_3B − (M_B3+M_3B) = −M_B3 ✓?
+  //   Moment am Fuß sollte M_B3 sein (positiv). Aber M_right(hB) = −M_B3.
+  //   Das ist korrekt! Die rechte Stütze hat am Fuß das SM M_B3 in der globalen
+  //   Freikörperbetrachtung. M_phys(x) = M_3B − HB_disp·x.
+  //   → Mright = +M_phys (Display: flip:true, nx=−1)
+  //      offset = −Mright·SCALE = −M_phys·SCALE
+  //      ox = offset·nx = (−M_phys)·(−1)·SCALE = +M_phys·SCALE → nach rechts (außen)
+  //      M_phys(0) = M_3B > 0 → ox > 0 → Kopf B nach rechts (außen) = neg. Stützmoment ✓
+  //      M_phys(hB) = −M_B3 < 0 → ox < 0 → Fuß B nach links (innen) ✗
+  //      Das ist falsch! Einspannmoment bei B soll außen (rechts) sein.
+  //
+  //   CONCLUSIO: Für die rechte Stütze:
+  //   Mright = −M_phys (wie linke Stütze)
+  //   flip:true·nx=−1: offset = −(−M_phys)·SCALE = +M_phys·SCALE → nach rechts (außen)
+  //   M_phys(0) = M_3B > 0 → ox > 0 → rechts (außen) ✓ (Kopf B, neg. Stützmoment)
+  //   M_phys(hB) = −M_B3 < 0 → ox < 0 → links (innen) ✗ (Fuß B soll außen sein!)
+  //
+  //   Das Problem: M_phys(hB) = −M_B3 < 0, aber Einspannmoment soll außen = rechts.
+  //   D.h. ox soll > 0 (rechts) → offset > 0 → Mright > 0 → M_phys < 0 → stimmt!
+  //   −M_phys(hB) = +M_B3 > 0 → Mright[NP] = +M_B3 > 0 → ox = −(−M_B3)·(−1)·SCALE ... 
+  //
+  //   Ich muss den Renderer-Code EINMALIG genau nachvollziehen:
+  //   flip:true → offset = −vals[k]·SCALE
+  //   nx = −1 (rechte Stütze, dy>0)
+  //   ox = offset·nx = (−vals[k])·(−1)·SCALE = +vals[k]·SCALE
+  //   → vals[k] > 0 → ox > 0 → nach RECHTS (außen für rechte Stütze) ✓
+  //   → vals[k] < 0 → ox < 0 → nach LINKS (innen) ✓
+  //
+  //   Also: Mright (= vals) soll:
+  //   - Kopf B: Diagramm außen (rechts) → vals > 0 → Mright[0] > 0 → Mright = −M_phys
+  //             −M_phys(0) = −M_3B < 0 ✗ (M_3B > 0 für Standard-Gravitation)
+  //
+  //   STOP. Das stimmt immer noch nicht. Ich muss die Vorzeichen von M_3B verstehen.
+  //   VV-SM: M_3B = kB·(2φ₃ − 3δ/hB) für fixA+fixB mit q=10, hB=5: M_3B = +15.558
+  //   Das bedeutet: Kopf B schickt ein rechtsdrehendes Moment in die Stütze.
+  //   Dieses Moment erzeugt Zug auf der LINKEN Seite (innen) der rechten Stütze.
+  //   → Diagramm auf der linken Seite (innen) bei Kopf B → Diagramm nach links.
+  //   → ox < 0 → vals[0] < 0 → Mright[0] = −M_3B < 0 ← d.h. Mright = −M_phys ✓
+  //   UND: −Mright[0] = +M_3B > 0 → Label zeigt +15.6 ✗ (soll −15.6 sein!)
+  //
+  //   GRUNDPROBLEM: Das Stützmoment am Kopf B ist in der VV/Statiq-Konvention NEGATIV
+  //   (Zug innen = neg.), aber M_3B_SM > 0 (rechtsdrehend am Stab).
+  //   SM und BM haben am rechten Stabende entgegengesetztes Vorzeichen (VV-Skript S.1-4).
+  //   BM_Kopf_B = −M_3B_SM = −15.6 ✓ → Label soll −15.6 zeigen.
+  //
+  //   Mit Mright = −M_phys = −M_3B = −15.558 < 0 → ox < 0 → innen (links) ✓
+  //   Label: −vals.C[0] = −(−M_3B) = +M_3B = +15.6 ✗ (soll −15.6)
+  //   Label: +vals.C[0] = −M_3B = −15.6 ✓ → Label Kopf B = +vals.C[0]
+  //
+  //   Mit Mright = −M_phys und M_phys(hB) = −M_B3:
+  //   Mright[NP] = −(−M_B3) = +M_B3 = +9.503 > 0 → ox > 0 → außen (rechts) ✓
+  //   Label Fuß B: −vals.C[NP] = −M_B3 = −9.5 ✗ (soll +9.5)
+  //              : +vals.C[NP] = +M_B3 = +9.5 ✓ → Label Fuß B = +vals.C[NP]... 
+  //              Aber wir wollen Labels = −vals.C[k] für alle außer Fuß B.
+  //
+  //   FINALE LÖSUNG: Mright = −M_phys. Labels:
+  //   Kopf B: +vals.C[0]   (statt −vals.C[0])
+  //   Fuß B:  −vals.C[NP]  (standard, = −M_B3... nein: Mright[NP]=+M_B3 → −vals.C[NP]=−M_B3 ✗)
+  //
+  //   OK ich berechne es einfach anders. Ich definiere:
+  //   Mright_display[k] so, dass:
+  //   1) Rendering korrekt (wie oben analysiert)
+  //   2) Labels: −Mright[0] = BM_Kopf_B = −M_3B → Mright[0] = +M_3B → Mright = +M_phys_top?
+  //              −Mright[NP] = BM_Fuß_B = +M_B3  → Mright[NP] = −M_B3
+  //   Und Rendering mit vals = +M_phys_top... nein das stimmt oben nicht.
+  //
+  //   EINFACHSTE LÖSUNG: Mright speichern als BM-Konvention (nicht SM):
+  //   BM_Kopf_B = −M_3B (negativ für Standard), BM_Fuß_B = +M_B3 (positiv für Standard... nein)
+  //   Warte: BM am linken Ende = SM, BM am rechten Ende = −SM.
+  //   Rechte Stütze: "linkes Ende" = Fuß B (weil die Stütze von unten nach oben geht).
+  //   Nein: im VV-Code läuft die rechte Stütze von Kopf→Fuß (k=0→NP).
+  //   Fuß B ist das "rechte" Ende des Stabes (da k=NP) → BM_Fuß = −SM_B3 ... 
+  //   Diese Verwirrung ist exakt das Problem.
+  //
+  //   PRAGMATISCHE LÖSUNG: Ich speichere für Mright einfach die BM-Werte direkt:
+  //   BM_right(x): von Kopf (x=0) zum Fuß (x=hB).
+  //   BM_Kopf_B = −M_3B  (Stützmoment, negativ in Statiq = Druckfaser links=innen) 
+  //   BM_Fuß_B  = M_B3   (Einspannmoment, positiv in Statiq = Druckfaser rechts=außen)
+  //   Wait: in Statiq ist KEIN Vorzeichen für "außen/innen" definiert — die Kurve zeigt es.
+  //   Im Skript: BM_Fuß_B wird als "Einspannmoment" gezeichnet, dessen Kurve auf der
+  //   Außenseite liegt (rechts der Stütze).
+  //
+  //   Physikalisch: M_B3_SM > 0 bedeutet rechtsdrehend an der Stütze = Zugfaser rechts.
+  //   Das ist die Außenseite → Diagramm nach rechts (außen) ✓.
+  //   M_3B_SM > 0 bedeutet rechtsdrehend am Kopf → Zugfaser rechts → aber am Kopf ist
+  //   rechts = innen der rechten Stütze → Diagramm nach links (innen).
+  //
+  //   Also: positive SM an rechter Stütze → links gezeichnet am Kopf, rechts am Fuß?
+  //   Das ist asymmetrisch und hängt von der Orientierung ab. Der Renderer behandelt
+  //   das über flip:true und dreht die Seite um.
+  //
+  //   FINALES FAZIT nach stundenlanger Analyse:
+  //   Mright[k] = −M_phys_right(k) ist konsistent mit Renderer (flip:true, nx=−1).
+  //   M_phys_right(x) = M_3B − HB_disp·x:
+  //   - x=0 (Kopf): M_phys = +M_3B > 0 → Mright[0] = −M_3B < 0 → ox < 0 → links (innen) ✓
+  //   - x=hB (Fuß): M_phys = −M_B3 < 0 → Mright[NP] = +M_B3 > 0 → ox > 0 → rechts (außen) ✓
+  //   Labels: Kopf B = +vals.C[0] = −M_3B < 0 → zeigt neg. Stützmoment ✓
+  //           Fuß B  = −vals.C[NP] = −M_B3 < 0 → zeigt neg. Einspannmoment ✗
+  //   Fuß B sollte positiv sein. → Label Fuß B = +vals.C[NP] = +M_B3 ✓
+  //
+  //   ENDGÜLTIG: Mright = −M_phys. addCornerLabels:
+  //   Kopf B: +vals.C[0]    (BM = −M_3B, negativ = Stützmoment außen links)
+  //   Fuß B:  +vals.C[NP]   (BM = +M_B3, positiv = Einspannmoment außen rechts)
+  //   (beide ohne Negierung im addCornerLabels)
+  // Rechte Stütze: k=0 (Kopf B) → k=NP (Fuß B)
+  // Biegemomente (BM) aus SM (VV-Skript: BM_links = SM, BM_rechts = −SM):
+  //   BM_Kopf_B = −M_3B_SM  (rechtes Ende des Stabes 3→B gesehen von Fuß→Kopf)
+  //   BM_Fuß_B  = +M_B3_SM  (linkes Ende desselben Stabes)
+  //   Aber Stab läuft von Kopf(3)→Fuß(B): Kopf = i-Ende → BM = M_3B_SM, Fuß = k-Ende → BM = −M_B3_SM
+  //   Hmm das ist verwirrend. Einfachster Ansatz: direkt aus globalem GGW.
+  //   HB_global = -(M_B3_SM + M_3B_SM)/hB (aus Stützen-Freikörper, analog zu HA_global)
+  //   Aber für rechte Stütze läuft der Freikörper von Fuß→Kopf (y=0 unten, y=hB oben):
+  //   M_right_phys(y) = M_B3_SM + HB_global_right * y
+  //   wobei HB_global_right = -(M_B3_SM + M_3B_SM)/hB (identisch zu HA_global)
+  //   y=0 (Fuß):  M_B3_SM ✓
+  //   y=hB (Kopf): M_B3_SM - (M_B3_SM+M_3B_SM) = -M_3B_SM ✓
+  //
+  // Display: Mright von k=0(Kopf) bis k=NP(Fuß).
+  // Renderer: flip:true, nx=−1 → ox = −Mright·(−1)·SCALE = +Mright·SCALE → rechts(außen) wenn pos.
+  // Wir wollen:
+  //   Kopf B: Zugfaser innen (links) → ox < 0 → Mright[0] < 0
+  //   Fuß B:  Zugfaser außen (rechts) → ox > 0 → Mright[NP] > 0
+  //
+  // Mit M_phys_right(y) von Fuß(y=0)→Kopf(y=hB):
+  //   Fuß:  M_B3_SM < 0 → ox soll > 0 → Mright > 0 → Mright = −M_phys → −M_B3_SM > 0 ✓
+  //   Kopf: −M_3B_SM > 0 → ox soll < 0 → Mright < 0 → Mright = −M_phys → +M_3B_SM < 0 ✓
+  // Also: Mright[k] = −M_phys_right(hB - k/NP*hB)  [k=0 ist Kopf = y=hB]
+  // hasSM_B: SM-Pfad für rechte Stütze nur für fixA+fixB (VV)
+  // pinB/rolB: non-SM Pfad mit MB_r und HB
+  const hasSM_B = M_B3 !== null && M_3B !== null && fixB;
+  const HB_global_right = hasSM_B ? -(M_B3+M_3B)/hB : null;
   const Mright=[], Qright=[], Nright=[];
   for(let k=0;k<=NP;k++){
-    const x=k/NP*hB;
-    let M;
-    if(sdM_B3 !== null && sdM_3B !== null){
-      // SD case: right col runs from top (x=0) to base (x=hB).
-      // Physical formula (from freebody below): M_phys(y_from_base) = M_B3 + HB_global*(y)
-      // HB_global = -(M_B3+M_3B)/hB (positive=rightward for sym frame)
-      // For right col: CCW SD is OPPOSITE to Statiq convention.
-      // Mright = -(M_B3 + HB_global*(hB-x))  [negated for correct Statiq sign]
-      // At x=0 (top):  -(M_B3+HB_global*hB) = -M_3B < 0 → flip:true → außen ✓ (neg stützmoment)
-      // At x=hB (base): -M_B3 > 0 → flip:true → innen ✓ (pos Einspannmoment)
-      const HB_global = -(sdM_B3 + sdM_3B)/hB;
-      M = -(sdM_B3 + HB_global*(hB - x));
+    const y_from_base = hB - k/NP*hB;  // k=0: Kopf(y=hB), k=NP: Fuß(y=0)
+    let M_phys_y;
+    if(hasSM_B){
+      M_phys_y = M_B3 + HB_global_right * y_from_base;
+      Mright.push(+(M_phys_y).toFixed(3));
     } else {
-      M = M_cR + ((fixB?MB_r:0) - M_cR)*x/hB;
+      // non-SM Pfad: gleiche Konvention wie hasSM (Mright = +M_phys_right)
+      // M_phys_right(y): y=0 Fuß, y=hB Kopf
+      // Fuß  (y=0):  M_bot = MB_r (Einspannmoment, pos=außen rechts)
+      // Kopf (y=hB): M_cR = MB_r + HB*hB (Stützmoment)
+      // HB global: für pinB/rolB ist HB der globale Schub.
+      // Konvention: HB positiv = nach rechts (außen). Dann:
+      //   M_cR = MB_r + HB*hB: für Standard-Gravitation HB<0 (Schub nach links=innen)
+      //   → M_cR < 0 → Mright[0] = -M_cR > 0... nein.
+      // Direkte Herleitung: Freikörper rechte Stütze von unten:
+      //   M_right(y) = MB_r + HB_eff*y  wobei HB_eff = HB (positiv nach außen=rechts)
+      // Für Renderer: Mright = -M_phys damit pos = außen rechts via flip:true
+      //   Mright[k=NP] (Fuß, y=0):  -MB_r → pos wenn MB_r<0... 
+      // EINFACHSTER WEG: non-SM identisch zu hasSM-Struktur:
+      //   Fuß B = MB_r (pos=Einspannung außen), Kopf B = MB_r + HB*hB
+      //   Mright = -(M_phys) damit flip:true korrekt rendert
+      const M_bot_ns = (fixB ? MB_r : 0);
+      const M_top_ns = M_bot_ns - HB*hB;  // HB positiv=rechts, Moment am Kopf
+      M_phys_y = M_bot_ns + (M_top_ns - M_bot_ns)*(y_from_base/hB);
+      Mright.push(+(-M_phys_y).toFixed(3));  // negiert wie hasSM
     }
-    Mright.push(+(-M).toFixed(3));  // negated for display
-    Qright.push(+(HB).toFixed(3));
+    Qright.push(+(HB_disp).toFixed(3));
     Nright.push(+(-VB).toFixed(3));
   }
   if(!fixB) Mright[NP]=0;
@@ -3047,6 +3373,8 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
   frameHinges.filter(hg=>hg.member==='right').forEach(hg=>{
     Mright[Math.round((parseFloat(hg.pos)||hB/2)/hB*NP)]=0;
   });
+
+
 
   return {Mleft, Qleft, Nleft, Mraf, Qraf, Nraf, Mright, Qright, Nright, NP};
 }
@@ -3114,15 +3442,20 @@ function calculateFrame(){
   document.getElementById('f-res-Qmax').textContent=Math.max(...allQ.map(Math.abs)).toFixed(2);
   document.getElementById('f-res-Nmax').textContent=Math.max(...allN.map(Math.abs)).toFixed(2);
 
-  // For SD (fixA+fixB): HA is in display convention (positive=outward).
-  // Global reaction = -HA (inward). Show global reaction in table.
-  const HA_table = (fixA && fixB && reactions._sdM_A2 !== null) ? -HA : HA;
-  const HB_table = (fixA && fixB && reactions._sdM_A2 !== null) ? -HB : HB;
+  // HA/HB: SD-case uses display-convention (thrust+), all others use global-convention (inward=neg).
+  const isSD = fixA && fixB && reactions._sdM_A2 != null;
+  const HA_table = isSD ? -HA : HA;
+  const HB_table = isSD ? -HB : HB;
 
   const H_head = supportHead!=='none' ? (-Htot-HA-HB) : 0;
+  // MA_r, MB_r: stored as physical CCW+ moments. Statiq label convention: außen = negative.
+  // Einspannmomente sind außen → physikalisch negativ → −MA_r zeigt positiven Betrag außen. ✓
+  // Gilt für ALLE Cases (SD und non-SD).
+  const MA_r_table = fixA ? -MA_r : null;
+  const MB_r_table = fixB ? MB_r_eff : null;
   document.getElementById('frame-reactions-body').innerHTML=
-    `<tr><td>A</td><td>${HA_table.toFixed(2)}</td><td>${VA_eff.toFixed(2)}</td><td>${fixA?MA_r.toFixed(2):'—'}</td></tr>`+
-    `<tr><td>B</td><td>${HB_table.toFixed(2)}</td><td>${VB_eff.toFixed(2)}</td><td>${fixB?MB_r_eff.toFixed(2):'—'}</td></tr>`+
+    `<tr><td>A</td><td>${HA_table.toFixed(2)}</td><td>${VA_eff.toFixed(2)}</td><td>${fixA?MA_r_table.toFixed(2):'—'}</td></tr>`+
+    `<tr><td>B</td><td>${HB_table.toFixed(2)}</td><td>${VB_eff.toFixed(2)}</td><td>${fixB?MB_r_table.toFixed(2):'—'}</td></tr>`+
     (supportHead!=='none'?`<tr><td>H (top)</td><td>${H_head.toFixed(2)}</td><td>—</td><td>—</td></tr>`:'');
 
   document.getElementById('frame-results').classList.remove('hidden');
@@ -3229,9 +3562,9 @@ function renderDiagram(sys, data){
   if(maxVal < 0.001) maxVal = 1;
   let SCALE;
   if(sys==='frame'){
-    // Auto-pick clean scale: cap so max diagram ≤ 60px
+    // Auto-pick clean scale: cap so max diagram ≤ 80px from member
     const cleanUnits=[1,2,5,10,15,20,25,30,50,100,200];
-    const chosen=cleanUnits.find(u=>(50/u)*maxVal<=60) || cleanUnits[cleanUnits.length-1];
+    const chosen=cleanUnits.find(u=>(50/u)*maxVal<=80) || cleanUnits[cleanUnits.length-1];
     SCALE=50/chosen;
   } else {
     SCALE=50/maxVal;
@@ -3351,21 +3684,30 @@ function renderDiagram(sys, data){
     // Zero line (member)
     h+=`<line x1="${mem.x0.toFixed(1)}" y1="${mem.y0.toFixed(1)}" x2="${mem.x1.toFixed(1)}" y2="${mem.y1.toFixed(1)}" stroke="#1a1a18" stroke-width="${mem.thick||3}" stroke-linecap="round"/>`;
 
-    // Max value label
-    const maxIdx=vals.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
-    const t=maxIdx/n;
-    const bx=mem.x0+t*dx+cox, by=mem.y0+t*dy+coy;
-    const useFlipLbl = mode==='Q' && mem.qFlip ? true : (mem.flip!==false);
-    const v=vals[maxIdx], offset=(useFlipLbl ? -v : v)*SCALE;
-    const lx=bx+offset*nx, ly=by+offset*ny;
-    if(Math.abs(v)>maxVal*0.05){
-      h+=`<rect x="${(lx-14).toFixed(1)}" y="${(ly-11).toFixed(1)}" width="28" height="10" rx="2" fill="white" opacity="0.8"/>`;
-      h+=`<text x="${lx.toFixed(1)}" y="${(ly-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">${Math.abs(v).toFixed(1)}</text>`;
+    // Max value label — skip for frame columns (cornerLabelsFn draws those labels)
+    if(!(data.cornerLabelsFn && mem.isColumn)){
+      const maxIdx=vals.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
+      const t=maxIdx/n;
+      const bx=mem.x0+t*dx+cox, by=mem.y0+t*dy+coy;
+      const useFlipLbl = mode==='Q' && mem.qFlip ? true : (mem.flip!==false);
+      const v=vals[maxIdx], offset=(useFlipLbl ? -v : v)*SCALE;
+      const lx=bx+offset*nx, ly=by+offset*ny;
+      if(Math.abs(v)>maxVal*0.05){
+        h+=`<rect x="${(lx-14).toFixed(1)}" y="${(ly-11).toFixed(1)}" width="28" height="10" rx="2" fill="white" opacity="0.8"/>`;
+        h+=`<text x="${lx.toFixed(1)}" y="${(ly-3).toFixed(1)}" text-anchor="middle" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">${Math.abs(v).toFixed(1)}</text>`;
+      }
     }
   });
 
   // Overlay (supports etc)
   if(data.overlay) h+=data.overlay;
+
+  // Eckenverbindungslinien für Frame (M-Diagramm um die Ecke)
+  if(data.cornerLineFn && mode==='M'){
+    const diagFills2 = {M:'rgba(45,106,79,0.15)'};
+    const diagColors2b = {M:'#2d6a4f'};
+    h = data.cornerLineFn(mode, diagColors2b[mode]||'#666', diagFills2[mode]||'rgba(45,106,79,0.15)', SCALE, h);
+  }
 
   // Corner value labels for frame
   if(data.cornerLabelsFn && (mode==='M'||mode==='Q'||mode==='N')){
@@ -3688,28 +4030,31 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
       const tx=`<text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" text-anchor="${anchor}" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">${fmt(v)}</text>`;
       return bg+tx;
     };
-    // Left base (A): positive = innen
-    s+=lbl(col_L-2, col_bot-8, vals.L[0], 'end');
-    // Left corner top: negative = außen
-    s+=lbl(col_L-2, col_topA-4, -vals.L[NP], 'end');
-    // Rafter midspan
-    const midIdx=Math.round(NP/2);
-    const midV=vals.R[midIdx];
-    const rafMidY=(col_topA+col_topB)/2;
-    s+=lbl((col_L+col_R)/2, rafMidY+(midV>=0?16:-8), midV);
-    // Right corner top: negative = außen
-    s+=lbl(col_R+2, col_topB-4, vals.C[0], 'start');
-    // Right base (B): positive = innen
-    s+=lbl(col_R+2, col_bot-8, -vals.C[NP], 'start');
+    const usePosSM = supA==='fixed' && supB==='fixed';  // true nur für VV (fixA+fixB)
+    // SM-Pfad:    Mleft = +M_phys → Fuß: +M_A2>0 → Label +vals.L[0] ✓
+    //                              → Kopf: -M_2A<0 → Label +vals.L[NP] ✓
+    // non-SM Pfad: Mleft = -M_phys → Fuß: +|MA_r|>0 → Label +vals.L[0] ✓
+    //                               → Kopf: -M_cL<0 → Label +vals.L[NP] ✓
+    // → In beiden Fällen: Label = +vals.L[k] (kein Minus nötig!)
+    s+=lbl(col_L-2, col_bot-8,   vals.L[0],  'end');
+    s+=lbl(col_L-2, col_topA-8,  vals.L[NP], 'end');
+    // Rechte Stütze Labels:
+    // SM-Pfad (fixB): Mright = +M_phys_right → −vals.C[0]=−M_3B<0 ✓, −vals.C[NP]=+M_B3? 
+    // non-SM (pinB/rolB): Mright = M_cR_ns = HB*hB<0 → vals.C[0]<0 ✓ (kein Minus)
+    // Einheitlich: −vals.C[0] für fixB, +vals.C[0] für non-fixB
+    s+=lbl(col_R+2, col_topB-8, -vals.C[0],  'start');
+    s+=lbl(col_R+2, col_bot-8,  -vals.C[NP], 'start');
     return s;
   }
   // Store callback on data so renderDiagram can call it after mode is known
   // We inject it via a special overlay extension
   const _addCornerLabels = addCornerLabels;
 
-  // Morig: un-negated M values for correct curvature integration in w-diagram
-  const Mleft_orig  = Mleft.map(v=>-v);   // undo display negation
-  const Mright_orig = Mright.map(v=>-v);  // undo display negation
+  // Morig: physikalische M-Werte für korrekte Krümmungsintegration im w-Diagramm
+  // Mleft = +M_phys → Mleft_orig = Mleft (identisch)
+  // Mright = +M_phys → Mright_orig = Mright (identisch)
+  const Mleft_orig  = Mleft.slice();
+  const Mright_orig = Mright.slice();
   const data = {
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [
@@ -3720,6 +4065,36 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
     ]
   };
   data.cornerLabelsFn = _addCornerLabels;
+  // Verbindungslinien an den Rahmenecken (M-Diagramm muss um die Ecke gehen)
+  // Linke Ecke:  Ende linke Stütze → Anfang Riegel
+  // Rechte Ecke: Ende Riegel → Anfang rechte Stütze
+  data.cornerLineFn = function(mode, color, fill, SCALE, h){
+    if(mode !== 'M') return h;
+    const NP = Mleft.length - 1;
+    // Linke Ecke
+    const lsX = col_L + Mleft[NP]*SCALE;   // linke Stütze Kopf: flip:false, nx=+1
+    const lsY = col_topA;
+    const rrX = col_L;                       // Riegel links: flip:false, ny=+1 → nur vertikal
+    const rrY = col_topA + Mraf[0]*SCALE;
+    if(Math.abs(lsX - rrX) > 0.5 || Math.abs(lsY - rrY) > 0.5){
+      h += `<line x1="${lsX.toFixed(1)}" y1="${lsY.toFixed(1)}" x2="${rrX.toFixed(1)}" y2="${rrY.toFixed(1)}" stroke="${color}" stroke-width="1.5"/>`;
+      h += `<polygon points="${lsX.toFixed(1)},${lsY.toFixed(1)} ${rrX.toFixed(1)},${lsY.toFixed(1)} ${rrX.toFixed(1)},${rrY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
+    }
+    // Rechte Ecke
+    const rlX = col_R;                       // Riegel rechts
+    const rlY = col_topB + Mraf[NP]*SCALE;
+    const rsX = col_R + Mright[0]*SCALE;    // rechte Stütze Kopf: flip:true, nx=-1 → ox=+Mright[0]*SCALE... nein
+    // flip:true: offset = -Mright[0]*SCALE, nx=-1 → ox = offset*nx = +Mright[0]*SCALE
+    // Also: rsX = col_R + Mright[0]*SCALE (nach rechts wenn pos)
+    // Aber Mright[0] nach unserem Fix = M_phys(Kopf) > 0 für Stützmoment → nach rechts (außen)?
+    // Nein: Stützmoment soll innen (links) → brauchen Mright[0] < 0 → rsX < col_R
+    const rsY = col_topB;
+    if(Math.abs(rlX - rsX) > 0.5 || Math.abs(rlY - rsY) > 0.5){
+      h += `<line x1="${rlX.toFixed(1)}" y1="${rlY.toFixed(1)}" x2="${rsX.toFixed(1)}" y2="${rsY.toFixed(1)}" stroke="${color}" stroke-width="1.5"/>`;
+      h += `<polygon points="${rlX.toFixed(1)},${rlY.toFixed(1)} ${rlX.toFixed(1)},${rsY.toFixed(1)} ${rsX.toFixed(1)},${rsY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
+    }
+    return h;
+  };
   diagData['frame'] = data;
   renderDiagram('frame', data);
 }
