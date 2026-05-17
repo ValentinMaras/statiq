@@ -2849,19 +2849,27 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
 
   // ── pinA+fixB: Kraftgrößenverfahren (n=2, gespiegelt von fixA+pinB) ──
   } else if(pinA && fixB){
-    // Redundante: X1=HB, X2=MB_r
-    // Virtuell: m̄1 (HB=1): links col=y (von oben), Riegel=ȳ_B(x)=hB*(1-x/b)+hA*(x/b)... nein
-    // Einfacher: Spiegelung von fixA+pinB (A↔B, links↔rechts)
-    // HA = -Htot - HB (ΣFx=0)
-    const dh_col = hB/NP;
-    let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);
-    let d12 = hB**2/(2*EI_S);
-    let d22 = hB/EI_S;
+    // Redundante: X1=HA (globaler Schub), X2=MB_r (Einspannmoment B)
+    // HB = -Htot - HA (ΣFx=0)
+    // Virtuelles System:
+    //   m̄1 (HA=1, HB=-1): linke Stütze m=y, Riegel m=yb(x), rechte Stütze m=y_rechts
+    //   m̄2 (MB_r=1): rechte Stütze m=1 (konstant), Riegel m=x/b (von 0 links bis 1 rechts)
+    // δ11 = ∫(m̄1²/EI)ds: Stützen + Riegel
+    // δ12 = ∫(m̄1·m̄2/EI)ds
+    // δ22 = ∫(m̄2²/EI)ds: rechte Stütze (hB/EI_S) + Riegel (b/(3EI_R))
+    // Δ1P = ∫(m̄1·MP/EI)ds
+    // Δ2P = ∫(m̄2·MP/EI)ds: Riegel ∫(x/b·MP/EI_R)dx
+    const dh_colB = hB/NP;
+    // Stützenanteile:
+    let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);  // m̄1=y für beide Stützen
+    let d12 = hB**2/(2*EI_S);                     // m̄1·m̄2 für rechte Stütze: ∫y·1·dy = hB²/2
+    let d22 = hB/EI_S;                            // m̄2=1 für rechte Stütze: ∫1²dy = hB
     let D1P = 0, D2P = 0;
+    // Riegel:
     for(let i=0;i<=NP;i++){
       const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
       const yb=hA+(hB-hA)*x/b;
-      const m1=yb, m2=x/b;   // gespiegelt: m2=x/b (statt 1-x/b)
+      const m1=yb, m2=x/b;
       const MP=-VA*x+Mq(x);
       d11+=w*m1*m1/EI_R*dx;
       d12+=w*m1*m2/EI_R*dx;
@@ -2870,9 +2878,9 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
       D2P+=w*m2*MP/EI_R*dx;
     }
     const det2b = d11*d22 - d12*d12;
-    HB   = (-D1P*d22 + D2P*d12) / det2b;
+    HA   = (-D1P*d22 + D2P*d12) / det2b;
     const MB_r_kgv = (-D2P*d11 + D1P*d12) / det2b;
-    HA   = -Htot - HB;
+    HB   = -Htot - HA;
     MA_r = 0;
     MB_r = MB_r_kgv;
 
@@ -2940,13 +2948,26 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
     M_3B = 0;
     M_B3 = 0;
   } else if(pinA && fixB){
-    // Gespiegelt von fixA+pinB: A=Gelenk, B=Einspannung
-    M_A2 = 0;           // Gelenk A
-    M_2A = HA*hA;       // Knotenmoment Kopf A
-    M_23 = -M_2A;       // Knotengleichgewicht Knoten 2
-    M_32 = MB_r + HB*hB; // Knotenmoment Kopf B
-    M_3B = M_32;         // SM Kopf B → für Rendering
-    M_B3 = -MB_r;        // SM Fuß B (Einspannung)
+    // pinA: kein Einspannmoment bei A
+    // fixB: MB_r = Einspannmoment bei B (positiv = außen rechts)
+    // Freikörper linke Stütze (Gelenk oben und unten): M=0 überall
+    // Freikörper rechte Stütze: Fuß=MB_r, Kopf=MB_r+HB*hB (aus GGW)
+    // SM-Konvention (für Rendering-Pfad hasSM_B):
+    //   M_B3 = Fuß-SM = -MB_r (VV: rechtsdrehend pos, MB_r>0 pos außen)
+    //   M_3B = Kopf-SM = -(MB_r + HB*hB) (analog)
+    //   HB_global_right = -(M_B3+M_3B)/hB = (MB_r + MB_r + HB*hB)/hB = HB + 2*MB_r/hB... falsch
+    // Einfacher: direkt physikalische Werte setzen für non-SM-Rendering:
+    M_A2 = 0;              // Gelenk A
+    M_2A = HA*hA;          // Knotenmoment Kopf A (aus Stützen-GGW)
+    M_23 = -M_2A;          // Knotengleichgewicht Knoten 2
+    M_32 = -(MB_r + HB*hB); // Knotenmoment Kopf B (negativ = innen)
+    // Für hasSM_B-Pfad: M_B3 und M_3B so setzen dass HB_global_right = HB korrekt
+    // M_phys_right(y) = MB_r + HB*y (Fuß y=0: MB_r, Kopf y=hB: MB_r+HB*hB)
+    // hasSM: M_phys_y = M_B3 + HB_global_right*y_from_base
+    //        M_B3 = M_phys(y=0) = MB_r
+    //        M_3B: so dass -(M_B3+M_3B)/hB = HB → M_3B = -HB*hB - M_B3 = -HB*hB - MB_r
+    M_B3 = MB_r;
+    M_3B = HB*hB + MB_r;
   } else if(fixA && rolB){
     // KGV rolB: MA_r bereits berechnet, HA=0, HB=0
     // Display-Konvention für Stütze: M_A2 = Display-Fuß, M_2A_neg = Display-Kopf
@@ -3343,7 +3364,7 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
     let M_phys_y;
     if(hasSM_B){
       M_phys_y = M_B3 + HB_global_right * y_from_base;
-      Mright.push(+(M_phys_y).toFixed(3));
+      Mright.push(+(-M_phys_y).toFixed(3));  // neg: außen=neg, flip:false,nx=-1 → ox=+M_phys*SCALE → rechts
     } else {
       // non-SM Pfad: gleiche Konvention wie hasSM (Mright = +M_phys_right)
       // M_phys_right(y): y=0 Fuß, y=hB Kopf
@@ -3373,6 +3394,7 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
   frameHinges.filter(hg=>hg.member==='right').forEach(hg=>{
     Mright[Math.round((parseFloat(hg.pos)||hB/2)/hB*NP)]=0;
   });
+
 
 
 
@@ -3460,7 +3482,7 @@ function calculateFrame(){
 
   document.getElementById('frame-results').classList.remove('hidden');
   const rafHingeIdx = rafHinge ? Math.round((parseFloat(rafHinge.pos)||b/2)/b*NP) : null;
-  renderFrameDiagram(b,h,allM,allQ,allN,NP,supportA,supportB,rafHingeIdx,hA,hB);
+  renderFrameDiagram(b,h,allM,allQ,allN,NP,supportA,supportB,rafHingeIdx,hA,hB,reactions.SM);
 }
 
 function setDiagMode(sys, mode){
@@ -3973,7 +3995,7 @@ function renderContDiagram(Ls, Qv_all, Mv_all){
 }
 
 // ── Frame diagram ──────────────────────────────────
-function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=null, hA=h, hB=h){
+function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=null, hA=h, hB=h, SM=null){
   const SVG_W=340, SVG_H=240, PAD=55;
   const col_bot=195;
   const hMax=Math.max(hA,hB,h);
@@ -4038,12 +4060,15 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
     // → In beiden Fällen: Label = +vals.L[k] (kein Minus nötig!)
     s+=lbl(col_L-2, col_bot-8,   vals.L[0],  'end');
     s+=lbl(col_L-2, col_topA-8,  vals.L[NP], 'end');
-    // Rechte Stütze Labels:
-    // SM-Pfad (fixB): Mright = +M_phys_right → −vals.C[0]=−M_3B<0 ✓, −vals.C[NP]=+M_B3? 
-    // non-SM (pinB/rolB): Mright = M_cR_ns = HB*hB<0 → vals.C[0]<0 ✓ (kein Minus)
-    // Einheitlich: −vals.C[0] für fixB, +vals.C[0] für non-fixB
-    s+=lbl(col_R+2, col_topB-8, -vals.C[0],  'start');
-    s+=lbl(col_R+2, col_bot-8,  -vals.C[NP], 'start');
+    // Rechte Stütze Labels: direkt aus SM-Werten
+    // BM_Kopf_B = −M_3B (negativ=außen), BM_Fuß_B = +M_B3 (positiv=außen)
+    if(supB==='fixed' && SM){
+      s+=lbl(col_R+2, col_topB-8, -(SM.M_3B), 'start');
+      s+=lbl(col_R+2, col_bot-8,    SM.M_B3,  'start');
+    } else {
+      s+=lbl(col_R+2, col_topB-8, vals.C[0],  'start');
+      s+=lbl(col_R+2, col_bot-8,  vals.C[NP], 'start');
+    }
     return s;
   }
   // Store callback on data so renderDiagram can call it after mode is known
@@ -4054,14 +4079,14 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
   // Mleft = +M_phys → Mleft_orig = Mleft (identisch)
   // Mright = +M_phys → Mright_orig = Mright (identisch)
   const Mleft_orig  = Mleft.slice();
-  const Mright_orig = Mright.slice();
+  const Mright_orig = Mright.map(v => -v);  // orig = M_phys (vor Negierung)
   const data = {
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [
       { x0:col_L, y0:col_bot, x1:col_L, y1:col_topA, thick:3, flip:false, isColumn:true,  memberLen:hA, M:Mleft,  Morig:Mleft_orig,  Q:Qleft,  N:Nleft  },
       { x0:col_L, y0:col_topA, x1:col_R, y1:col_topB, thick:3, flip:false, isColumn:false, memberLen:b, M:Mraf,   Morig:Mraf,        Q:Qraf,   N:Nraf,
         hingeIdx: rafHingeIdx },
-      { x0:col_R, y0:col_topB, x1:col_R, y1:col_bot, thick:3, flip:true,  isColumn:true,  memberLen:hB, M:Mright, Morig:Mright_orig, Q:Qright, N:Nright }
+      { x0:col_R, y0:col_topB, x1:col_R, y1:col_bot, thick:3, flip:false, isColumn:true,  memberLen:hB, M:Mright, Morig:Mright_orig, Q:Qright, N:Nright }
     ]
   };
   data.cornerLabelsFn = _addCornerLabels;
@@ -4071,27 +4096,29 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
   data.cornerLineFn = function(mode, color, fill, SCALE, h){
     if(mode !== 'M') return h;
     const NP = Mleft.length - 1;
-    // Linke Ecke
-    const lsX = col_L + Mleft[NP]*SCALE;   // linke Stütze Kopf: flip:false, nx=+1
+    // Linke Ecke: L-förmig über (col_L, col_topA)
+    // Stütze (flip:false, nx=+1): Kopfpunkt = (col_L + Mleft[NP]*SCALE, col_topA)
+    // Riegel (flip:false, ny=+1): Startpunkt = (col_L, col_topA + Mraf[0]*SCALE)
+    const lsX = col_L + Mleft[NP]*SCALE;
     const lsY = col_topA;
-    const rrX = col_L;                       // Riegel links: flip:false, ny=+1 → nur vertikal
+    const rrX = col_L;
     const rrY = col_topA + Mraf[0]*SCALE;
     if(Math.abs(lsX - rrX) > 0.5 || Math.abs(lsY - rrY) > 0.5){
-      h += `<line x1="${lsX.toFixed(1)}" y1="${lsY.toFixed(1)}" x2="${rrX.toFixed(1)}" y2="${rrY.toFixed(1)}" stroke="${color}" stroke-width="1.5"/>`;
-      h += `<polygon points="${lsX.toFixed(1)},${lsY.toFixed(1)} ${rrX.toFixed(1)},${lsY.toFixed(1)} ${rrX.toFixed(1)},${rrY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
+      h += `<polyline points="${lsX.toFixed(1)},${lsY.toFixed(1)} ${col_L},${col_topA} ${rrX.toFixed(1)},${rrY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+      h += `<polygon points="${lsX.toFixed(1)},${lsY.toFixed(1)} ${col_L},${lsY.toFixed(1)} ${col_L},${rrY.toFixed(1)} ${rrX.toFixed(1)},${rrY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
     }
-    // Rechte Ecke
-    const rlX = col_R;                       // Riegel rechts
+    // Rechte Ecke: Riegel-Endpunkt → Stützen-Kopfpunkt
+    // Riegel (flip:false, ny=+1): Endpunkt = (col_R, col_topB + Mraf[NP]*SCALE)
+    // Stütze (flip:true, nx=-1): offset=-Mright[0]*SCALE, ox=+Mright[0]*SCALE
+    //   → Kopfpunkt = (col_R + Mright[0]*SCALE, col_topB)
+    const rlX = col_R;
     const rlY = col_topB + Mraf[NP]*SCALE;
-    const rsX = col_R + Mright[0]*SCALE;    // rechte Stütze Kopf: flip:true, nx=-1 → ox=+Mright[0]*SCALE... nein
-    // flip:true: offset = -Mright[0]*SCALE, nx=-1 → ox = offset*nx = +Mright[0]*SCALE
-    // Also: rsX = col_R + Mright[0]*SCALE (nach rechts wenn pos)
-    // Aber Mright[0] nach unserem Fix = M_phys(Kopf) > 0 für Stützmoment → nach rechts (außen)?
-    // Nein: Stützmoment soll innen (links) → brauchen Mright[0] < 0 → rsX < col_R
+    const rsX = col_R - Mright[0]*SCALE;  // flip:false, nx=-1: ox = -Mright*SCALE
     const rsY = col_topB;
+    // Verbindung: L-förmig über die Ecke (col_R, col_topB)
     if(Math.abs(rlX - rsX) > 0.5 || Math.abs(rlY - rsY) > 0.5){
-      h += `<line x1="${rlX.toFixed(1)}" y1="${rlY.toFixed(1)}" x2="${rsX.toFixed(1)}" y2="${rsY.toFixed(1)}" stroke="${color}" stroke-width="1.5"/>`;
-      h += `<polygon points="${rlX.toFixed(1)},${rlY.toFixed(1)} ${rlX.toFixed(1)},${rsY.toFixed(1)} ${rsX.toFixed(1)},${rsY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
+      h += `<polyline points="${rsX.toFixed(1)},${rsY.toFixed(1)} ${col_R},${col_topB} ${rlX.toFixed(1)},${rlY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+      h += `<polygon points="${rsX.toFixed(1)},${rsY.toFixed(1)} ${col_R},${rsY.toFixed(1)} ${col_R},${rlY.toFixed(1)} ${rlX.toFixed(1)},${rlY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
     }
     return h;
   };
