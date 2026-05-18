@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Statiq v0.5.6 -->
+<!-- Statiq v0.5.8 -->
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -301,7 +301,7 @@
 <!-- ═══════════════ HEADER ═══════════════ -->
 <header class="app-header">
   <a class="logo" href="index.html">stat<span>iq</span></a>
-  <div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;letter-spacing:0.5px;">v0.5.5</div>
+  <div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;letter-spacing:0.5px;">v0.5.8</div>
 </header>
 
 <nav class="nav" style="display:flex;align-items:center;padding:0 16px;gap:10px">
@@ -468,7 +468,7 @@
       <div class="diagram-label" id="diag-label-beam">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.5</div>
+  <div class="footnote">Statiq v0.5.8</div>
 </main>
 
 <!-- ═══════════════ CANTILEVER TAB ═══════════════ -->
@@ -534,7 +534,7 @@
       <div class="diagram-label" id="diag-label-cant">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.5 · Cantilever</div>
+  <div class="footnote">Statiq v0.5.8 · Cantilever</div>
 </main>
 
 <!-- ═══════════════ CONTINUOUS BEAM TAB ═══════════════ -->
@@ -602,7 +602,7 @@
       <div class="diagram-label" id="diag-label-cont">Bending Moment M — kNm</div>
     </div>
 
-  <div class="footnote">Statiq v0.5.5 · Continuous Beam</div>
+  <div class="footnote">Statiq v0.5.8 · Continuous Beam</div>
 </main>
 
 <!-- ═══════════════ FRAME TAB ═══════════════ -->
@@ -701,6 +701,8 @@
       </table>
     </div>
 
+
+
     
   </div>
 
@@ -734,9 +736,20 @@
         <svg id="diag-svg-frame" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;min-height:140px"></svg>
       </div>
       <div class="diagram-label" id="diag-label-frame">Bending Moment M — kNm</div>
+
+      <!-- Inline node forces table — shown for M/Q/N, hidden for w -->
+      <div id="frame-node-table" style="margin-top:12px;display:none">
+        <div style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:8px;letter-spacing:0.5px">
+          ① Lager A &nbsp;·&nbsp; ② Ecke links &nbsp;·&nbsp; ③ Ecke rechts &nbsp;·&nbsp; ④ Lager B
+        </div>
+        <table class="reactions-table" style="margin-bottom:0">
+          <thead id="frame-node-thead"></thead>
+          <tbody id="frame-forces-body"></tbody>
+        </table>
+      </div>
     </div>
 
-  <div class="footnote">Statiq v0.5.5 · Frame</div>
+  <div class="footnote">Statiq v0.5.8 · Frame</div>
 </main>
 
 <script>
@@ -2621,7 +2634,7 @@ function frameSolveDet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
 // Knoten: 1=Fuß A (unten links), 2=Kopf A, 3=Kopf B, 4=Fuß B (unten rechts)
 //
 // Ausgabe: { SM: {M_A2,M_2A,M_23,M_32,M_3B,M_B3}, HA, HB, MA_r, MB_r,
-//            _sdVA_corr, _sdM_A2, _sdM_2A, _sdM_B3, _sdM_3B }
+//            _sdM_A2, _sdM_2A, _sdM_B3, _sdM_3B }
 //
 function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
   const {pinA, pinB, fixA, fixB, rolA, rolB, rafHinge} = config;
@@ -2741,13 +2754,12 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
 
   let phi2=0, phi3=0, delta=0;
   let HA=0, HB=0, MA_r=0, MB_r=0;
-  let _sdVA_corr=0, _sdM_B3=null, _sdM_A2=null, _sdM_3B=null, _sdM_2A=null;
+  let _sdM_B3=null, _sdM_A2=null, _sdM_3B=null, _sdM_2A=null;
 
   // ── pinA+pinB: Kraftgrößenverfahren (unverändert) ─────────────────
   if(pinA && pinB){
     // Redundante: X₁ = H (horizontaler Schub)
     // δ₁₁·H = −Δ₁P
-    const dh_col = hA/NP;
     let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);
     let D1P = 0;
     for(let i=0;i<=NP;i++){
@@ -2756,6 +2768,7 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
       d11 += w*yb*yb/EI_R*dx;
       D1P += w*yb*(-VA*x+Mq(x))/EI_R*dx;
     }
+    const dh_col = hA/NP;
     hLoads.forEach(hl=>{
       if(hl._mem!=='left') return;
       const F=hl._F, z=hl._z;
@@ -2780,7 +2793,6 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
     // HB=0 (Rolle), HA=Htot (ΣFx=0).
     // ∂U/∂MA_r = 0: MA_r·(hA/EI_S + b/EI_R) + HA·(hA²/(2EI_S) + hA·b/EI_R) + Δ_raf = 0
     HA = Htot; HB = 0;
-    const dh_col = hA/NP;
     const c1 = hA/EI_S + b/EI_R;
     const c2 = HA*(hA*hA/(2*EI_S) + hA*b/EI_R);
     let c3 = 0;
@@ -2807,10 +2819,10 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
     //                 [δ21 δ22][MA_r]   [−Δ2P]
     // Virtuell: m̄1 (HA=1): links col=y, Riegel=ȳ(x), rechts col=y
     //           m̄2 (MA_r=1): links col=1, Riegel=(1−x/b), rechts col=0
-    const dh_col = hA/NP;
     let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);
     let d12 = hA**2/(2*EI_S);
     let d22 = hA/EI_S;
+    const dh_col = hB/NP;
     let D1P = 0, D2P = 0;
     for(let i=0;i<=NP;i++){
       const x=i/NP*b, w=(i===0||i===NP)?0.5:1;
@@ -2859,7 +2871,6 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
     // δ22 = ∫(m̄2²/EI)ds: rechte Stütze (hB/EI_S) + Riegel (b/(3EI_R))
     // Δ1P = ∫(m̄1·MP/EI)ds
     // Δ2P = ∫(m̄2·MP/EI)ds: Riegel ∫(x/b·MP/EI_R)dx
-    const dh_colB = hB/NP;
     // Stützenanteile:
     let d11 = hA**3/(3*EI_S) + hB**3/(3*EI_S);  // m̄1=y für beide Stützen
     let d12 = hB**2/(2*EI_S);                     // m̄1·m̄2 für rechte Stütze: ∫y·1·dy = hB²/2
@@ -2948,26 +2959,16 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
     M_3B = 0;
     M_B3 = 0;
   } else if(pinA && fixB){
-    // pinA: kein Einspannmoment bei A
-    // fixB: MB_r = Einspannmoment bei B (positiv = außen rechts)
-    // Freikörper linke Stütze (Gelenk oben und unten): M=0 überall
-    // Freikörper rechte Stütze: Fuß=MB_r, Kopf=MB_r+HB*hB (aus GGW)
-    // SM-Konvention (für Rendering-Pfad hasSM_B):
-    //   M_B3 = Fuß-SM = -MB_r (VV: rechtsdrehend pos, MB_r>0 pos außen)
-    //   M_3B = Kopf-SM = -(MB_r + HB*hB) (analog)
-    //   HB_global_right = -(M_B3+M_3B)/hB = (MB_r + MB_r + HB*hB)/hB = HB + 2*MB_r/hB... falsch
-    // Einfacher: direkt physikalische Werte setzen für non-SM-Rendering:
-    M_A2 = 0;              // Gelenk A
-    M_2A = HA*hA;          // Knotenmoment Kopf A (aus Stützen-GGW)
-    M_23 = -M_2A;          // Knotengleichgewicht Knoten 2
-    M_32 = -(MB_r + HB*hB); // Knotenmoment Kopf B (negativ = innen)
-    // Für hasSM_B-Pfad: M_B3 und M_3B so setzen dass HB_global_right = HB korrekt
-    // M_phys_right(y) = MB_r + HB*y (Fuß y=0: MB_r, Kopf y=hB: MB_r+HB*hB)
-    // hasSM: M_phys_y = M_B3 + HB_global_right*y_from_base
-    //        M_B3 = M_phys(y=0) = MB_r
-    //        M_3B: so dass -(M_B3+M_3B)/hB = HB → M_3B = -HB*hB - M_B3 = -HB*hB - MB_r
+    // KGV: HA und MB_r aus Solver. Gelenk bei A → MA_r=0.
+    M_A2 = 0;
+    M_2A = HA*hA;
+    M_23 = -M_2A;
+    M_32 = -(MB_r + HB*hB);
+    // M_B3/M_3B für hasSM_B-Rendering (positiv=innen-Konvention):
+    // Fuß B: MB_r (Einspannung, Zugfaser innen wenn MB_r>0)
+    // Kopf B: MB_r + HB*hB (Stützmoment)
     M_B3 = MB_r;
-    M_3B = HB*hB + MB_r;
+    M_3B = MB_r + HB*hB;
   } else if(fixA && rolB){
     // KGV rolB: MA_r bereits berechnet, HA=0, HB=0
     // Display-Konvention für Stütze: M_A2 = Display-Fuß, M_2A_neg = Display-Kopf
@@ -3003,12 +3004,19 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
   if(isVV && Math.abs(Zs)>1e-4) console.warn('VV Z_sway Residual:', Zs.toFixed(6));
 
   // MA_r/MB_r für Kompatibilität: MA_r = −M_A2 (für alle Cases)
-  if(!(fixA && pinB) && !(fixA && rolB) && !(pinA && fixB)){  // für diese Cases bereits via KGV gesetzt
-    MA_r = fixA ? -M_A2 : 0;
-    MB_r = fixB ? -M_B3 : 0;
+  // MA_r/MB_r: für KGV-Cases bereits gesetzt, für VV ableiten
+  if(fixA && fixB){
+    MA_r = -M_A2;  // VV-SM: M_A2 rechtsdrehend am Stabende Fuß A → phys. CCW → negieren
+    MB_r = +M_B3;  // VV-SM: M_B3 rechtsdrehend am Stabende Fuß B → gleiche phys. Richtung wie MA_r
   }
-  // VA-Korrektur:
-  _sdVA_corr = -(M_A2 + M_B3)/b;
+  // VA_real/VB_real: echte vertikale Auflagerreaktionen aus Gleichgewicht mit Einspannmomenten.
+  // Entkoppelt von VA/VB (Mraf-Freikörper). Nur fuer N-Diagramm verwendet.
+  // Herleitung: Sigma_M_B=0 -> VA_real*b = Mvert_A + MA_r - MB_r
+  //             -> VA_real = VA + (MA_r - MB_r)/b
+  // pinA+pinB: MA_r=MB_r=0 -> VA_real=VA, VB_real=VB (korrekt)
+  // fixA+fixB symm.: MA_r=MB_r -> VA_real=VB_real=Vtot/2 (korrekt)
+  const _sdVA_real = VA + (MA_r - MB_r) / b;
+  const _sdVB_real = VB - (MA_r - MB_r) / b;
 
   // Übergabe der SM für frameInternalForces:
   // SM werden immer übergeben (auch für pinB/rolB wo kB=0 → M_B3=M_3B=0)
@@ -3020,7 +3028,9 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
   _sdM_B3 = M_B3;
   _sdM_3B = fixB ? M_3B : M_32;  // M_32 für pinB/rolB als Kopf-Moment
 
-  return {HA, HB, MA_r, MB_r, _sdVA_corr, _sdM_B3, _sdM_A2, _sdM_3B, _sdM_2A,
+  return {HA, HB, MA_r, MB_r,
+          VA_real: _sdVA_real, VB_real: _sdVB_real,
+          _sdM_B3, _sdM_A2, _sdM_3B, _sdM_2A,
           SM: {M_A2, M_2A, M_23, M_32, M_3B, M_B3}};
 }
 
@@ -3086,10 +3096,19 @@ function frameSolveIndet(b, hA, hB, VA, VB, Htot, vLoads, hLoads, config){
 function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
                               vLoads, hLoads, config, sdExtra={}){
   const {fixA, fixB, rafHinge} = config;
-  // SM direkt aus VV-Solver (alle Cases liefern jetzt SM)
   const {sdM_A2: M_A2=null, sdM_2A: M_2A=null,
-         sdM_B3: M_B3=null, sdM_3B: M_3B=null} = sdExtra;
-  const NP=100;
+         sdM_B3: M_B3=null, sdM_3B: M_3B=null,
+         VA_real=VA, VB_real=VB} = sdExtra;  // VA_real/VB_real fuer N, VA/VB fuer M
+  const NP=50;
+
+  // ── Lokales Koordinatensystem (Option A) ────────────────────────────
+  // Jeder Stab hat ein lokales KS: x entlang Stabachse (vom Lager weg), y⊥ (CCW-Normale).
+  // Display-Konvention: vals > 0 → in Richtung lokale y (innen/sagging) → korrekte Seite.
+  //
+  // Linke Stütze:  x: Fuß→Kopf (↑), y: nach rechts (innen). nx=+1, flip:false. vals>0 → rechts.
+  // Riegel:        x: links→rechts (→), y: nach unten (sagging+). ny=+1, flip:false. vals>0 → unten.
+  // Rechte Stütze: x: Fuß→Kopf (↑, Option A), Renderer läuft Kopf→Fuß → Array k=0=Kopf.
+  //                y: nach links (innen). nx=-1, flip:false. vals>0 → ox=-vals*SCALE → links. ✓
 
   // ── Lasthelfer ────────────────────────────────────────────────────
   function Mq(x){   // Biegemoment aus Riegellast (einfach gelagert)
@@ -3118,84 +3137,39 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
   //         HB_global = −(M_B3+M_3B)/hB
   // Für display-convention (HA positiv = Schub nach außen):
   //   HA_disp = (M_A2+M_2A)/hA  (positiv für Standard-Gravitation)
-  // hasSM: SM-Pfad nur für VV-Cases (fixA+fixB) und fixA+pinB
-  // fixA+rolB: HA=0, non-SM Pfad mit MA_r direkt (sauberer)
-  // pinA+pinB: non-SM (HA aus KGV, MA_r=0)
+  // hasSM: SM-Pfad nur für fixA+fixB (VV-Solver liefert M_A2, M_2A)
   const hasSM = M_A2 !== null && M_2A !== null && fixA && fixB;
   // HA_disp für Momentenberechnung in Stütze und Riegel
   const HA_disp = hasSM ? (M_A2+M_2A)/hA : HA;
-  // HB_disp: nur für SM-Pfad (fixB) aus SM berechnen, sonst HB direkt
-  const HB_disp = (M_B3!==null && M_3B!==null && fixB) ? -(M_B3+M_3B)/hB : HB;
 
-  // ── Linke Stütze: y=0 (Fuß A) → y=hA (Kopf A) ───────────────────
-  // M_phys(y) aus Freikörper (unten abgeschnitten):
-  //   M_phys(y) = M_A2 − HA_disp·y   [M_A2 am Fuß, HA_disp wirkt als Schub nach außen]
-  //   Kontrolle: y=0  → M_A2          ✓ (Einspannmoment)
-  //              y=hA → M_A2 − HA_disp·hA = M_A2 − (M_A2+M_2A) = −M_2A ✓ (Knotenmoment)
-  // Mleft = −M_phys (Display: außen=neg, innen=pos, flip:false, nx=+1)
-  // Qleft = HA_disp (Querkraft in Stütze = horizontale Reaktion)
+  // ── Linke Stütze ──────────────────────────────────────────────────
+  // Rahmenecke (Kopf A): starrer Knoten → M_kopf_A = Mraf[0] (aus Riegel)
+  // Lager (Fuß A): fixA → Einspannmoment, pin/rol → M=0
+  //
+  // Vorzeichen Display-Konvention (flip:false, nx=+1, vals>0 → nach rechts=innen):
+  //   hasSM (fixA+fixB): M_A2 am Fuß (positiv=innen ✓), -M_2A am Kopf ✓
+  //   non-SM: M_fuss_A = fixA ? -MA_r : 0  (MA_r positiv → außen → neg)
+  //           M_kopf_A = Mraf[0]            (aus Riegel, direkt übernehmen)
   const Mleft=[], Qleft=[], Nleft=[];
+  // Erst Riegel berechnen damit Mraf[0] für Kopf A verfügbar ist
+  // (Riegel-Loop kommt weiter unten – wir brauchen deshalb einen Zwischenschritt)
+  // Lösung: Mleft-Werte nach Riegel-Berechnung setzen (see below)
+  // Temporär: Platzhalter-Array, wird nach Riegel befüllt
   for(let k=0;k<=NP;k++){
-    const y=k/NP*hA;
-    let M_phys, Q=HA_disp;
-    if(hasSM){
-      // SM-Pfad: lineare Interpolation in Display-Konvention
-      // Display-Fuß = M_A2 (pos=innen, neg=außen), Display-Kopf = -M_2A
-      const t = y/hA;
-      M_phys = M_A2*(1-t) + (-M_2A)*t;
-    } else {
-      // Statisch bestimmter Fall (kein SM aus Solver)
-      M_phys = (fixA ? MA_r : 0) + HA*y;
-      hLoads.forEach(hl=>{
-        if(hl._mem!=='left') return;
-        if(y>=hl._z){ M_phys+=hl._F*(y-hl._z); Q-=hl._F; }
-      });
-    }
-    Mleft.push(+(hasSM ? M_phys : -M_phys).toFixed(3));
-    Qleft.push(+(Q).toFixed(3));
-    Nleft.push(+(-VA).toFixed(3));
+    Mleft.push(0);
+    Qleft.push(+(HA).toFixed(3));  // Q in Stütze = Horizontalschub HA
+    Nleft.push(+(-VA_real).toFixed(3));  // VA_real: echte Auflagerreaktion (mit Einspannmomenten)
   }
-  if(!fixA) Mleft[0]=0;
   frameHinges.filter(hg=>hg.member==='left').forEach(hg=>{
     Mleft[Math.round((parseFloat(hg.pos)||hA/2)/hA*NP)]=0;
   });
 
   // ── Riegel: x=0 (Kopf A) → x=b (Kopf B) ─────────────────────────
-  // M_phys aus globalem Gleichgewicht (linker Freikörper bis Schnitt x):
-  //   M_raf(x) = VA·x − HA_disp·ȳ(x) − M_A2 − Mq(x) − Mh(x)
-  //              [HA_disp·ȳ wirkt als Moment gegen CCW]
-  //   ȳ(x) = hA + (hB−hA)·x/b
-  //   Kontrolle x=0: VA·0 − HA_disp·hA − M_A2 = −(M_A2+M_2A) − M_A2 + M_2A
-  //                = −M_A2 − M_2A + M_2A ... nein:
-  //   x=0: −HA_disp·hA − M_A2 = −(M_A2+M_2A) − M_A2 ✗
-  //   Korrekt: x=0: M_raf = −HA_disp·hA − M_A2
-  //                       = −(M_A2+M_2A) − M_A2 ✗
-  //   Richtig: −HA_disp·hA − M_A2 = −(M_A2+M_2A)/hA·hA − M_A2
-  //                                = −(M_A2+M_2A) − M_A2 = −2M_A2 − M_2A ✗
-  //   Hmm — das stimmt nicht. Lass es uns anders aufbauen:
-  //   M_raf(0) muss = M_23 in BM-Konvention = −M_23_SM = −(−M_2A) = M_2A? Nein.
-  //   VV: M_23 = SM am Stab (rechtsdrehend). BM am linken Ende des Riegels = M_23_SM.
-  //   Aber BM am Knoten 2 (Gleichgewicht): M_2A_SM + M_23_SM = 0 → M_23_SM = −M_2A
-  //   M_raf(0) in BM = M_23_BM. Am linken Ende (i-Ende): BM = SM → M_raf(0) = M_23_SM = −M_2A.
-  //   Mit globalem GGW: M_raf(0) = −HA_disp·hA − M_A2
-  //   Setze: −HA_disp·hA = −(M_A2+M_2A)
-  //   → M_raf(0) = −(M_A2+M_2A) − M_A2 = −2M_A2 − M_2A ✗ (soll −M_2A sein)
-  //
-  //   FEHLER in der Herleitung. Der korrekte Ansatz:
-  //   HA_disp wirkt am BODEN (Fuß A) nach außen (links). Der Freikörper "links von x"
-  //   hat am Schnitt x die innere Kraft. Der Momentendrehpunkt ist am Schnitt x.
-  //   ΣM_Schnitt = 0:
-  //     +VA·x − Mq(x) − HA_disp·ȳ(x) + M_A2 − M_raf(x) = 0
-  //     [VA: aufwärts, Moment = +VA·x CCW ✓]
-  //     [HA_disp: nach links (außen), Hebelarm ȳ(x), Moment = −HA_disp·ȳ(x) ✓]
-  //     [M_A2: Einspannmoment CCW = positiv, direkt addiert ✓]
-  //   → M_raf(x) = VA·x − Mq(x) − HA_disp·ȳ(x) + M_A2
-  //   Kontrolle x=0: M_raf(0) = −HA_disp·hA + M_A2
-  //                            = −(M_A2+M_2A) + M_A2 = −M_2A ✓ (= M_23_SM ✓)
-  //   Kontrolle x=b: M_raf(b) = VA·b − q·b²/2 − HA_disp·hB + M_A2
-  //                 = M_3B_SM (Kontinuität) — zu prüfen numerisch.
-  //
-  // Mraf = +M_raf_phys (sagging = positiv = nach unten, flip:false)
+  // Koordinatensystem: x entlang Riegel (links→rechts), lokal y⊥ nach unten (sagging +)
+  // Freikörper links von x: M_raf(x) = VA·x − Mq(x) − HA_disp·ȳ(x) + M_A2_eff
+  //   ȳ(x) = hA + (hB−hA)·x/b  (Riegelhöhe über Boden)
+  //   x=0: M_raf = −HA_disp·hA + M_A2 = −M_2A ✓ (Knotengleichgewicht)
+  // Display: Mraf = +M_raf_phys (sagging positiv = nach unten)
   const rafAngle = Math.atan2(hB-hA, b);
   const cosA=Math.cos(rafAngle), sinA=Math.sin(rafAngle);
   const Mraf=[], Qraf=[], Nraf=[];
@@ -3203,200 +3177,54 @@ function frameInternalForces(b, hA, hB, VA, VB, HA, HB, MA_r, MB_r,
   for(let k=0;k<=NP;k++){
     const x=k/NP*b;
     const ybar=hA+(hB-hA)*x/b;
-    const Vv=VA-Qq(x);
+    const Vv_N = VA_real - Qq(x);   // fuer N/Q-Projektion (echte Auflagerreaktion)
     let Mh=0;
     hLoads.forEach(hl=>{ if(hl._mem==='left'&&ybar>hl._z) Mh+=hl._F*(ybar-hl._z); });
     const M_raf = VA*x - Mq(x) - HA_disp*ybar + M_A2_eff - Mh;
     Mraf.push(+(M_raf).toFixed(3));
-    Qraf.push(+(Vv*cosA - HA_disp*sinA).toFixed(3));
-    Nraf.push(+(-Vv*sinA - HA_disp*cosA).toFixed(3));
+    Qraf.push(+(Vv_N*cosA - HA*sinA).toFixed(3));
+    Nraf.push(+(-Vv_N*sinA - HA*cosA).toFixed(3));
   }
   if(rafHinge){
     const ki=Math.round((parseFloat(rafHinge.pos)||b/2)/b*NP);
     Mraf[ki]=0;
   }
 
-  // ── Rechte Stütze: k=0 (Kopf B) → k=NP (Fuß B) ──────────────────
-  // M_phys(x) wobei x=0 am Kopf, x=hB am Fuß:
-  //   Aus SM direkt: linear von M_3B (Kopf) bis M_B3 (Fuß)
-  //   M_phys(x) = M_3B + (M_B3−M_3B)·x/hB = M_3B + HB_global·x
-  //   HB_global = (M_B3−M_3B)/hB = −(M_B3+M_3B)/hB ... nein:
-  //   Aus GGW: HB_disp = (M_B3+M_3B)/hB (analog zu HA)
-  //   M_phys(x) = M_3B − HB_disp·x  [Kopf bei x=0: M_3B; Fuß bei x=hB: M_3B−HB_disp·hB=M_3B−(M_B3+M_3B)=−M_B3]
-  //   Hmm: M_phys(hB) = −M_B3, aber Fuß B hat M_B3. Vorzeichenproblem!
-  //   Richtig: Die rechte Stütze läuft von Kopf→Fuß. Am Kopf ist M_3B (SM), am Fuß M_B3 (SM).
-  //   Freikörper "oben abgeschnitten" bei Abstand x vom Kopf:
-  //   ΣM = 0: M_3B − HB_disp·x − M_right(x) = 0 → M_right(x) = M_3B − HB_disp·x
-  //   x=0: M_right = M_3B ✓     x=hB: M_right = M_3B − (M_B3+M_3B) = −M_B3 ✓?
-  //   Moment am Fuß sollte M_B3 sein (positiv). Aber M_right(hB) = −M_B3.
-  //   Das ist korrekt! Die rechte Stütze hat am Fuß das SM M_B3 in der globalen
-  //   Freikörperbetrachtung. M_phys(x) = M_3B − HB_disp·x.
-  //   → Mright = +M_phys (Display: flip:true, nx=−1)
-  //      offset = −Mright·SCALE = −M_phys·SCALE
-  //      ox = offset·nx = (−M_phys)·(−1)·SCALE = +M_phys·SCALE → nach rechts (außen)
-  //      M_phys(0) = M_3B > 0 → ox > 0 → Kopf B nach rechts (außen) = neg. Stützmoment ✓
-  //      M_phys(hB) = −M_B3 < 0 → ox < 0 → Fuß B nach links (innen) ✗
-  //      Das ist falsch! Einspannmoment bei B soll außen (rechts) sein.
-  //
-  //   CONCLUSIO: Für die rechte Stütze:
-  //   Mright = −M_phys (wie linke Stütze)
-  //   flip:true·nx=−1: offset = −(−M_phys)·SCALE = +M_phys·SCALE → nach rechts (außen)
-  //   M_phys(0) = M_3B > 0 → ox > 0 → rechts (außen) ✓ (Kopf B, neg. Stützmoment)
-  //   M_phys(hB) = −M_B3 < 0 → ox < 0 → links (innen) ✗ (Fuß B soll außen sein!)
-  //
-  //   Das Problem: M_phys(hB) = −M_B3 < 0, aber Einspannmoment soll außen = rechts.
-  //   D.h. ox soll > 0 (rechts) → offset > 0 → Mright > 0 → M_phys < 0 → stimmt!
-  //   −M_phys(hB) = +M_B3 > 0 → Mright[NP] = +M_B3 > 0 → ox = −(−M_B3)·(−1)·SCALE ... 
-  //
-  //   Ich muss den Renderer-Code EINMALIG genau nachvollziehen:
-  //   flip:true → offset = −vals[k]·SCALE
-  //   nx = −1 (rechte Stütze, dy>0)
-  //   ox = offset·nx = (−vals[k])·(−1)·SCALE = +vals[k]·SCALE
-  //   → vals[k] > 0 → ox > 0 → nach RECHTS (außen für rechte Stütze) ✓
-  //   → vals[k] < 0 → ox < 0 → nach LINKS (innen) ✓
-  //
-  //   Also: Mright (= vals) soll:
-  //   - Kopf B: Diagramm außen (rechts) → vals > 0 → Mright[0] > 0 → Mright = −M_phys
-  //             −M_phys(0) = −M_3B < 0 ✗ (M_3B > 0 für Standard-Gravitation)
-  //
-  //   STOP. Das stimmt immer noch nicht. Ich muss die Vorzeichen von M_3B verstehen.
-  //   VV-SM: M_3B = kB·(2φ₃ − 3δ/hB) für fixA+fixB mit q=10, hB=5: M_3B = +15.558
-  //   Das bedeutet: Kopf B schickt ein rechtsdrehendes Moment in die Stütze.
-  //   Dieses Moment erzeugt Zug auf der LINKEN Seite (innen) der rechten Stütze.
-  //   → Diagramm auf der linken Seite (innen) bei Kopf B → Diagramm nach links.
-  //   → ox < 0 → vals[0] < 0 → Mright[0] = −M_3B < 0 ← d.h. Mright = −M_phys ✓
-  //   UND: −Mright[0] = +M_3B > 0 → Label zeigt +15.6 ✗ (soll −15.6 sein!)
-  //
-  //   GRUNDPROBLEM: Das Stützmoment am Kopf B ist in der VV/Statiq-Konvention NEGATIV
-  //   (Zug innen = neg.), aber M_3B_SM > 0 (rechtsdrehend am Stab).
-  //   SM und BM haben am rechten Stabende entgegengesetztes Vorzeichen (VV-Skript S.1-4).
-  //   BM_Kopf_B = −M_3B_SM = −15.6 ✓ → Label soll −15.6 zeigen.
-  //
-  //   Mit Mright = −M_phys = −M_3B = −15.558 < 0 → ox < 0 → innen (links) ✓
-  //   Label: −vals.C[0] = −(−M_3B) = +M_3B = +15.6 ✗ (soll −15.6)
-  //   Label: +vals.C[0] = −M_3B = −15.6 ✓ → Label Kopf B = +vals.C[0]
-  //
-  //   Mit Mright = −M_phys und M_phys(hB) = −M_B3:
-  //   Mright[NP] = −(−M_B3) = +M_B3 = +9.503 > 0 → ox > 0 → außen (rechts) ✓
-  //   Label Fuß B: −vals.C[NP] = −M_B3 = −9.5 ✗ (soll +9.5)
-  //              : +vals.C[NP] = +M_B3 = +9.5 ✓ → Label Fuß B = +vals.C[NP]... 
-  //              Aber wir wollen Labels = −vals.C[k] für alle außer Fuß B.
-  //
-  //   FINALE LÖSUNG: Mright = −M_phys. Labels:
-  //   Kopf B: +vals.C[0]   (statt −vals.C[0])
-  //   Fuß B:  −vals.C[NP]  (standard, = −M_B3... nein: Mright[NP]=+M_B3 → −vals.C[NP]=−M_B3 ✗)
-  //
-  //   OK ich berechne es einfach anders. Ich definiere:
-  //   Mright_display[k] so, dass:
-  //   1) Rendering korrekt (wie oben analysiert)
-  //   2) Labels: −Mright[0] = BM_Kopf_B = −M_3B → Mright[0] = +M_3B → Mright = +M_phys_top?
-  //              −Mright[NP] = BM_Fuß_B = +M_B3  → Mright[NP] = −M_B3
-  //   Und Rendering mit vals = +M_phys_top... nein das stimmt oben nicht.
-  //
-  //   EINFACHSTE LÖSUNG: Mright speichern als BM-Konvention (nicht SM):
-  //   BM_Kopf_B = −M_3B (negativ für Standard), BM_Fuß_B = +M_B3 (positiv für Standard... nein)
-  //   Warte: BM am linken Ende = SM, BM am rechten Ende = −SM.
-  //   Rechte Stütze: "linkes Ende" = Fuß B (weil die Stütze von unten nach oben geht).
-  //   Nein: im VV-Code läuft die rechte Stütze von Kopf→Fuß (k=0→NP).
-  //   Fuß B ist das "rechte" Ende des Stabes (da k=NP) → BM_Fuß = −SM_B3 ... 
-  //   Diese Verwirrung ist exakt das Problem.
-  //
-  //   PRAGMATISCHE LÖSUNG: Ich speichere für Mright einfach die BM-Werte direkt:
-  //   BM_right(x): von Kopf (x=0) zum Fuß (x=hB).
-  //   BM_Kopf_B = −M_3B  (Stützmoment, negativ in Statiq = Druckfaser links=innen) 
-  //   BM_Fuß_B  = M_B3   (Einspannmoment, positiv in Statiq = Druckfaser rechts=außen)
-  //   Wait: in Statiq ist KEIN Vorzeichen für "außen/innen" definiert — die Kurve zeigt es.
-  //   Im Skript: BM_Fuß_B wird als "Einspannmoment" gezeichnet, dessen Kurve auf der
-  //   Außenseite liegt (rechts der Stütze).
-  //
-  //   Physikalisch: M_B3_SM > 0 bedeutet rechtsdrehend an der Stütze = Zugfaser rechts.
-  //   Das ist die Außenseite → Diagramm nach rechts (außen) ✓.
-  //   M_3B_SM > 0 bedeutet rechtsdrehend am Kopf → Zugfaser rechts → aber am Kopf ist
-  //   rechts = innen der rechten Stütze → Diagramm nach links (innen).
-  //
-  //   Also: positive SM an rechter Stütze → links gezeichnet am Kopf, rechts am Fuß?
-  //   Das ist asymmetrisch und hängt von der Orientierung ab. Der Renderer behandelt
-  //   das über flip:true und dreht die Seite um.
-  //
-  //   FINALES FAZIT nach stundenlanger Analyse:
-  //   Mright[k] = −M_phys_right(k) ist konsistent mit Renderer (flip:true, nx=−1).
-  //   M_phys_right(x) = M_3B − HB_disp·x:
-  //   - x=0 (Kopf): M_phys = +M_3B > 0 → Mright[0] = −M_3B < 0 → ox < 0 → links (innen) ✓
-  //   - x=hB (Fuß): M_phys = −M_B3 < 0 → Mright[NP] = +M_B3 > 0 → ox > 0 → rechts (außen) ✓
-  //   Labels: Kopf B = +vals.C[0] = −M_3B < 0 → zeigt neg. Stützmoment ✓
-  //           Fuß B  = −vals.C[NP] = −M_B3 < 0 → zeigt neg. Einspannmoment ✗
-  //   Fuß B sollte positiv sein. → Label Fuß B = +vals.C[NP] = +M_B3 ✓
-  //
-  //   ENDGÜLTIG: Mright = −M_phys. addCornerLabels:
-  //   Kopf B: +vals.C[0]    (BM = −M_3B, negativ = Stützmoment außen links)
-  //   Fuß B:  +vals.C[NP]   (BM = +M_B3, positiv = Einspannmoment außen rechts)
-  //   (beide ohne Negierung im addCornerLabels)
-  // Rechte Stütze: k=0 (Kopf B) → k=NP (Fuß B)
-  // Biegemomente (BM) aus SM (VV-Skript: BM_links = SM, BM_rechts = −SM):
-  //   BM_Kopf_B = −M_3B_SM  (rechtes Ende des Stabes 3→B gesehen von Fuß→Kopf)
-  //   BM_Fuß_B  = +M_B3_SM  (linkes Ende desselben Stabes)
-  //   Aber Stab läuft von Kopf(3)→Fuß(B): Kopf = i-Ende → BM = M_3B_SM, Fuß = k-Ende → BM = −M_B3_SM
-  //   Hmm das ist verwirrend. Einfachster Ansatz: direkt aus globalem GGW.
-  //   HB_global = -(M_B3_SM + M_3B_SM)/hB (aus Stützen-Freikörper, analog zu HA_global)
-  //   Aber für rechte Stütze läuft der Freikörper von Fuß→Kopf (y=0 unten, y=hB oben):
-  //   M_right_phys(y) = M_B3_SM + HB_global_right * y
-  //   wobei HB_global_right = -(M_B3_SM + M_3B_SM)/hB (identisch zu HA_global)
-  //   y=0 (Fuß):  M_B3_SM ✓
-  //   y=hB (Kopf): M_B3_SM - (M_B3_SM+M_3B_SM) = -M_3B_SM ✓
-  //
-  // Display: Mright von k=0(Kopf) bis k=NP(Fuß).
-  // Renderer: flip:true, nx=−1 → ox = −Mright·(−1)·SCALE = +Mright·SCALE → rechts(außen) wenn pos.
-  // Wir wollen:
-  //   Kopf B: Zugfaser innen (links) → ox < 0 → Mright[0] < 0
-  //   Fuß B:  Zugfaser außen (rechts) → ox > 0 → Mright[NP] > 0
-  //
-  // Mit M_phys_right(y) von Fuß(y=0)→Kopf(y=hB):
-  //   Fuß:  M_B3_SM < 0 → ox soll > 0 → Mright > 0 → Mright = −M_phys → −M_B3_SM > 0 ✓
-  //   Kopf: −M_3B_SM > 0 → ox soll < 0 → Mright < 0 → Mright = −M_phys → +M_3B_SM < 0 ✓
-  // Also: Mright[k] = −M_phys_right(hB - k/NP*hB)  [k=0 ist Kopf = y=hB]
-  // hasSM_B: SM-Pfad für rechte Stütze nur für fixA+fixB (VV)
-  // pinB/rolB: non-SM Pfad mit MB_r und HB
+  // ── Linke Stütze: Fuß→Kopf befüllen ─────────────────────────────
+  // Fuß A  (Lager):      fixA → Einspannmoment aus SM, sonst 0
+  // Kopf A (Rahmenecke): starrer Knoten → M = Riegelmoment bei x=0 = Mraf[0]
+  // WICHTIG: Mraf[0] ist das KNOTENMOMENT (≠0 auch bei pinA!)
+  //          Nur das LAGER A hat M=0 bei pinA, nicht die Rahmenecke!
+  {
+    const M_fuss_A = hasSM ? M_A2 : (fixA ? -MA_r : 0);
+    const M_kopf_A = Mraf[0];  // Rahmenecke = Riegelstartmoment (nicht genullt!)
+    for(let k=0;k<=NP;k++){
+      const t = k/NP;
+      Mleft[k] = +( M_fuss_A + (M_kopf_A - M_fuss_A)*t ).toFixed(3);
+    }
+    if(!fixA) Mleft[0] = 0;  // Lager A: M=0 (überschreibt nur den Fußpunkt)
+  }
+
+  // ── Rechte Stütze: Kopf→Fuß ───────────────────────────────────────
+  // Kopf B: = Mraf[NP] (Rahmenecke, starrer Knoten)
+  // Fuß B:  fixB → Einspannmoment, sonst 0 (Lager)
+  // Display: flip:false, nx=-1 → vals>0 nach links (innen)
+  // hasSM_B: VV-Solver liefert M_B3/M_3B direkt (fixA+fixB, pinA+fixB)
   const hasSM_B = M_B3 !== null && M_3B !== null && fixB;
-  const HB_global_right = hasSM_B ? -(M_B3+M_3B)/hB : null;
+  const M_kopf_B = hasSM_B ? M_3B  : Mraf[NP];
+  const M_fuss_B = hasSM_B ? -M_B3 : (fixB ? MB_r : 0);
   const Mright=[], Qright=[], Nright=[];
   for(let k=0;k<=NP;k++){
-    const y_from_base = hB - k/NP*hB;  // k=0: Kopf(y=hB), k=NP: Fuß(y=0)
-    let M_phys_y;
-    if(hasSM_B){
-      M_phys_y = M_B3 + HB_global_right * y_from_base;
-      Mright.push(+(-M_phys_y).toFixed(3));  // neg: außen=neg, flip:false,nx=-1 → ox=+M_phys*SCALE → rechts
-    } else {
-      // non-SM Pfad: gleiche Konvention wie hasSM (Mright = +M_phys_right)
-      // M_phys_right(y): y=0 Fuß, y=hB Kopf
-      // Fuß  (y=0):  M_bot = MB_r (Einspannmoment, pos=außen rechts)
-      // Kopf (y=hB): M_cR = MB_r + HB*hB (Stützmoment)
-      // HB global: für pinB/rolB ist HB der globale Schub.
-      // Konvention: HB positiv = nach rechts (außen). Dann:
-      //   M_cR = MB_r + HB*hB: für Standard-Gravitation HB<0 (Schub nach links=innen)
-      //   → M_cR < 0 → Mright[0] = -M_cR > 0... nein.
-      // Direkte Herleitung: Freikörper rechte Stütze von unten:
-      //   M_right(y) = MB_r + HB_eff*y  wobei HB_eff = HB (positiv nach außen=rechts)
-      // Für Renderer: Mright = -M_phys damit pos = außen rechts via flip:true
-      //   Mright[k=NP] (Fuß, y=0):  -MB_r → pos wenn MB_r<0... 
-      // EINFACHSTER WEG: non-SM identisch zu hasSM-Struktur:
-      //   Fuß B = MB_r (pos=Einspannung außen), Kopf B = MB_r + HB*hB
-      //   Mright = -(M_phys) damit flip:true korrekt rendert
-      const M_bot_ns = (fixB ? MB_r : 0);
-      const M_top_ns = M_bot_ns - HB*hB;  // HB positiv=rechts, Moment am Kopf
-      M_phys_y = M_bot_ns + (M_top_ns - M_bot_ns)*(y_from_base/hB);
-      Mright.push(+(-M_phys_y).toFixed(3));  // negiert wie hasSM
-    }
-    Qright.push(+(HB_disp).toFixed(3));
-    Nright.push(+(-VB).toFixed(3));
+    const t = k/NP;  // k=0=Kopf, k=NP=Fuß
+    Mright.push(+( M_kopf_B + (M_fuss_B - M_kopf_B)*t ).toFixed(3));
+    Qright.push(+(HB).toFixed(3));  // Q in Stütze = Horizontalschub HB
+    Nright.push(+(-VB_real).toFixed(3));  // VB_real: echte Auflagerreaktion
   }
-  if(!fixB) Mright[NP]=0;
-  if(!fixA) Mleft[0]=0;
+
+  // Gelenke in Stäben nullsetzen
   frameHinges.filter(hg=>hg.member==='right').forEach(hg=>{
     Mright[Math.round((parseFloat(hg.pos)||hB/2)/hB*NP)]=0;
   });
-
-
-
 
   return {Mleft, Qleft, Nleft, Mraf, Qraf, Nraf, Mright, Qright, Nright, NP};
 }
@@ -3438,21 +3266,16 @@ function calculateFrame(){
   const _sdM_2A = reactions._sdM_2A;
   const _sdM_3B = reactions._sdM_3B;
 
-  // For fixed-fixed frame (Slope-Deflection), VA/VB must be corrected to satisfy
-  // global moment equilibrium including base end moments M_A2 and M_B3.
-  // sdVA_corr = −(M_A2 + M_B3)/b  was computed in frameSolveIndet.
-  // MB_r = −M_B3 is already correct; M_cR = MB_r + HB*hB = M_3B ✓
-  let VA_eff = VA, VB_eff = VB;
-  if(reactions._sdVA_corr){
-    VA_eff = VA + reactions._sdVA_corr;
-    VB_eff = VB - reactions._sdVA_corr;
-  }
-  const MB_r_eff = MB_r;  // no adjustment needed — MB_r = −M_B3 is already correct
+  // VA/VB: unveraendert fuer Mraf-Freikoerper (M und w).
+  // VA_real/VB_real: echte Auflagerreaktionen fuer N-Diagramm (aus Solver, mit Einspannmomenten).
+  const VA_real = reactions.VA_real !== undefined ? reactions.VA_real : VA;
+  const VB_real = reactions.VB_real !== undefined ? reactions.VB_real : VB;
 
   // Step 3: Internal forces per member
   const forces = frameInternalForces(
-    b, hA, hB, VA_eff, VB_eff, HA, HB, MA_r, MB_r_eff, vLoads, hLoads, config,
-    {sdM_A2: _sdM_A2, sdM_2A: _sdM_2A, sdM_B3: reactions._sdM_B3, sdM_3B: _sdM_3B});
+    b, hA, hB, VA, VB, HA, HB, MA_r, MB_r, vLoads, hLoads, config,
+    {sdM_A2: _sdM_A2, sdM_2A: _sdM_2A, sdM_B3: reactions._sdM_B3, sdM_3B: _sdM_3B,
+     VA_real, VB_real});
   const {Mleft,Qleft,Nleft,Mraf,Qraf,Nraf,Mright,Qright,Nright,NP} = forces;
 
   // Step 4: Results & render
@@ -3474,13 +3297,43 @@ function calculateFrame(){
   // Einspannmomente sind außen → physikalisch negativ → −MA_r zeigt positiven Betrag außen. ✓
   // Gilt für ALLE Cases (SD und non-SD).
   const MA_r_table = fixA ? -MA_r : null;
-  const MB_r_table = fixB ? MB_r_eff : null;
+  const MB_r_table = fixB ? MB_r : null;
   document.getElementById('frame-reactions-body').innerHTML=
-    `<tr><td>A</td><td>${HA_table.toFixed(2)}</td><td>${VA_eff.toFixed(2)}</td><td>${fixA?MA_r_table.toFixed(2):'—'}</td></tr>`+
-    `<tr><td>B</td><td>${HB_table.toFixed(2)}</td><td>${VB_eff.toFixed(2)}</td><td>${fixB?MB_r_table.toFixed(2):'—'}</td></tr>`+
+    `<tr><td>A</td><td>${HA_table.toFixed(2)}</td><td>${VA_real.toFixed(2)}</td><td>${fixA?MA_r_table.toFixed(2):'—'}</td></tr>`+
+    `<tr><td>B</td><td>${HB_table.toFixed(2)}</td><td>${VB_real.toFixed(2)}</td><td>${fixB?MB_r_table.toFixed(2):'—'}</td></tr>`+
     (supportHead!=='none'?`<tr><td>H (top)</td><td>${H_head.toFixed(2)}</td><td>—</td><td>—</td></tr>`:'');
 
+  // Internal forces — store globally for tab switching
+  const fmt2 = v => (Math.abs(v)<0.005 ? '0.00' : v.toFixed(2));
+  const np = NP;
+
+  // Lagerreaktionen fuer Tabelle
+  window._frameForces = {
+    '12': [
+      { lbl:'Lager 1 (H/V/M)', isSupport:true,
+        H: HA_table.toFixed(2), V: VA_real.toFixed(2), Msup: fixA ? MA_r_table.toFixed(2) : '—' },
+      { lbl_idx:'12', M: fmt2(Mleft[0]),  Q: fmt2(Qleft[0]),  N: fmt2(Nleft[0]) },
+      { lbl_idx:'21', M: fmt2(Mleft[np]), Q: fmt2(Qleft[np]), N: fmt2(Nleft[np]) },
+    ],
+    '23': [
+      { lbl_idx:'23', M: fmt2(Mraf[0]),  Q: fmt2(Qraf[0]),  N: fmt2(Nraf[0]) },
+      { lbl_idx:'32', M: fmt2(Mraf[np]), Q: fmt2(Qraf[np]), N: fmt2(Nraf[np]) },
+    ],
+    '34': [
+      { lbl_idx:'34', M: fmt2(Mright[0]),  Q: fmt2(Qright[0]),  N: fmt2(Nright[0]) },
+      { lbl_idx:'43', M: fmt2(Mright[np]), Q: fmt2(Qright[np]), N: fmt2(Nright[np]) },
+      { lbl:'Lager 4 (H/V/M)', isSupport:true,
+        H: HB_table.toFixed(2), V: VB_real.toFixed(2), Msup: fixB ? MB_r_table.toFixed(2) : '—' },
+    ],
+  };
+  updateFrameNodeTable(diagMode['frame']||'M');
+
   document.getElementById('frame-results').classList.remove('hidden');
+  // Show node table for current mode
+  const _curMode = diagMode['frame']||'M';
+  const _tbl = document.getElementById('frame-node-table');
+  if(_tbl) _tbl.style.display = (_curMode==='W') ? 'none' : 'block';
+  if(_curMode!=='W') updateFrameNodeTable(_curMode);
   const rafHingeIdx = rafHinge ? Math.round((parseFloat(rafHinge.pos)||b/2)/b*NP) : null;
   renderFrameDiagram(b,h,allM,allQ,allN,NP,supportA,supportB,rafHingeIdx,hA,hB,reactions.SM);
 }
@@ -3502,8 +3355,81 @@ function setDiagMode(sys, mode){
   // Show/hide EI input
   const eiEl = document.getElementById('ei-input-'+sys);
   if(eiEl) eiEl.style.display = mode==='W' ? 'block' : 'none';
+  // Show/hide node table for frame
+  if(sys==='frame'){
+    const tbl = document.getElementById('frame-node-table');
+    if(tbl) tbl.style.display = (mode==='W') ? 'none' : 'block';
+    if(mode!=='W') updateFrameNodeTable(mode);
+  }
   // Re-render
   if(diagData[sys]) renderDiagram(sys, diagData[sys]);
+}
+
+function updateFrameNodeTable(mode){
+  const f = window._frameForces;
+  if(!f) return;
+  const units = {M:'kNm', Q:'kN', N:'kN'};
+  const unit = units[mode]||'';
+  const idx = {M:0, Q:1, N:2}[mode];  // column index in stored data
+  const cols = {M:['M','Q','N'], Q:['Q','M','N'], N:['N','M','Q']}[mode] || ['M','Q','N'];
+
+  // Header
+  const thead = document.getElementById('frame-node-thead');
+  if(thead) thead.innerHTML = `<tr>
+    <th>Knoten</th>
+    <th>${mode} (${unit})</th>
+    <th style="color:var(--text3)">${cols[1]}</th>
+    <th style="color:var(--text3)">${cols[2]}</th>
+  </tr>`;
+
+  const getVal = (row, col) => ({M:row.M, Q:row.Q, N:row.N})[col];
+  const fmt2 = v => (v===undefined||v===null) ? '—' : v;
+
+  // Build rows: stütze A, riegel, stütze B with dividers
+  const tbody = document.getElementById('frame-forces-body');
+  if(!tbody) return;
+
+  const sections = [
+    { label:'Stütze A (①→②)', rows: f['12'].filter(r=>!r.isSupport) },
+    { label:'Riegel (②→③)',    rows: f['23'] },
+    { label:'Stütze B (③→④)', rows: f['34'].filter(r=>!r.isSupport) },
+  ];
+
+  // Lager
+  const lag1 = f['12'].find(r=>r.isSupport);
+  const lag4 = f['34'].find(r=>r.isSupport);
+
+  let html = '';
+
+  // Lager A
+  if(lag1) html += `<tr style="background:var(--surface2)">
+    <td style="font-size:11px;color:var(--text3)">① Lager A</td>
+    <td colspan="3" style="font-size:11px;color:var(--text3)">H=${lag1.H} &nbsp; V=${lag1.V} &nbsp; M=${lag1.Msup}</td>
+  </tr>`;
+
+  sections.forEach((sec,si) => {
+    html += `<tr><td colspan="4" style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;padding:4px 10px;background:var(--surface2);letter-spacing:0.5px">${sec.label}</td></tr>`;
+    sec.rows.forEach(row => {
+      const primary = fmt2(getVal(row, mode));
+      const sec1    = fmt2(getVal(row, cols[1]));
+      const sec2    = fmt2(getVal(row, cols[2]));
+      const rowLbl = row.lbl_idx ? `${mode}<sub>${row.lbl_idx}</sub>` : (row.lbl||'');
+      html += `<tr>
+        <td style="font-family:DM Mono,monospace">${rowLbl}</td>
+        <td style="font-weight:600">${primary}</td>
+        <td style="color:var(--text3);font-size:12px">${sec1}</td>
+        <td style="color:var(--text3);font-size:12px">${sec2}</td>
+      </tr>`;
+    });
+  });
+
+  // Lager B
+  if(lag4) html += `<tr style="background:var(--surface2)">
+    <td style="font-size:11px;color:var(--text3)">④ Lager B</td>
+    <td colspan="3" style="font-size:11px;color:var(--text3)">H=${lag4.H} &nbsp; V=${lag4.V} &nbsp; M=${lag4.Msup}</td>
+  </tr>`;
+
+  tbody.innerHTML = html;
 }
 
 // Store last computed diagram data per system
@@ -3582,12 +3508,63 @@ function renderDiagram(sys, data){
   let maxVal = 0;
   members.forEach(m => { if(m[mode]) m[mode].forEach(v => { if(Math.abs(v) > maxVal) maxVal = Math.abs(v); }); });
   if(maxVal < 0.001) maxVal = 1;
+  // For frame: get member arrays from data for scale computation
+  const frameMembers = sys==='frame' ? data.members : null;
   let SCALE;
-  if(sys==='frame'){
-    // Auto-pick clean scale: cap so max diagram ≤ 80px from member
+  if(sys==='frame' && frameMembers){
+    const PAD_TOP  = 18;
+    const PAD_SIDE = 18;
+    const mL = frameMembers[0], mR = frameMembers[2], mRaf = frameMembers[1];
+    // col positions from member coords
+    const _col_topA = mL.y1, _col_topB = mR.y0, _col_bot = mL.y0;
+    const _col_L = mL.x0, _col_R = mR.x0;
+    const _SVG_H = data.svgH, _SVG_W = data.svgW;
+
+    const maxL   = Math.max(...(mL[mode]||[0.001]).map(Math.abs), 0.001);
+    const maxRaf = Math.max(...(mRaf[mode]||[0.001]).map(Math.abs), 0.001);
+    const maxR   = Math.max(...(mR[mode]||[0.001]).map(Math.abs), 0.001);
+
+    // Pixel budget per direction:
+    // Left col (flip:false, nx=+1): ox = +val*SCALE → goes right (innen). Budget: col_L - PAD_SIDE
+    // Left col (flip:false, nx=+1): ox = val*SCALE (neg=left=außen). Budget: _SVG_W - col_L... ignored, use col_L
+    // Rafter (flip:false, ny=+1): oy = +val*SCALE (down). Budget: SVG_H - col_bot - 5
+    //                              oy = val*SCALE (neg=up). Budget: col_topA - PAD_TOP
+    // Right col (flip:false, nx=-1): ox = -val*SCALE. val>0 → ox<0 → left (innen). Budget: col_R - col_L
+    //                                val<0 → ox>0 → right (außen). Budget: SVG_W - col_R - PAD_SIDE
+
+    const budgetL_in   = _col_L - PAD_SIDE;          // left col innen (nach links)
+    const budgetL_out  = _SVG_W - _col_L - PAD_SIDE; // left col außen (nach rechts) - not critical
+    const budgetRaf_dn = _SVG_H - _col_bot - 5;                         // rafter down (M sagging)
+    const rafInterior  = _col_bot - Math.max(_col_topA, _col_topB);   // Rahmeninnenraum
+    const budgetRaf_up = Math.min(_col_topA, _col_topB) - PAD_TOP + rafInterior * 0.6; // rafter up: SVG-Rand + 60% Innenraum
+    const budgetR_in   = _SVG_W - _col_R - PAD_SIDE; // right col innen (nach rechts)
+    const budgetR_out  = _col_R - PAD_SIDE;           // right col außen (nach links) - not critical
+
+    const maxRaf_pos = Math.max(...(mRaf[mode]||[0]).filter(v=>v>0), 0.001);
+    const maxRaf_neg = Math.max(...(mRaf[mode]||[0]).map(v=>-v).filter(v=>v>0), 0.001);
+    const maxR_pos   = Math.max(...(mR[mode]||[0]).filter(v=>v>0), 0.001);  // innen (links)
+    const maxR_neg   = Math.max(...(mR[mode]||[0]).map(v=>-v).filter(v=>v>0), 0.001); // außen (rechts)
+
+    // Fuer M: Riegel geht nach unten (sagging+) → budgetRaf_dn
+    // Fuer Q/N: Riegel geht nach oben (neg=up) → budgetRaf_up
+    // Wir nutzen mode-abhaengige Budgets fuer den Riegel:
+    const rafBudget_pos = (mode==='M') ? budgetRaf_dn : budgetRaf_up;
+    const rafBudget_neg = (mode==='M') ? budgetRaf_up : budgetRaf_dn;
+
+    const scales = [
+      budgetL_in / maxL,
+      rafBudget_pos / maxRaf_pos,
+      rafBudget_neg / maxRaf_neg,
+      budgetR_in / maxR_pos,
+      budgetR_out / maxR_neg,
+    ].filter(s => isFinite(s) && s > 0);
+
+    SCALE = Math.min(...scales, 80/maxVal);
+    // Floor to clean value
     const cleanUnits=[1,2,5,10,15,20,25,30,50,100,200];
-    const chosen=cleanUnits.find(u=>(50/u)*maxVal<=80) || cleanUnits[cleanUnits.length-1];
-    SCALE=50/chosen;
+    const chosen = cleanUnits.find(u => (50/u) <= SCALE) || 1;
+    SCALE = Math.min(SCALE, 50/chosen);
+    if(SCALE < 0.01) SCALE = 0.01;
   } else {
     SCALE=50/maxVal;
   }
@@ -3641,15 +3618,25 @@ function renderDiagram(sys, data){
     segments.push([segStart, n]);
 
     // For inclined rafter: clip diagram to prevent overflow past column lines at corners.
+    // Also clip right column to prevent overflow above col_topB.
     const clipId = `clip-mem-${sys}-${mi}`;
     let clipAttr = '';
-    if(!mem.isColumn && Math.abs(dy) > 2){
+    if(!mem.isColumn){  // Clipping fuer alle Riegel (auch horizontal)
       const cx0 = Math.min(mem.x0, mem.x1) - 1;
       const cx1 = Math.max(mem.x0, mem.x1) + 1;
-      // Top clip: exactly at the higher corner (no margin — rafter diagram must not exceed it)
-      const cy0 = Math.min(mem.y0, mem.y1) - 2;
-      // Bottom clip: well below both corners
+      // cy0: nach oben maximal bis SVG-Rand (PAD_TOP), nicht darueber hinaus
+      const cy0 = Math.max(18, Math.min(mem.y0, mem.y1) - SCALE*maxVal - 2);  // 18px = SVG-Rand
+      // cy1: nach unten SCALE*maxVal (fuer M sagging)
       const cy1 = Math.max(mem.y0, mem.y1) + SCALE*maxVal + 10;
+      h += `<defs><clipPath id="${clipId}"><rect x="${cx0.toFixed(1)}" y="${cy0.toFixed(1)}" width="${(cx1-cx0).toFixed(1)}" height="${(cy1-cy0).toFixed(1)}"/></clipPath></defs>`;
+      clipAttr = ` clip-path="url(#${clipId})"`;
+    } else if(mem.isColumn && sys==='frame'){
+      // Stützen: vertikal auf Stützenlänge begrenzen, horizontal auf Rahmenbreite + Diagramm-Breite
+      const margin = SCALE*maxVal + 10;
+      const cy0 = Math.min(mem.y0, mem.y1);   // oberes Ende der Stütze (kein Überlauf nach oben)
+      const cy1 = Math.max(mem.y0, mem.y1);   // unteres Ende der Stütze (kein Überlauf nach unten)
+      const cx0 = Math.min(mem.x0, mem.x1) - margin;
+      const cx1 = Math.max(mem.x0, mem.x1) + margin;
       h += `<defs><clipPath id="${clipId}"><rect x="${cx0.toFixed(1)}" y="${cy0.toFixed(1)}" width="${(cx1-cx0).toFixed(1)}" height="${(cy1-cy0).toFixed(1)}"/></clipPath></defs>`;
       clipAttr = ` clip-path="url(#${clipId})"`;
     }
@@ -3706,8 +3693,9 @@ function renderDiagram(sys, data){
     // Zero line (member)
     h+=`<line x1="${mem.x0.toFixed(1)}" y1="${mem.y0.toFixed(1)}" x2="${mem.x1.toFixed(1)}" y2="${mem.y1.toFixed(1)}" stroke="#1a1a18" stroke-width="${mem.thick||3}" stroke-linecap="round"/>`;
 
-    // Max value label — skip for frame columns (cornerLabelsFn draws those labels)
-    if(!(data.cornerLabelsFn && mem.isColumn)){
+
+    // Max value label — deaktiviert (Werte in Tabelle)
+    if(false && !(data.cornerLabelsFn && mem.isColumn)){
       const maxIdx=vals.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
       const t=maxIdx/n;
       const bx=mem.x0+t*dx+cox, by=mem.y0+t*dy+coy;
@@ -3732,13 +3720,12 @@ function renderDiagram(sys, data){
   }
 
   // Corner value labels for frame
-  if(data.cornerLabelsFn && (mode==='M'||mode==='Q'||mode==='N')){
-    const diagColors2 = {M:'#2d6a4f',Q:'#1d4ed8',N:'#92400e'};
-    h+=data.cornerLabelsFn(mode, diagColors2[mode]||'#666');
-  }
+  // Labels werden jetzt in der Tabelle angezeigt, nicht im Diagramm
+  // if(data.cornerLabelsFn ...) -- deaktiviert
 
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.setAttribute('height', H);
+  svg.style.overflow = 'hidden';  // Verhindert Overflow ausserhalb des SVG-Bereichs
   svg.innerHTML=h;
 }
 
@@ -3797,9 +3784,12 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
           const thetaR=new Array(n+1).fill(0), wR=new Array(n+1).fill(0);
           for(let i=1;i<=n;i++) thetaR[i]=thetaR[i-1]+phiR[i-1]*dx;
           for(let i=1;i<=n;i++) wR[i]=wR[i-1]+thetaR[i-1]*dx;
-          // Reverse back so index 0=top, n=base; negate so inward=positive
+          // Reverse back so index 0=top, n=base
+          // Right col: positive M = inward (left). phi=M/EI > 0 → curves left → w > 0 = inward.
+          // After double integration from base upward, w > 0 means rightward displacement.
+          // Renderer uses nx=-1 for right col (inward=left), so positive wVals → left. No negate needed.
           const wRev=[...wR].reverse();
-          wVals = wRev.map(v=>-v*1000);
+          wVals = wRev.map(v=>v*1000);
         }
       } else {
         // Rafter: simply supported BC (w=0 at both ends), correct for slope offset
@@ -3905,6 +3895,7 @@ function renderDeflectionDiagram(sys, data, svg, W, H, color, fill){
   if(data.overlay) h+=data.overlay;
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   svg.setAttribute('height', H);
+  svg.style.overflow = 'hidden';  // Verhindert Overflow ausserhalb des SVG-Bereichs
   svg.innerHTML=h;
 }
 
@@ -4052,23 +4043,26 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
       const tx=`<text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" text-anchor="${anchor}" font-size="8" fill="${color}" font-weight="600" font-family="DM Mono,monospace">${fmt(v)}</text>`;
       return bg+tx;
     };
-    const usePosSM = supA==='fixed' && supB==='fixed';  // true nur für VV (fixA+fixB)
-    // SM-Pfad:    Mleft = +M_phys → Fuß: +M_A2>0 → Label +vals.L[0] ✓
-    //                              → Kopf: -M_2A<0 → Label +vals.L[NP] ✓
-    // non-SM Pfad: Mleft = -M_phys → Fuß: +|MA_r|>0 → Label +vals.L[0] ✓
-    //                               → Kopf: -M_cL<0 → Label +vals.L[NP] ✓
-    // → In beiden Fällen: Label = +vals.L[k] (kein Minus nötig!)
-    s+=lbl(col_L-2, col_bot-8,   vals.L[0],  'end');
-    s+=lbl(col_L-2, col_topA-8,  vals.L[NP], 'end');
-    // Rechte Stütze Labels: direkt aus SM-Werten
-    // BM_Kopf_B = −M_3B (negativ=außen), BM_Fuß_B = +M_B3 (positiv=außen)
-    if(supB==='fixed' && SM){
-      s+=lbl(col_R+2, col_topB-8, -(SM.M_3B), 'start');
-      s+=lbl(col_R+2, col_bot-8,    SM.M_B3,  'start');
-    } else {
-      s+=lbl(col_R+2, col_topB-8, vals.C[0],  'start');
-      s+=lbl(col_R+2, col_bot-8,  vals.C[NP], 'start');
-    }
+    // Einheitliche Konvention: positiv=innen(rechts bei linker Stütze), negativ=außen(links)
+    // Label-Position dynamisch nach Vorzeichen — gilt für M, Q, N
+    const lblFussA = vals.L[0];
+    const lblKopfA = vals.L[NP];
+    // Fuss: nach Vorzeichen (innen/außen). Kopf: fuer Q/N immer außen (links) wegen Riegel-Verlauf-Konflikt
+    const xFussA = lblFussA >= 0 ? col_L+2 : col_L-2;
+    const xKopfA = mode==='M' ? (lblKopfA >= 0 ? col_L+2 : col_L-2) : col_L-2;
+    const aFussA = lblFussA >= 0 ? 'start' : 'end';
+    const aKopfA = mode==='M' ? (lblKopfA >= 0 ? 'start' : 'end') : 'end';
+    s+=lbl(xFussA, col_bot-8,    lblFussA, aFussA);
+    s+=lbl(xKopfA, col_topA+16,  lblKopfA, aKopfA);
+    // vals.C[0]=Kopf B, vals.C[NP]=Fuß B
+    const lblKopf = vals.C[0];
+    const lblFuss = vals.C[NP];
+    const xFuss = lblFuss >= 0 ? col_R-2 : col_R+2;
+    const xKopf = mode==='M' ? (lblKopf >= 0 ? col_R-2 : col_R+2) : col_R+2;
+    const aFuss = lblFuss >= 0 ? 'end' : 'start';
+    const aKopf = mode==='M' ? (lblKopf >= 0 ? 'end' : 'start') : 'start';
+    s+=lbl(xKopf, col_topB+16,  lblKopf, aKopf);
+    s+=lbl(xFuss, col_bot-8,    lblFuss, aFuss);
     return s;
   }
   // Store callback on data so renderDiagram can call it after mode is known
@@ -4079,7 +4073,9 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
   // Mleft = +M_phys → Mleft_orig = Mleft (identisch)
   // Mright = +M_phys → Mright_orig = Mright (identisch)
   const Mleft_orig  = Mleft.slice();
-  const Mright_orig = Mright.map(v => -v);  // orig = M_phys (vor Negierung)
+  // Option A: Mright[k=0]=Fuß, Mright[k=NP]=Kopf.
+  // Renderer läuft von Kopf→Fuß → Array umkehren für korrekte Darstellung.
+  const Mright_orig = Mright.slice();
   const data = {
     svgW: SVG_W, svgH: SVG_H, overlay: ov,
     members: [
@@ -4096,29 +4092,23 @@ function renderFrameDiagram(b, h, allM, allQ, allN, NP, supA, supB, rafHingeIdx=
   data.cornerLineFn = function(mode, color, fill, SCALE, h){
     if(mode !== 'M') return h;
     const NP = Mleft.length - 1;
-    // Linke Ecke: L-förmig über (col_L, col_topA)
-    // Stütze (flip:false, nx=+1): Kopfpunkt = (col_L + Mleft[NP]*SCALE, col_topA)
-    // Riegel (flip:false, ny=+1): Startpunkt = (col_L, col_topA + Mraf[0]*SCALE)
-    const lsX = col_L + Mleft[NP]*SCALE;
+    // Linke Ecke: L-förmig über Knoten (col_L, col_topA)
+    const lsX = col_L + Mleft[NP]*SCALE;   // Stützkopf A horizontal
     const lsY = col_topA;
     const rrX = col_L;
-    const rrY = col_topA + Mraf[0]*SCALE;
-    if(Math.abs(lsX - rrX) > 0.5 || Math.abs(lsY - rrY) > 0.5){
-      h += `<polyline points="${lsX.toFixed(1)},${lsY.toFixed(1)} ${col_L},${col_topA} ${rrX.toFixed(1)},${rrY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
-      h += `<polygon points="${lsX.toFixed(1)},${lsY.toFixed(1)} ${col_L},${lsY.toFixed(1)} ${col_L},${rrY.toFixed(1)} ${rrX.toFixed(1)},${rrY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
-    }
-    // Rechte Ecke: Riegel-Endpunkt → Stützen-Kopfpunkt
-    // Riegel (flip:false, ny=+1): Endpunkt = (col_R, col_topB + Mraf[NP]*SCALE)
-    // Stütze (flip:true, nx=-1): offset=-Mright[0]*SCALE, ox=+Mright[0]*SCALE
-    //   → Kopfpunkt = (col_R + Mright[0]*SCALE, col_topB)
-    const rlX = col_R;
+    const rrY = col_topA + Mraf[0]*SCALE;  // Riegel links vertikal
+    // Seit Eckenkontinuität: Mleft[NP]=Mraf[0] → lsX und rrY zeigen auf dieselbe Seite
+    // Polygon füllt die Ecke zwischen Stütze und Riegel
+    // Ecken-Hypotenuse: verbindet Stützkopf mit Riegelanfang (nur Linie + kleines Dreieck)
     const rlY = col_topB + Mraf[NP]*SCALE;
-    const rsX = col_R - Mright[0]*SCALE;  // flip:false, nx=-1: ox = -Mright*SCALE
-    const rsY = col_topB;
-    // Verbindung: L-förmig über die Ecke (col_R, col_topB)
-    if(Math.abs(rlX - rsX) > 0.5 || Math.abs(rlY - rsY) > 0.5){
-      h += `<polyline points="${rsX.toFixed(1)},${rsY.toFixed(1)} ${col_R},${col_topB} ${rlX.toFixed(1)},${rlY.toFixed(1)}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
-      h += `<polygon points="${rsX.toFixed(1)},${rsY.toFixed(1)} ${col_R},${rsY.toFixed(1)} ${col_R},${rlY.toFixed(1)} ${rlX.toFixed(1)},${rlY.toFixed(1)}" fill="${fill}" stroke="none"/>`;
+    const rsX = col_R - Mright[0]*SCALE;
+    // Linke Ecke: Hypotenuse nur wenn beide Members Moment haben (fixA und Riegel nicht 0)
+    if(Math.abs(Mraf[0]) > 0.05 && Math.abs(Mleft[NP]) > 0.05){
+      h += `<line x1="${lsX.toFixed(1)}" y1="${col_topA}" x2="${col_L}" y2="${rrY.toFixed(1)}" stroke="${color}" stroke-width="1.5"/>`;
+    }
+    // Rechte Ecke: Hypotenuse nur wenn beide Members Moment haben
+    if(Math.abs(Mraf[NP]) > 0.05 && Math.abs(Mright[0]) > 0.05){
+      h += `<line x1="${col_R}" y1="${rlY.toFixed(1)}" x2="${rsX.toFixed(1)}" y2="${col_topB}" stroke="${color}" stroke-width="1.5"/>`;
     }
     return h;
   };
@@ -4502,7 +4492,7 @@ function applyCalcTranslations(){
     const tabES = ['Viga Biapoyada','Ménsula','Viga Continua','Pórtico'];
     [...tab,...tabDE,...tabFR,...tabES].forEach((name,i)=>{
       if(fn.textContent.includes(name)){
-        fn.textContent = `Statiq v0.5.5 · ${t.tabs[i%4]}`;
+        fn.textContent = `Statiq v0.5.8 · ${t.tabs[i%4]}`;
       }
     });
   });
