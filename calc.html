@@ -578,15 +578,7 @@
   <div id="cont-results" class="hidden">
     <span id="cont-Mmax" style="display:none"></span>
     <span id="cont-Qmax" style="display:none"></span>
-    <!-- Reactions table -->
-    <div class="card">
-      <div class="card-title" style="margin-bottom:10px">Support Reactions</div>
-      <table class="reactions-table">
-        <thead><tr><th>Support</th><th>Reaction (kN)</th><th>Moment (kNm)</th></tr></thead>
-        <tbody id="cont-reactions-body"></tbody>
-      </table>
-    </div>
-    
+    <span id="cont-reactions-body" style="display:none"></span>
   </div>
 
     <!-- Diagram on structure -->
@@ -637,8 +629,7 @@
     <div class="field-row">
       <div class="field"><label>Width b <span class="unit">m</span></label>
         <input type="number" id="fB" value="5" step="0.1" min="0.5" oninput="drawFrame()"></div>
-      <div class="field"><label>Height h <span class="unit">m</span></label>
-        <input type="number" id="fH" value="4" step="0.1" min="0.5" oninput="syncFrameHeights('h')"></div>
+      <input type="number" id="fH" value="4" step="0.1" min="0.5" style="display:none" oninput="syncFrameHeights('h')">
     </div>
     <div class="field-row" style="margin-top:4px">
       <div class="field"><label>h<sub>A</sub> <span class="unit">m</span></label>
@@ -1581,7 +1572,7 @@ function calculateContinuous() {
   }).join('');
 
   document.getElementById('cont-results').classList.remove('hidden');
-  renderContDiagram(spanData.map(s=>s.L), Qv_all, Mv_all);
+  renderContDiagram(spanData.map(s=>s.L), Qv_all, Mv_all, R, M_sup);
 }
 
 // ── Gaussian elimination ───────────────────────────
@@ -3465,15 +3456,23 @@ function updateSimpleNodeTable(sys, mode){
   const unit = units[mode]||'';
   const cols = {M:['M','Q','N'], Q:['Q','M','N'], N:['N','M','Q']}[mode]||['M','Q','N'];
 
+  // For cont: Q column shows V (reaction) for support rows — label accordingly
+  const qLabel = (sys==='cont') ? 'V' : 'Q';
+  const colLabels = cols.map(c => c==='Q' ? qLabel : c);
+
   const thead = document.getElementById(sys+'-node-thead');
   if(thead) thead.innerHTML = `<tr>
     <th>Stelle</th>
-    <th>${mode} (${unit})</th>
-    <th style="color:var(--text3)">${cols[1]}</th>
-    <th style="color:var(--text3)">${cols[2]}</th>
+    <th>${mode==='Q' ? qLabel : mode} (${unit})</th>
+    <th style="color:var(--text3)">${colLabels[1]}</th>
+    <th style="color:var(--text3)">${colLabels[2]}</th>
   </tr>`;
 
-  const getVal = (row, col) => ({M:row.M, Q:row.Q, N:row.N})[col] ?? '—';
+  const getVal = (row, col) => {
+    // For cont support rows: show V (reaction) instead of Q
+    if(col==='Q' && row.V !== undefined) return row.V;
+    return ({M:row.M, Q:row.Q, N:row.N})[col] ?? '—';
+  };
   const tbody = document.getElementById(sys+'-forces-body');
   if(!tbody) return;
 
@@ -3999,7 +3998,7 @@ function renderBeamDiagram(L, Qv, Mv, xs, Nv=null, reactions={}){
   window._beamForces = {
     rows: [
       { lbl:'A', M: fmt2b(0),                      Q: fmt2b(VA),               N: fmt2b(HA) },
-      { lbl:'M\u0302 (Feld)', M: fmt2b(mSignB*Mv[maxMidxB]), Q: fmt2b(Qv[maxMidxB]), N: fmt2b((Nv||[])[maxMidxB]||0) },
+      { lbl:'Mmax Feld', M: fmt2b(mSignB*Mv[maxMidxB]), Q: fmt2b(Qv[maxMidxB]), N: fmt2b((Nv||[])[maxMidxB]||0) },
       { lbl:'B', M: fmt2b(0),                       Q: fmt2b(-VB),              N: fmt2b(HA) },
     ]
   };
@@ -4042,7 +4041,7 @@ function renderCantDiagram(L, Qv, Mv, Nv=null, reactions={}){
   window._cantForces = {
     rows: [
       { lbl:'A (Einspannung)', M: fmt2c(-MA_c),          Q: fmt2c(VA_c),          N: fmt2c(HA_c) },
-      { lbl:'M\u0302 (max)',   M: fmt2c(Mv[maxMidxC]),    Q: fmt2c(Qv[maxMidxC]),  N: fmt2c((Nv||[])[maxMidxC]||0) },
+      { lbl:'Mmax',   M: fmt2c(Mv[maxMidxC]),    Q: fmt2c(Qv[maxMidxC]),  N: fmt2c((Nv||[])[maxMidxC]||0) },
       { lbl:'B (frei)',        M: fmt2c(0),               Q: fmt2c(0),             N: fmt2c(0) },
     ]
   };
@@ -4054,7 +4053,7 @@ function renderCantDiagram(L, Qv, Mv, Nv=null, reactions={}){
 }
 
 // ── Continuous beam diagram ────────────────────────
-function renderContDiagram(Ls, Qv_all, Mv_all){
+function renderContDiagram(Ls, Qv_all, Mv_all, R=[], M_sup=[]){
   const SVG_W=300, SVG_H=140, PAD=20, bY=75, x0=PAD, x1=SVG_W-PAD, bW=x1-x0;
   const Ltot = Ls.reduce((a,b)=>a+b,0);
   let ov = '', cumX=0;
@@ -4085,29 +4084,48 @@ function renderContDiagram(Ls, Qv_all, Mv_all){
     }]
   };
   diagData['cont'] = data;
-  // Store critical values: each support point + span max-M
-  // Mv_all contains -M_phys (negated for renderer). Negate back for physical display.
+  // Build node table.
+  // Mv_all = -M_phys, Qv_all = -Q_phys (negated for renderer).
+  // Physical display: M_phys = -Mv_all, Q_phys = -Qv_all.
   const fmt2co = v => (Math.abs(v)<0.005?'0.00':v.toFixed(2));
-  const mSignCo = -1;
-  const Ltot2 = Ls.reduce((a,b)=>a+b,0);
-  const NTotal = Mv_all.length-1;
+  const NPT_co = 60; // must match NPT in calculateContinuous
+  const nSpans = Ls.length;
   const rows_co = [];
-  let cumLco = 0;
-  // Support points
   const supportNames_co = ['A','B','C','D','E','F'];
+
+  // Exact support indices: each span has NPT points (except last which has NPT+1)
+  // Span s starts at index s*NPT, ends at s*NPT+NPT (= (s+1)*NPT)
+  // Last support is at nSpans*NPT
+  const supIdxs = [];
+  for(let si=0; si<=nSpans; si++) supIdxs.push(si*NPT_co);
+
   Ls.forEach((L,si)=>{
-    const idx = Math.round(cumLco/Ltot2*NTotal);
-    rows_co.push({ lbl: supportNames_co[si], M: fmt2co(mSignCo*Mv_all[idx]), Q: fmt2co(Qv_all[idx]), N:'—' });
-    // Span max-M between this support and next
-    const idxNext = Math.round((cumLco+L)/Ltot2*NTotal);
-    const slice_M = Mv_all.slice(idx, idxNext+1);
-    const slice_Q = Qv_all.slice(idx, idxNext+1);
-    const maxIdx_co = slice_M.reduce((mi,v,i,a)=>Math.abs(v)>Math.abs(a[mi])?i:mi,0);
-    rows_co.push({ lbl:`M\u0302 Feld ${si+1}`, M: fmt2co(mSignCo*slice_M[maxIdx_co]), Q: fmt2co(slice_Q[maxIdx_co]), N:'—' });
-    cumLco += L;
+    const idxLeft  = supIdxs[si];
+    const idxRight = supIdxs[si+1];
+
+    // Support row: use exact reactions from solver
+    const V_sup = R[si] ?? 0;
+    const M_sup_val = (si===0 || si===nSpans) ? 0 : (M_sup[si] ?? 0);
+    rows_co.push({ lbl: supportNames_co[si], M: fmt2co(M_sup_val), V: fmt2co(V_sup), N:'—' });
+
+    // True inner maximum (support points excluded)
+    const slice_Mv = Mv_all.slice(idxLeft+1, idxRight);
+    const slice_Qv = Qv_all.slice(idxLeft+1, idxRight);
+    let spanM, spanQ;
+    if(slice_Mv.length === 0){
+      spanM = 0; spanQ = 0;
+    } else {
+      let maxIdx = 0;
+      for(let k=1; k<slice_Mv.length; k++) if(Math.abs(slice_Mv[k]) > Math.abs(slice_Mv[maxIdx])) maxIdx=k;
+      spanM = -slice_Mv[maxIdx];
+      spanQ = -slice_Qv[maxIdx];
+    }
+    rows_co.push({ lbl:`M Feld ${si+1}`, M: fmt2co(spanM), Q: fmt2co(spanQ), N:'—' });
   });
+
   // Last support
-  rows_co.push({ lbl: supportNames_co[Ls.length], M: fmt2co(mSignCo*Mv_all[NTotal]), Q: fmt2co(Qv_all[NTotal]), N:'—' });
+  const idxLast = supIdxs[nSpans];
+  rows_co.push({ lbl: supportNames_co[nSpans], M: fmt2co(0), V: fmt2co(R[nSpans]??0), N:'—' });
   window._contForces = { rows: rows_co };
   const _curModeCo = diagMode['cont']||'M';
   const _tblCo = document.getElementById('cont-node-table');
@@ -4638,14 +4656,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
-addLoad('beam','point');
-addLoad('beam','dist');
-addLoad('cant','point');
-addLoad('cant','dist');
+// No default loads — systems open clean
 initSpanData();
 renderContUI();
-addFrameLoad('vert');
-addFrameLoad('horiz');
+// No default loads — systems open clean
 renderFrameHinges();
 updateIndetInfo();
 drawBeam();
