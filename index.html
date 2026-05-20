@@ -418,10 +418,10 @@
   </div>
 
   <!-- ref -->
-  <div class="module-card inactive" style="--card-accent:#60a5fa;">
+  <a class="module-card active" href="ref.html" style="--card-accent:#60a5fa;">
     <div class="card-top">
       <div class="card-id">statiq·ref</div>
-      <div class="card-badge badge-soon" id="badge-soon-2">SOON</div>
+      <div class="card-badge badge-live" id="badge-live-2">● LIVE</div>
     </div>
     <div class="card-title" id="ref-title">Theory & Tables</div>
     <div class="card-desc" id="ref-desc">Section properties, material parameters, design tables and structural theory — your digital reference handbook.</div>
@@ -431,7 +431,8 @@
       <span class="tag">Norm Tables</span>
       <span class="tag">Formulas</span>
     </div>
-  </div>
+    <div class="card-arrow">→</div>
+  </a>
 
 </section>
 
@@ -529,8 +530,10 @@ function applyLang(lang){
   document.getElementById('subline').innerHTML = t.subline.replace(/\n/g, '<br>');
   document.getElementById('section-label').childNodes[0].textContent = t.modules;
   document.getElementById('badge-live').textContent = t.live;
-  document.getElementById('badge-soon-1').textContent = t.soon;
-  document.getElementById('badge-soon-2').textContent = t.soon;
+  const bl2 = document.getElementById('badge-live-2');
+  if(bl2) bl2.textContent = t.live;
+  const bs1 = document.getElementById('badge-soon-1');
+  if(bs1) bs1.textContent = t.soon;
   document.getElementById('calc-title').textContent = t.calc_title;
   document.getElementById('calc-desc').textContent = t.calc_desc;
   document.getElementById('size-title').textContent = t.size_title;
