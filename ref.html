@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<!-- Statiq·ref v0.1.0 -->
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Statiq·ref — Bemessungsgrundlagen</title>
+  <meta name="description" content="Reference tables and design values for civil engineering students — section properties, material values and factors." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f1f3; --surface: #ffffff; --surface2: #e8eaed;
+      --border: #cbd5e1; --border-dark: #94a3b8;
+      --text: #111827; --text2: #374151; --text3: #9ca3af;
+      --accent: #2563eb; --accent-bg: #eff6ff;
+      --red: #d85a30; --blue: #2563eb; --green: #0f6e56;
+      --wood: #b07c3a; --wood-bg: #f5ede0;
+      --radius: 4px; --radius-sm: 3px;
+      --wire: #cbd5e1;
+    }
+    body { font-family:DM Sans, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 3rem; position: relative; }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(var(--wire) 1px, transparent 1px),
+        linear-gradient(90deg, var(--wire) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .main, .app-header, .nav { position: relative; z-index: 1; }
+
+    .app-header { background: rgba(240,241,243,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-dark); padding: 0.75rem 1.25rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .logo { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; color: var(--text); text-decoration: none; }
+    .logo span { color: var(--accent); }
+    .version { font-size: 11px; color: var(--text3); font-family:DM Mono, monospace; }
+
+    /* Breadcrumb nav */
+    .nav { background: rgba(240,241,243,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-dark); padding: 9px 1.25rem; display: flex; align-items: center; gap: 6px; font-size: 12px; font-family:DM Mono, monospace; overflow-x: auto; scrollbar-width: none; }
+    .nav::-webkit-scrollbar { display: none; }
+    .crumb { color: var(--accent); cursor: pointer; white-space: nowrap; background: none; border: none; font-family:DM Mono, monospace; font-size: 12px; padding: 0; }
+    .crumb:hover { text-decoration: underline; }
+    .crumb.current { color: var(--text3); cursor: default; }
+    .crumb.current:hover { text-decoration: none; }
+    .crumb-sep { color: var(--text3); }
+
+    .main { padding: 1rem; max-width: 540px; margin: 0 auto; }
+
+    /* Card */
+    .card { background: rgba(255,255,255,0.9); border: 1px solid var(--border-dark); border-radius: var(--radius); padding: 1rem 1.25rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9); }
+    .card-title { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; font-family: DM Mono, monospace; margin-bottom: 12px; }
+
+    /* Tile grid for navigation */
+    .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tile { background: rgba(255,255,255,0.9); border: 1px solid var(--border-dark); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: all 0.15s; text-align: left; font-family:DM Sans, sans-serif; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .tile:hover { border-color: var(--accent); background: var(--accent-bg); transform: translateY(-1px); }
+    .tile-tag { display:inline-block; font-family:DM Mono,monospace; font-size:11px; font-weight:600; letter-spacing:1px; color:var(--text3); margin-bottom:8px; text-transform:uppercase; }
+    .tile-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .tile-sub { font-size: 11px; color: var(--text3); line-height: 1.4; }
+    .tile-full { grid-column: 1 / -1; }
+
+    /* List item navigation */
+    .nav-list { display: flex; flex-direction: column; gap: 6px; }
+    .nav-list-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.9); border: 1px solid var(--border-dark); border-radius: var(--radius); padding: 13px 15px; cursor: pointer; transition: all 0.15s; font-family:DM Sans, sans-serif; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .nav-list-item:hover { border-color: var(--accent); background: var(--accent-bg); }
+    .nav-list-label { font-size: 14px; font-weight: 500; color: var(--text); }
+    .nav-list-arrow { color: var(--text3); font-size: 16px; }
+
+    /* Page heading */
+    .page-head { margin-bottom: 1rem; }
+    .page-title { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+    .page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+
+    /* Section heading inside content */
+    .section-head { font-size: 13px; font-weight: 600; color: var(--text); margin: 4px 0 8px; }
+    .section-note { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 10px; }
+
+    /* Data tables */
+    .data-table-wrap { overflow-x: auto; margin: 8px 0 4px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    table.data { width: 100%; border-collapse: collapse; font-size: 12px; font-family:DM Mono, monospace; white-space: nowrap; }
+    table.data th { background: var(--surface2); color: var(--text2); font-weight: 600; padding: 7px 9px; text-align: right; border-bottom: 1px solid var(--border-dark); position: sticky; top: 0; }
+    table.data th:first-child { text-align: left; }
+    table.data td { padding: 6px 9px; text-align: right; border-bottom: 1px solid var(--surface2); color: var(--text); }
+    table.data td:first-child { text-align: left; font-weight: 600; color: var(--text); }
+    table.data tr:last-child td { border-bottom: none; }
+    table.data tr.row-highlight td { background: var(--accent-bg); }
+    table.data tbody tr:hover td { background: var(--wood-bg); }
+
+    /* Filter chips */
+    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .chip { padding: 5px 12px; font-size: 11px; font-family:DM Mono, monospace; border: 1px solid var(--border-dark); border-radius: 20px; background: var(--surface); color: var(--text2); cursor: pointer; transition: all 0.12s; }
+    .chip:hover { border-color: var(--accent); }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Legend / footnote */
+    .legend { font-size: 11px; color: var(--text3); line-height: 1.7; margin-top: 8px; font-family:DM Mono, monospace; }
+    .legend b { color: var(--text2); font-weight: 600; }
+
+    /* Formula box */
+    .formula-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; margin: 8px 0; font-family:DM Mono, monospace; font-size: 12px; color: var(--text); line-height: 1.9; }
+    .formula-box .comment { color: var(--text3); font-size: 11px; }
+
+    .footnote { text-align: center; font-size: 11px; color: var(--text3); margin-top: 1.5rem; font-family:DM Mono, monospace; }
+
+    .hidden { display: none; }
+
+    /* Cross-app link */
+    .applink { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-family:DM Mono, monospace; color: var(--accent); background: var(--accent-bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; cursor: pointer; margin-top: 4px; }
+    .applink:hover { border-color: var(--accent); }
+
+    /* Info banner */
+    .info-banner { background: var(--wood-bg); border: 1px solid #e0cba0; border-radius: var(--radius-sm); padding: 9px 12px; font-size: 12px; color: #6b4f23; line-height: 1.55; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <a class="logo" href="#" onclick="goHome();return false;">stat<span>iq</span>·ref</a>
+  <span class="version">v0.1.0</span>
+</header>
+
+<nav class="nav" id="breadcrumb"></nav>
+
+<main class="main" id="main"></main>
+
+<script>
+// ══════════════════════════════════════════════════
+// STATIQ·REF — Reference data application
+// ══════════════════════════════════════════════════
+// Navigation model: Fach → Kapitel → Thema → Content
+
+// ── Navigation state ───────────────────────────────
+let navState = { fach: null, kapitel: null, thema: null };
+
+// ══════════════════════════════════════════════════
+// DATA — Holzbau
+// ══════════════════════════════════════════════════
+
+// Vollholz Nadelholz — characteristic values per EN 338
+// fm,k ft0,k ft90,k fc0,k fc90,k fv,k in N/mm²; E0,mean E0,05 Gmean in kN/mm²; rho in kg/m³
+const VOLLHOLZ_NADEL = {
+  cols: ['Klasse','f_m,k','f_t,0,k','f_t,90,k','f_c,0,k','f_c,90,k','f_v,k','E_0,mean','E_0,05','G_mean','ρ_k','ρ_mean'],
+  units:['','N/mm²','N/mm²','N/mm²','N/mm²','N/mm²','N/mm²','kN/mm²','kN/mm²','kN/mm²','kg/m³','kg/m³'],
+  rows: [
+    ['C14', 14, 7.2, 0.4, 16, 2.0, 3.0, 7.0, 4.7, 0.44, 290, 350],
+    ['C16', 16, 8.5, 0.4, 17, 2.2, 3.2, 8.0, 5.4, 0.50, 310, 370],
+    ['C18', 18, 10,  0.4, 18, 2.2, 3.4, 9.0, 6.0, 0.56, 320, 380],
+    ['C20', 20, 11.5,0.4, 19, 2.3, 3.6, 9.5, 6.4, 0.59, 330, 390],
+    ['C22', 22, 13,  0.4, 20, 2.4, 3.8, 10,  6.7, 0.63, 340, 410],
+    ['C24', 24, 14,  0.4, 21, 2.5, 4.0, 11,  7.4, 0.69, 350, 420],
+    ['C27', 27, 16,  0.4, 22, 2.6, 4.0, 11.5,7.7, 0.72, 370, 450],
+    ['C30', 30, 18,  0.4, 23, 2.7, 4.0, 12,  8.0, 0.75, 380, 460],
+    ['C35', 35, 21,  0.4, 25, 2.8, 4.0, 13,  8.7, 0.81, 400, 480],
+    ['C40', 40, 24,  0.4, 26, 2.9, 4.0, 14,  9.4, 0.88, 420, 500],
+    ['C45', 45, 27,  0.4, 27, 3.1, 4.0, 15,  10,  0.94, 440, 520],
+    ['C50', 50, 30,  0.4, 29, 3.2, 4.0, 16,  10.7,1.00, 460, 550],
+  ]
+};
+
+// Brettschichtholz (Glulam) — EN 14080
+const BSH = {
+  cols: ['Klasse','f_m,k','f_t,0,k','f_t,90,k','f_c,0,k','f_c,90,k','f_v,k','E_0,mean','E_0,05','G_mean','ρ_k','ρ_mean'],
+  units:['','N/mm²','N/mm²','N/mm²','N/mm²','N/mm²','N/mm²','kN/mm²','kN/mm²','kN/mm²','kg/m³','kg/m³'],
+  rows: [
+    ['GL20h', 20, 16, 0.5, 20, 2.5, 3.5, 8.4, 7.0, 0.65, 340, 370],
+    ['GL22h', 22, 17.6,0.5,22, 2.5, 3.5, 10.5,8.8, 0.65, 370, 410],
+    ['GL24h', 24, 19.2,0.5,24, 2.5, 3.5, 11.5,9.6, 0.65, 385, 420],
+    ['GL26h', 26, 20.8,0.5,26, 2.7, 3.5, 12.1,10.1,0.65, 405, 445],
+    ['GL28h', 28, 22.3,0.5,28, 2.8, 3.5, 12.6,10.5,0.65, 425, 460],
+    ['GL30h', 30, 24,  0.5,30, 3.0, 3.5, 13.6,11.3,0.65, 430, 480],
+    ['GL32h', 32, 25.6,0.5,32, 3.3, 3.5, 14.2,11.8,0.65, 440, 490],
+    ['GL20c', 20, 15,  0.5,18.5,2.5,3.5, 10.4,8.6, 0.65, 355, 390],
+    ['GL22c', 22, 16,  0.5,20,  2.5,3.5, 10.4,8.6, 0.65, 355, 390],
+    ['GL24c', 24, 17,  0.5,21.5,2.5,3.5, 11.0,9.1, 0.65, 365, 400],
+    ['GL26c', 26, 19,  0.5,23.5,2.7,3.5, 11.3,9.4, 0.65, 385, 420],
+    ['GL28c', 28, 19.5,0.5,24,  2.8,3.5, 12.3,10.2,0.65, 390, 420],
+    ['GL30c', 30, 19.5,0.5,24.5,3.0,3.5, 13.0,10.8,0.65, 390, 430],
+    ['GL32c', 32, 19.5,0.5,24.5,3.3,3.5, 13.5,11.2,0.65, 400, 440],
+  ]
+};
+
+// kmod — modification factor (EN 1995-1-1, Tab 3.1) for solid timber / glulam
+const KMOD = {
+  cols: ['Nutzungsklasse','ständig','lang','mittel','kurz','sehr kurz'],
+  rows: [
+    ['NKL 1', 0.60, 0.70, 0.80, 0.90, 1.10],
+    ['NKL 2', 0.60, 0.70, 0.80, 0.90, 1.10],
+    ['NKL 3', 0.50, 0.55, 0.65, 0.70, 0.90],
+  ]
+};
+
+// Partial safety factors γM (EN 1995-1-1 / NA Deutschland)
+const GAMMA_M = [
+  ['Vollholz', '1.30'],
+  ['Brettschichtholz', '1.25'],
+  ['Furnierschichtholz (LVL)', '1.20'],
+  ['Holzwerkstoffe (OSB, Sperrholz)', '1.20'],
+  ['Verbindungen', '1.30'],
+  ['Außergewöhnliche Bemessungssituation', '1.00'],
+];
+
+// ══════════════════════════════════════════════════
+// CONTENT STRUCTURE — Fach → Kapitel → Thema
+// ══════════════════════════════════════════════════
+const FAECHER = {
+  holzbau: {
+    title: 'Holzbau',
+    sub: 'EC5 — Bemessung von Holztragwerken',
+    kapitel: {
+      grundlagen: {
+        title: 'Grundlagen der Bemessung',
+        themen: {
+          einwirkungen: { title: 'Designwerte Einwirkung & Widerstand' },
+          gamma:        { title: 'Teilsicherheitsbeiwerte γM' },
+        }
+      },
+      baustoffe: {
+        title: 'Baustoffe',
+        themen: {
+          vollholz:      { title: 'Vollholz (Nadelholz)' },
+          bsh:           { title: 'Brettschichtholz (BSH)' },
+          kmod:          { title: 'Modifikationsbeiwert kmod' },
+        }
+      },
+      gzg: {
+        title: 'Gebrauchstauglichkeit',
+        themen: {
+          durchbiegung: { title: 'Durchbiegung — Grenzwerte' },
+          schwingung:   { title: 'Schwingungen' },
+        }
+      },
+      gzt: {
+        title: 'Tragfähigkeitsnachweise',
+        themen: {
+          knicken: { title: 'Knicken' },
+          kippen:  { title: 'Kippen' },
+        }
+      },
+      verbindungen: {
+        title: 'Verbindungsmittel — Grundlagen',
+        themen: {
+          abstaende: { title: 'Mindestabstände' },
+          stabduebel:{ title: 'Stabdübel & Bolzen' },
+          naegel:    { title: 'Nägel' },
+        }
+      },
+    }
+  }
+};
+
+// ══════════════════════════════════════════════════
+// RENDERING
+// ══════════════════════════════════════════════════
+function goHome(){ navState = { fach:null, kapitel:null, thema:null }; render(); }
+
+function render(){
+  renderBreadcrumb();
+  const main = document.getElementById('main');
+  if(!navState.fach){ main.innerHTML = viewFaecher(); return; }
+  if(!navState.kapitel){ main.innerHTML = viewKapitel(); return; }
+  if(!navState.thema){ main.innerHTML = viewThemen(); return; }
+  main.innerHTML = viewThema();
+  // Run any post-render hooks
+  if(typeof window._afterRender === 'function'){ window._afterRender(); window._afterRender = null; }
+}
+
+function renderBreadcrumb(){
+  const bc = document.getElementById('breadcrumb');
+  let html = `<button class="crumb" onclick="goHome()">Start</button>`;
+  if(navState.fach){
+    const f = FAECHER[navState.fach];
+    html += `<span class="crumb-sep">›</span>`;
+    html += navState.kapitel
+      ? `<button class="crumb" onclick="navTo('${navState.fach}',null,null)">${f.title}</button>`
+      : `<button class="crumb current">${f.title}</button>`;
+  }
+  if(navState.kapitel){
+    const k = FAECHER[navState.fach].kapitel[navState.kapitel];
+    html += `<span class="crumb-sep">›</span>`;
+    html += navState.thema
+      ? `<button class="crumb" onclick="navTo('${navState.fach}','${navState.kapitel}',null)">${k.title}</button>`
+      : `<button class="crumb current">${k.title}</button>`;
+  }
+  if(navState.thema){
+    const t = FAECHER[navState.fach].kapitel[navState.kapitel].themen[navState.thema];
+    html += `<span class="crumb-sep">›</span><button class="crumb current">${t.title}</button>`;
+  }
+  bc.innerHTML = html;
+}
+
+function navTo(fach, kapitel, thema){
+  navState = { fach, kapitel, thema };
+  render();
+  window.scrollTo(0,0);
+}
+
+// ── View: Fächer (home) ────────────────────────────
+function viewFaecher(){
+  let tiles = '';
+  for(const [key, f] of Object.entries(FAECHER)){
+    tiles += `<button class="tile" onclick="navTo('${key}',null,null)">
+      <span class="tile-tag">EC5</span>
+      <div class="tile-title">${f.title}</div>
+      <div class="tile-sub">${f.sub}</div>
+    </button>`;
+  }
+  // Placeholder tiles for upcoming subjects
+  tiles += `<div class="tile" style="opacity:0.5;cursor:default">
+      <span class="tile-tag">EC3</span>
+      <div class="tile-title">Stahlbau</div>
+      <div class="tile-sub">in Vorbereitung</div>
+    </div>`;
+  tiles += `<div class="tile" style="opacity:0.5;cursor:default">
+      <span class="tile-tag">EC2</span>
+      <div class="tile-title">Stahlbeton</div>
+      <div class="tile-sub">in Vorbereitung</div>
+    </div>`;
+  return `
+    <div class="page-head">
+      <div class="page-title">Bemessungsgrundlagen</div>
+      <div class="page-sub">Querschnittswerte, Baustoffkennwerte und Beiwerte zum Nachschlagen.</div>
+    </div>
+    <div class="tile-grid">${tiles}</div>
+    <div class="footnote">Statiq·ref v0.1.0 — Nachschlagewerk</div>
+  `;
+}
+
+// ── View: Kapitel ──────────────────────────────────
+function viewKapitel(){
+  const f = FAECHER[navState.fach];
+  let items = '';
+  for(const [key, k] of Object.entries(f.kapitel)){
+    const count = Object.keys(k.themen).length;
+    items += `<div class="nav-list-item" onclick="navTo('${navState.fach}','${key}',null)">
+      <span class="nav-list-label">${k.title}</span>
+      <span class="nav-list-arrow">›</span>
+    </div>`;
+  }
+  return `
+    <div class="page-head">
+      <div class="page-title">${f.title}</div>
+      <div class="page-sub">${f.sub}</div>
+    </div>
+    <div class="nav-list">${items}</div>
+    <div class="footnote">Statiq·ref v0.1.0</div>
+  `;
+}
+
+// ── View: Themen ───────────────────────────────────
+function viewThemen(){
+  const k = FAECHER[navState.fach].kapitel[navState.kapitel];
+  let items = '';
+  for(const [key, t] of Object.entries(k.themen)){
+    items += `<div class="nav-list-item" onclick="navTo('${navState.fach}','${navState.kapitel}','${key}')">
+      <span class="nav-list-label">${t.title}</span>
+      <span class="nav-list-arrow">›</span>
+    </div>`;
+  }
+  return `
+    <div class="page-head">
+      <div class="page-title">${k.title}</div>
+    </div>
+    <div class="nav-list">${items}</div>
+    <div class="footnote">Statiq·ref v0.1.0</div>
+  `;
+}
+
+// ── View: Thema content ────────────────────────────
+function viewThema(){
+  const key = navState.fach + '/' + navState.kapitel + '/' + navState.thema;
+  const builder = CONTENT[key];
+  const t = FAECHER[navState.fach].kapitel[navState.kapitel].themen[navState.thema];
+  const body = builder ? builder() : `<div class="card"><div class="section-note">Inhalt folgt in Kürze.</div></div>`;
+  return `
+    <div class="page-head">
+      <div class="page-title">${t.title}</div>
+    </div>
+    ${body}
+    <div class="footnote">Statiq·ref v0.1.0</div>
+  `;
+}
+
+// ── Helper: render a data table ────────────────────
+function dataTable(data, highlightRow){
+  let head = '<tr>' + data.cols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
+  if(data.units){
+    head += '<tr>' + data.units.map(u=>`<th style="font-weight:400;color:var(--text3);font-size:10px">${u}</th>`).join('') + '</tr>';
+  }
+  let body = data.rows.map(r=>{
+    const hl = (highlightRow && r[0]===highlightRow) ? ' class="row-highlight"' : '';
+    return `<tr${hl}>` + r.map(c=>`<td>${c}</td>`).join('') + '</tr>';
+  }).join('');
+  return `<div class="data-table-wrap"><table class="data"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+// ══════════════════════════════════════════════════
+// CONTENT BUILDERS — keyed by fach/kapitel/thema
+// ══════════════════════════════════════════════════
+const CONTENT = {
+
+  // ── Baustoffe → Vollholz ─────────────────────────
+  'holzbau/baustoffe/vollholz': () => `
+    <div class="card">
+      <div class="card-title">Charakteristische Werte — EN 338</div>
+      <div class="section-note">
+        Festigkeits- und Steifigkeitskennwerte für Nadelholz-Festigkeitsklassen.
+        Festigkeiten als 5%-Quantil, E-Moduln als Mittelwert (E<sub>0,mean</sub>) bzw. 5%-Quantil (E<sub>0,05</sub>).
+      </div>
+      ${dataTable(VOLLHOLZ_NADEL)}
+      <div class="legend">
+        <b>f_m,k</b> Biegung · <b>f_t,0,k</b> Zug ∥ Faser · <b>f_t,90,k</b> Zug ⊥ Faser<br>
+        <b>f_c,0,k</b> Druck ∥ Faser · <b>f_c,90,k</b> Druck ⊥ Faser · <b>f_v,k</b> Schub<br>
+        <b>E_0,mean</b> Elastizitätsmodul ∥ · <b>G_mean</b> Schubmodul · <b>ρ_k</b> Rohdichte (5%-Quantil)
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bemessungswert der Festigkeit</div>
+      <div class="section-note">Der Designwert ergibt sich aus dem charakteristischen Wert:</div>
+      <div class="formula-box">
+        f<sub>d</sub> = k<sub>mod</sub> · f<sub>k</sub> / γ<sub>M</sub>
+        <div class="comment">k<sub>mod</sub> — Modifikationsbeiwert (Lasteinwirkungsdauer + Nutzungsklasse)<br>
+        γ<sub>M</sub> — Teilsicherheitsbeiwert (Vollholz: 1,30)</div>
+      </div>
+      <div class="info-banner">
+        Beispiel C24, Biegung, NKL 1, mittlere Lasteinwirkungsdauer (k<sub>mod</sub>=0,8):<br>
+        f<sub>m,d</sub> = 0,8 · 24 / 1,30 = <b>14,8 N/mm²</b>
+      </div>
+      <div class="applink" onclick="alert('Verlinkung zu statiq·size folgt')">→ Nachweis in statiq·size führen</div>
+    </div>
+  `,
+
+  // ── Baustoffe → BSH ──────────────────────────────
+  'holzbau/baustoffe/bsh': () => `
+    <div class="card">
+      <div class="card-title">Brettschichtholz — EN 14080</div>
+      <div class="section-note">
+        Festigkeitsklassen für Brettschichtholz. <b>h</b> = homogen (gleiche Lamellen),
+        <b>c</b> = kombiniert (höherfeste Außenlamellen, schwächerer Kern).
+      </div>
+      ${dataTable(BSH)}
+      <div class="legend">
+        Bezeichnung GL = Glued Laminated Timber. Die Zahl gibt die charakteristische
+        Biegefestigkeit f<sub>m,k</sub> in N/mm² an.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Homogen vs. Kombiniert</div>
+      <div class="section-note">
+        Bei kombiniertem BSH (GL..c) liegen höherfeste Lamellen außen, wo die Biegespannung
+        am größten ist. Das spart Material — die Biegefestigkeit ist gleich, aber die
+        Druck- und Zugfestigkeit ∥ Faser ist niedriger als bei homogenem BSH gleicher Klasse.
+      </div>
+    </div>
+  `,
+
+  // ── Baustoffe → kmod ─────────────────────────────
+  'holzbau/baustoffe/kmod': () => `
+    <div class="card">
+      <div class="card-title">Modifikationsbeiwert kmod — EN 1995-1-1, Tab. 3.1</div>
+      <div class="section-note">
+        k<sub>mod</sub> berücksichtigt den Einfluss von Lasteinwirkungsdauer und
+        Holzfeuchte (Nutzungsklasse) auf die Festigkeit. Gilt für Vollholz und BSH.
+      </div>
+      ${dataTable(KMOD)}
+      <div class="legend">
+        <b>ständig</b> > 10 Jahre (Eigenlast) · <b>lang</b> 6 Monate–10 Jahre (Lager)<br>
+        <b>mittel</b> 1 Woche–6 Monate (Nutzlast, Schnee) · <b>kurz</b> < 1 Woche (Wind)<br>
+        <b>sehr kurz</b> Anprall, außergewöhnlich
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Nutzungsklassen (NKL)</div>
+      <div class="section-note">
+        <b>NKL 1</b> — beheizte Innenräume, Holzfeuchte ≤ 12 %<br>
+        <b>NKL 2</b> — überdachte, offene Bauten, Holzfeuchte ≤ 20 %<br>
+        <b>NKL 3</b> — frei bewittert, Holzfeuchte > 20 %
+      </div>
+      <div class="info-banner">
+        Bei Lastkombinationen mit verschiedenen Einwirkungsdauern ist k<sub>mod</sub>
+        der <b>kürzesten</b> beteiligten Last maßgebend.
+      </div>
+    </div>
+  `,
+
+  // ── Grundlagen → γM ──────────────────────────────
+  'holzbau/grundlagen/gamma': () => `
+    <div class="card">
+      <div class="card-title">Teilsicherheitsbeiwerte γM — EN 1995-1-1/NA</div>
+      <div class="section-note">
+        γ<sub>M</sub> deckt Streuungen der Materialeigenschaften und Modellunsicherheiten ab.
+        Er steht im Nenner des Bemessungswerts der Festigkeit.
+      </div>
+      <div class="data-table-wrap">
+        <table class="data">
+          <thead><tr><th>Baustoff / Situation</th><th>γ_M</th></tr></thead>
+          <tbody>
+            ${GAMMA_M.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="legend">
+        Werte nach deutschem Nationalen Anhang. In der außergewöhnlichen
+        Bemessungssituation gilt γ<sub>M</sub> = 1,0.
+      </div>
+    </div>
+  `,
+
+  // ── Grundlagen → Einwirkungen ────────────────────
+  'holzbau/grundlagen/einwirkungen': () => `
+    <div class="card">
+      <div class="card-title">Bemessungswert der Einwirkung</div>
+      <div class="section-note">In der ständigen/vorübergehenden Bemessungssituation (GZT):</div>
+      <div class="formula-box">
+        E<sub>d</sub> = γ<sub>G</sub>·G<sub>k</sub> + γ<sub>Q</sub>·Q<sub>k,1</sub> + Σ γ<sub>Q</sub>·ψ<sub>0,i</sub>·Q<sub>k,i</sub>
+        <div class="comment">γ<sub>G</sub> = 1,35 (ungünstig) · γ<sub>Q</sub> = 1,50 · ψ<sub>0</sub> — Kombinationsbeiwert</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Bemessungswert des Widerstands</div>
+      <div class="section-note">
+        Wegen der Anisotropie des Holzes wird zwischen Beanspruchung
+        <b>parallel</b> und <b>senkrecht</b> zur Faser unterschieden.
+      </div>
+      <div class="formula-box">
+        ∥ Faser:&nbsp;&nbsp; R<sub>d</sub> = k<sub>mod</sub> · R<sub>k,0</sub> / γ<sub>M</sub><br>
+        ⊥ Faser:&nbsp;&nbsp; R<sub>d</sub> = k<sub>mod</sub> · R<sub>k,90</sub> / γ<sub>M</sub>
+        <div class="comment">Die Festigkeit ⊥ Faser ist deutlich kleiner — besonders bei Zug
+        (f<sub>t,90,k</sub> ≈ 0,4 N/mm²).</div>
+      </div>
+      <div class="info-banner">
+        Zug senkrecht zur Faser ist der kritischste Beanspruchungsfall im Holzbau
+        und wird, wo möglich, konstruktiv vermieden.
+      </div>
+    </div>
+  `,
+
+  // ── Verbindungen → Mindestabstände ───────────────
+  'holzbau/verbindungen/abstaende': () => `
+    <div class="card">
+      <div class="card-title">Mindestabstände stiftförmiger Verbindungsmittel</div>
+      <div class="section-note">
+        Damit ein Verbindungsmittel seine volle Tragfähigkeit erreicht und das Holz
+        nicht aufspaltet, sind Mindestabstände einzuhalten. Sie werden als Vielfache
+        des Durchmessers <b>d</b> angegeben und hängen vom Kraft-Faser-Winkel α ab.
+      </div>
+      <div class="formula-box">
+        a<sub>1</sub> — untereinander ∥ Faser&nbsp;&nbsp;|&nbsp;&nbsp; a<sub>2</sub> — untereinander ⊥ Faser<br>
+        a<sub>3</sub> — zum beanspruchten/unbeanspr. Hirnholzende<br>
+        a<sub>4</sub> — zum beanspruchten/unbeanspr. Rand
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Stabdübel & Bolzen — EN 1995-1-1, Tab. 8.5</div>
+      <div class="data-table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>Abstand</th><th>Richtung</th><th>Mindestwert</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>a₁</td><td>0° ≤ α ≤ 360°</td><td>(3 + 2·|cos α|)·d</td></tr>
+            <tr><td>a₂</td><td>0° ≤ α ≤ 360°</td><td>3·d</td></tr>
+            <tr><td>a₃,t</td><td>−90° ≤ α ≤ 90°</td><td>max(7d ; 80 mm)</td></tr>
+            <tr><td>a₃,c</td><td>belastet</td><td>max(3,5d ; 40 mm)</td></tr>
+            <tr><td>a₄,t</td><td>0° ≤ α ≤ 180°</td><td>max((2+2·sin α)·d ; 3d)</td></tr>
+            <tr><td>a₄,c</td><td>—</td><td>3·d</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <b>t</b> = beanspruchter (tension) Rand/Ende · <b>c</b> = unbeanspruchter (compression)<br>
+        α = Winkel zwischen Kraft- und Faserrichtung
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Nägel (ohne Vorbohrung) — Tab. 8.2</div>
+      <div class="data-table-wrap">
+        <table class="data">
+          <thead><tr><th>Abstand</th><th>ρ_k ≤ 420</th><th>Mindestwert</th></tr></thead>
+          <tbody>
+            <tr><td>a₁</td><td>d < 5 mm</td><td>(5 + 5·|cos α|)·d</td></tr>
+            <tr><td>a₁</td><td>d ≥ 5 mm</td><td>(5 + 7·|cos α|)·d</td></tr>
+            <tr><td>a₂</td><td>—</td><td>5·d</td></tr>
+            <tr><td>a₃,t</td><td>—</td><td>(10 + 5·cos α)·d</td></tr>
+            <tr><td>a₄,t</td><td>—</td><td>(5 + 5·sin α)·d</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="info-banner">
+        Bei Vorbohren dürfen die Abstände reduziert werden. Vorbohren ist
+        ab d ≥ 6 mm bzw. bei Rohdichten ρ<sub>k</sub> > 500 kg/m³ ohnehin Pflicht.
+      </div>
+    </div>
+  `,
+
+  // ── Verbindungen → Stabdübel & Bolzen ────────────
+  'holzbau/verbindungen/stabduebel': () => `
+    <div class="card">
+      <div class="card-title">Tragfähigkeit auf Abscheren — Theorie nach Johansen</div>
+      <div class="section-note">
+        Die charakteristische Tragfähigkeit F<sub>v,Rk</sub> eines stiftförmigen
+        Verbindungsmittels je Scherfuge ergibt sich aus dem kleinsten Wert mehrerer
+        Versagensmechanismen (Fließgelenktheorie).
+      </div>
+      <div class="formula-box">
+        Maßgebend ist der <b>kleinste</b> Wert aus:<br>
+        — Lochleibungsversagen im Holz<br>
+        — Lochleibung + 1 Fließgelenk im Stift<br>
+        — Lochleibung + 2 Fließgelenke im Stift
+        <div class="comment">Zähere Mechanismen (mit Fließgelenken) sind erwünscht —
+        sie kündigen das Versagen durch Verformung an.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Lochleibungsfestigkeit f_h,0,k</div>
+      <div class="section-note">Für Stabdübel und Bolzen, Kraft ∥ Faser:</div>
+      <div class="formula-box">
+        f<sub>h,0,k</sub> = 0,082 · (1 − 0,01·d) · ρ<sub>k</sub>&nbsp;&nbsp;[N/mm²]
+        <div class="comment">d — Durchmesser [mm] · ρ<sub>k</sub> — char. Rohdichte [kg/m³]</div>
+      </div>
+      <div class="section-note" style="margin-top:8px">Unter Winkel α zur Faser:</div>
+      <div class="formula-box">
+        f<sub>h,α,k</sub> = f<sub>h,0,k</sub> / (k<sub>90</sub>·sin²α + cos²α)
+        <div class="comment">k<sub>90</sub> = 1,35 + 0,015·d (Nadelholz)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fließmoment M_y,Rk</div>
+      <div class="formula-box">
+        M<sub>y,Rk</sub> = 0,3 · f<sub>u,k</sub> · d<sup>2,6</sup>&nbsp;&nbsp;[Nmm]
+        <div class="comment">f<sub>u,k</sub> — char. Zugfestigkeit des Stahlstifts
+        (Stabdübel i.d.R. 360 N/mm²)</div>
+      </div>
+      <div class="applink" onclick="alert('Verlinkung zu statiq·size folgt')">→ Abscher-Nachweis in statiq·size führen</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Übliche Durchmesser</div>
+      <div class="section-note">
+        Stabdübel: 6, 8, 10, 12, 16, 20, 24 mm — Passung in vorgebohrtes Loch
+        (Toleranz 0 bis +0,1 mm).<br>
+        Bolzen: 6, 8, 10, 12, 16, 20, 24, 30 mm — mit Lochspiel, Mutter und
+        Unterlegscheibe.
+      </div>
+    </div>
+  `,
+
+  // ── Verbindungen → Nägel ─────────────────────────
+  'holzbau/verbindungen/naegel': () => `
+    <div class="card">
+      <div class="card-title">Nagelverbindungen — EN 1995-1-1, Abschn. 8.3</div>
+      <div class="section-note">
+        Nägel übertragen Kräfte überwiegend auf Abscheren. Maßgebend sind die
+        Lochleibung im Holz, das Fließmoment des Nagels und — bei axialer Last —
+        der Ausziehwiderstand.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Lochleibungsfestigkeit</div>
+      <div class="section-note">Nägel ohne Vorbohrung (d ≤ 8 mm):</div>
+      <div class="formula-box">
+        f<sub>h,k</sub> = 0,082 · ρ<sub>k</sub> · d<sup>−0,3</sup>&nbsp;&nbsp;[N/mm²]
+        <div class="comment">Bei runden Nägeln gilt diese Formel unabhängig vom
+        Kraft-Faser-Winkel.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fließmoment M_y,Rk</div>
+      <div class="data-table-wrap">
+        <table class="data">
+          <thead><tr><th>Nagelform</th><th>M_y,Rk</th></tr></thead>
+          <tbody>
+            <tr><td>runder Draht</td><td>0,3·f_u·d^2,6</td></tr>
+            <tr><td>quadratisch / gerillt</td><td>0,45·f_u·d^2,6</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legend">f_u — char. Zugfestigkeit des Nageldrahts, üblich 600 N/mm²</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Mindestholzdicken & Einschlagtiefe</div>
+      <div class="section-note">
+        Die Spitze muss ausreichend tief im Holz sitzen. Für die volle Tragfähigkeit
+        auf Abscheren gilt eine Mindesteinschlagtiefe von <b>8·d</b>.
+        Bei geringerer Tiefe (≥ 6d) ist die Tragfähigkeit linear abzumindern;
+        unter 6d zählt die Scherfuge nicht als tragend.
+      </div>
+      <div class="info-banner">
+        Glattschaftnägel haben einen geringen Ausziehwiderstand. Für axial
+        beanspruchte Verbindungen werden Sondernägel (gerillt, profiliert) verwendet.
+      </div>
+    </div>
+  `,
+};
+
+// ── Init ───────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
