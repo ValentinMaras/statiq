@@ -371,6 +371,9 @@
     <button onclick="closeNavMenu();showTab('arch')" class="nd-item" id="nm-arch">
       <span class="nd-sys-icon" style="font-size:17px">⌒</span><span class="nd-sys-label">Dreigelenkbogen</span>
     </button>
+    <button onclick="closeNavMenu();showTab('gable')" class="nd-item" id="nm-gable">
+      <span class="nd-sys-icon" style="font-size:17px">⌂</span><span class="nd-sys-label">Satteldachrahmen</span>
+    </button>
   </div>
 
 
@@ -856,6 +859,69 @@
   <div class="footnote">Statiq v0.5.8 · Dreigelenkbogen</div>
 </main>
 
+<!-- ═══════════════ GABLE FRAME TAB ═══════════════ -->
+<main class="main hidden" id="tab-gable">
+
+  <div class="card">
+    <div class="card-title">System</div>
+
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px">
+      <svg id="gable-system-svg" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto"></svg>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Spannweite l <span class="unit">m</span></label>
+        <input type="number" id="gable-L" value="10" step="0.5" min="1" oninput="drawGable()"></div>
+      <div class="field"><label>Stützenhöhe h <span class="unit">m</span></label>
+        <input type="number" id="gable-h" value="4" step="0.1" min="0.5" oninput="drawGable()"></div>
+    </div>
+    <div class="field-row" style="margin-top:4px">
+      <div class="field"><label>Firstüberhöhe f <span class="unit">m</span></label>
+        <input type="number" id="gable-f" value="3" step="0.1" min="0.1" oninput="drawGable()"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Point Loads</div>
+    <div class="load-list" id="gable-point-list"></div>
+    <button class="add-load-btn" onclick="addGableLoad('point')">＋ Add Point Load</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Distributed Loads</div>
+    <div class="load-list" id="gable-dist-list"></div>
+    <button class="add-load-btn" onclick="addGableLoad('dist')">＋ Add Distributed Load</button>
+  </div>
+
+  <button class="calc-btn" onclick="calculateGable()">Calculate</button>
+
+  <div id="gable-results" class="hidden">
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title">Diagram on Structure</div>
+        <button class="info-btn" onclick="openGableSteps()" title="Rechenweg anzeigen">i</button>
+      </div>
+      <div class="diagram-toggle-row" style="margin-top:10px">
+        <button class="diagram-toggle-btn active-M" id="diag-btn-M-gable" onclick="setDiagMode('gable','M')">M</button>
+        <button class="diagram-toggle-btn" id="diag-btn-Q-gable" onclick="setDiagMode('gable','Q')">Q</button>
+        <button class="diagram-toggle-btn" id="diag-btn-N-gable" onclick="setDiagMode('gable','N')">N</button>
+      </div>
+      <div class="diagram-svg-wrap">
+        <svg id="diag-svg-gable" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;min-height:180px"></svg>
+      </div>
+      <div class="diagram-label" id="diag-label-gable">Bending Moment M — kNm</div>
+
+      <div id="gable-node-table" style="margin-top:12px">
+        <table class="reactions-table" style="margin-bottom:0">
+          <thead id="gable-node-thead"></thead>
+          <tbody id="gable-forces-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">Statiq v0.5.8 · Satteldachrahmen</div>
+</main>
+
 <!-- Steps modals (outside any tab so they work globally) -->
 <div class="modal-overlay" id="modal-arch-steps" onclick="closeModal('arch-steps')">
   <div class="modal" onclick="event.stopPropagation()">
@@ -864,6 +930,16 @@
       <button class="modal-close" onclick="closeModal('arch-steps')">×</button>
     </div>
     <div id="arch-steps-content"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-gable-steps" onclick="closeModal('gable-steps')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Rechenweg — Satteldachrahmen</div>
+      <button class="modal-close" onclick="closeModal('gable-steps')">×</button>
+    </div>
+    <div id="gable-steps-content"></div>
   </div>
 </div>
 
@@ -944,7 +1020,7 @@ function navMenuBack(){
 }
 
 function showTab(name) {
-  ['beam','cantilever','cont','frame','arch','saved'].forEach(t =>
+  ['beam','cantilever','cont','frame','arch','gable','saved'].forEach(t =>
     document.getElementById('tab-'+t).classList.toggle('hidden', t !== name));
 
   const i18nTabs = window._i18n?.tabs || ['Simply Supported','Cantilever','Continuous Beam','Frame'];
@@ -954,6 +1030,7 @@ function showTab(name) {
     cont: i18nTabs[2]||'Durchlaufträger',
     frame: i18nTabs[3]||'Rahmen',
     arch: 'Dreigelenkbogen',
+    gable: 'Satteldachrahmen',
     saved: window._i18n?.saved||'Gespeichert'
   };
   document.querySelectorAll('.nd-item').forEach(b=>b.classList.remove('active'));
@@ -964,13 +1041,14 @@ function showTab(name) {
   if(lbl) lbl.textContent=labels[name]||name;
 
   const saveBtn=document.getElementById('nav-save-btn');
-  if(saveBtn) saveBtn.style.display=['beam','cantilever','cont','frame','arch'].includes(name)?'block':'none';
+  if(saveBtn) saveBtn.style.display=['beam','cantilever','cont','frame','arch','gable'].includes(name)?'block':'none';
 
   if(name==='beam') drawBeam();
   if(name==='cantilever') setTimeout(drawCantilever, 30);
   if(name==='cont') { renderContUI(); setTimeout(drawContinuous, 30); }
   if(name==='frame') { renderFrameUI(); setTimeout(drawFrame, 30); }
   if(name==='arch') setTimeout(drawArch, 30);
+  if(name==='gable') setTimeout(drawGable, 30);
   if(name==='saved') renderSavedTab();
 }
 
@@ -3530,6 +3608,11 @@ function setDiagMode(sys, mode){
     renderArchDiagram(d.L, d.f, d.hA, d.hB, d.xs, d.Mv, d.Qv, d.Nv, d.reactions);
     return;
   }
+  // Gable: re-render diagram
+  if(sys==='gable' && window._gableData){
+    renderGableDiagram();
+    return;
+  }
   // Re-render
   if(diagData[sys]) renderDiagram(sys, diagData[sys]);
 }
@@ -3649,7 +3732,7 @@ function updateSimpleNodeTable(sys, mode){
     </tr>`;
   }).join('');
 }
-const diagMode = { beam:'M', cant:'M', cont:'M', frame:'M', arch:'M' };
+const diagMode = { beam:'M', cant:'M', cont:'M', frame:'M', arch:'M', gable:'M' };
 const diagData = {};
 
 // Colors
@@ -5394,6 +5477,442 @@ function openArchSteps() {
 
   document.getElementById('arch-steps-content').innerHTML = content;
   document.getElementById('modal-arch-steps').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════
+// SATTELDACHRAHMEN (Gable Frame) — 3-hinged
+// ══════════════════════════════════════════════════
+// Geometry: 5 nodes
+//   ① A  (0, 0)        foot left  — pin
+//   ② Traufe links (0, h)
+//   ③ First C (L/2, h+f)          — hinge
+//   ④ Traufe rechts (L, h)
+//   ⑤ B  (L, 0)        foot right — pin
+// Members: left column, left rafter, right rafter, right column
+const gableLoads = { point:[], dist:[] };
+
+// ── Draw gable system preview ──────────────────────
+function drawGable(){
+  const L = parseFloat(document.getElementById('gable-L').value) || 10;
+  const h = parseFloat(document.getElementById('gable-h').value) || 4;
+  const f = parseFloat(document.getElementById('gable-f').value) || 3;
+  const svg = document.getElementById('gable-system-svg');
+  if(!svg) return;
+
+  const W = 300, H = 200, PAD = 32;
+  const xL = PAD, xR = W - PAD;
+  const drawL = xR - xL;
+  const yTot = h + f;
+  const yScale = (H - 55) / (yTot || 1);
+  const yBase = H - 22;
+
+  const sx = x => xL + x / L * drawL;
+  const sy = y => yBase - y * yScale;
+
+  // Node coords (model units)
+  const nA = [0, 0], n2 = [0, h], nC = [L/2, h+f], n4 = [L, h], nB = [L, 0];
+
+  let out = '';
+  // Frame fill
+  out += `<path d="M${sx(0)},${sy(0)} L${sx(0)},${sy(h)} L${sx(L/2)},${sy(h+f)} L${sx(L)},${sy(h)} L${sx(L)},${sy(0)} Z" fill="rgba(15,110,86,0.05)" stroke="none"/>`;
+  // Members (thick black)
+  const memPath = `M${sx(0)},${sy(0)} L${sx(0)},${sy(h)} L${sx(L/2)},${sy(h+f)} L${sx(L)},${sy(h)} L${sx(L)},${sy(0)}`;
+  out += `<path d="${memPath}" fill="none" stroke="#1a1a18" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  // Supports A, B (pin)
+  [[0,'A'],[L,'B']].forEach(([xv,lbl])=>{
+    const px = sx(xv), py = sy(0);
+    out += `<polygon points="${px},${py} ${px-7},${py+14} ${px+7},${py+14}" fill="#1a1a18"/>`;
+    out += `<line x1="${px-9}" y1="${py+16}" x2="${px+9}" y2="${py+16}" stroke="#1a1a18" stroke-width="1.5"/>`;
+    out += `<text x="${px}" y="${py+27}" text-anchor="middle" font-size="11" font-family="DM Mono,monospace" fill="#374151">${lbl}</text>`;
+  });
+  // First hinge C
+  const cx = sx(L/2), cy = sy(h+f);
+  out += `<circle cx="${cx}" cy="${cy}" r="4" fill="white" stroke="#1a1a18" stroke-width="1.5"/>`;
+  out += `<text x="${cx+9}" y="${cy-5}" font-size="10" font-family="DM Mono,monospace" fill="#374151">C</text>`;
+
+  // Dimension labels
+  out += `<text x="${(sx(0)+sx(L))/2}" y="${yBase+15}" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="#9ca3af">l = ${L} m</text>`;
+  out += `<text x="${sx(0)-6}" y="${(sy(0)+sy(h))/2}" text-anchor="end" font-size="9" font-family="DM Mono,monospace" fill="#9ca3af">h=${h}m</text>`;
+  out += `<text x="${cx+8}" y="${(sy(h)+sy(h+f))/2}" font-size="9" font-family="DM Mono,monospace" fill="#9ca3af">f=${f}m</text>`;
+
+  // Loads (visual) — arrowheads drawn explicitly as polygons (always straight down)
+  gableLoads.dist.filter(l=>l.enabled).forEach(ld=>{
+    const {qa,qb} = ld.values;
+    const steps = 8;
+    for(let i=0;i<=steps;i++){
+      const xi = i/steps * L;
+      const yRoof = xi <= L/2 ? h + f*(xi/(L/2)) : h + f*((L-xi)/(L/2));
+      const px = sx(xi), py = sy(yRoof);
+      out += `<line x1="${px}" y1="${py-18}" x2="${px}" y2="${py-3}" stroke="#2563eb" stroke-width="1.2"/>`;
+      out += `<polygon points="${px},${py} ${px-3},${py-5} ${px+3},${py-5}" fill="#2563eb"/>`;
+    }
+    out += `<text x="${sx(L/2)}" y="${sy(h+f)-26}" text-anchor="middle" font-size="9" font-family="DM Mono,monospace" fill="#2563eb">q=${qa===qb?qa:qa+'→'+qb}kN/m</text>`;
+  });
+  gableLoads.point.filter(l=>l.enabled).forEach(ld=>{
+    const {F,a} = ld.values;
+    const yRoof = a <= L/2 ? h + f*(a/(L/2)) : h + f*((L-a)/(L/2));
+    const px = sx(a), py = sy(yRoof);
+    out += `<line x1="${px}" y1="${py-22}" x2="${px}" y2="${py-4}" stroke="#d85a30" stroke-width="1.5"/>`;
+    out += `<polygon points="${px},${py} ${px-4},${py-7} ${px+4},${py-7}" fill="#d85a30"/>`;
+    out += `<text x="${px+7}" y="${py-13}" font-size="9" font-family="DM Mono,monospace" fill="#d85a30">F=${F}kN</text>`;
+  });
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = out;
+}
+
+// ── Gable load CRUD ────────────────────────────────
+function addGableLoad(type){
+  const id = ++uid;
+  const L = parseFloat(document.getElementById('gable-L').value) || 10;
+  if(type==='point') gableLoads.point.push({ id, enabled:true, values:{ F:10, a:+(L/2).toFixed(1) } });
+  else gableLoads.dist.push({ id, enabled:true, values:{ qa:10, qb:10 } });
+  renderGableLoads(); drawGable();
+}
+function removeGableLoad(type,id){
+  gableLoads[type] = gableLoads[type].filter(l=>l.id!==id);
+  renderGableLoads(); drawGable();
+}
+function toggleGableLoad(type,id){
+  const l = gableLoads[type].find(l=>l.id===id);
+  if(l) l.enabled = !l.enabled;
+  renderGableLoads(); drawGable();
+}
+function renderGableLoads(){
+  const fmt = (type,ld) => {
+    if(type==='point'){
+      return `<div class="field-row">
+        <div class="field"><label>F <span class="unit">kN</span></label><input type="number" value="${ld.values.F}" step="0.5" oninput="gableLoads.point.find(l=>l.id==${ld.id}).values.F=+this.value;drawGable()"></div>
+        <div class="field"><label>a <span class="unit">m</span></label><input type="number" value="${ld.values.a}" step="0.1" min="0" oninput="gableLoads.point.find(l=>l.id==${ld.id}).values.a=+this.value;drawGable()"></div>
+      </div>`;
+    } else {
+      return `<div class="field-row">
+        <div class="field"><label>q<sub>a</sub> <span class="unit">kN/m</span></label><input type="number" value="${ld.values.qa}" step="0.5" oninput="gableLoads.dist.find(l=>l.id==${ld.id}).values.qa=+this.value;drawGable()"></div>
+        <div class="field"><label>q<sub>b</sub> <span class="unit">kN/m</span></label><input type="number" value="${ld.values.qb}" step="0.5" oninput="gableLoads.dist.find(l=>l.id==${ld.id}).values.qb=+this.value;drawGable()"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Gleichlast über die ganze Spannweite (auf Grundriss bezogen).</div>`;
+    }
+  };
+  ['point','dist'].forEach(type=>{
+    const list = document.getElementById('gable-'+type+'-list');
+    if(!list) return;
+    const labels = { point:'p', dist:'q' };
+    let i = 1;
+    list.innerHTML = gableLoads[type].map(ld=>`
+      <div class="load-item${ld.enabled?'':' disabled'}">
+        <div class="load-item-header">
+          <span class="load-item-label">${labels[type]}${i++}</span>
+          <div class="load-item-actions">
+            <button class="load-action-btn" onclick="toggleGableLoad('${type}',${ld.id})">${ld.enabled?'👁':'○'}</button>
+            <button class="load-action-btn delete" onclick="removeGableLoad('${type}',${ld.id})">✕</button>
+          </div>
+        </div>
+        <div class="load-item-body">${fmt(type,ld)}</div>
+      </div>`).join('');
+  });
+}
+
+// ── Gable geometry helper ──────────────────────────
+// Returns roof height y at horizontal position x
+function gableRoofY(x, L, h, f){
+  if(x <= L/2) return h + f * (x / (L/2));
+  return h + f * ((L - x) / (L/2));
+}
+
+// ── Gable solver ───────────────────────────────────
+function calculateGable(){
+  const L = parseFloat(document.getElementById('gable-L').value) || 10;
+  const h = parseFloat(document.getElementById('gable-h').value) || 4;
+  const f = parseFloat(document.getElementById('gable-f').value) || 3;
+
+  const pts = gableLoads.point.filter(l=>l.enabled).map(l=>l.values);
+  const dsts = gableLoads.dist.filter(l=>l.enabled);
+
+  // ── Total vertical load + moment about A ──────────
+  let Ftot = 0, sumMA = 0, sumMC_left = 0;
+  pts.forEach(p => {
+    Ftot += p.F;
+    sumMA += p.F * p.a;
+    if(p.a <= L/2) sumMC_left += p.F * (L/2 - p.a);
+  });
+  dsts.forEach(dl => {
+    // UDL over full span (plan projection): qa→qb linear in x from 0..L
+    const { qa, qb } = dl.values;
+    const Ft = (qa + qb)/2 * L;
+    // centroid of trapezoid load
+    const xc = L * (qa + 2*qb) / (3*(qa + qb) || 1);
+    Ftot += Ft;
+    sumMA += Ft * xc;
+    // left half (0..L/2) contribution to crown moment
+    const qMid = qa + (qb-qa)*0.5;
+    const FtL = (qa + qMid)/2 * (L/2);
+    const xcL = (L/2) * (qa + 2*qMid)/(3*(qa+qMid)||1);
+    sumMC_left += FtL * (L/2 - xcL);
+  });
+
+  const VA = (Ftot * L - sumMA) / L;  // ΣM_B = 0 → wait, use ΣM_A
+  // ΣM_A=0: VB·L = sumMA → VB; VA = Ftot - VB
+  const VB = sumMA / L;
+  const VA2 = Ftot - VB;
+
+  // Crown hinge: ΣM_left about C = 0
+  // VA·(L/2) − H·(h+f) − sumMC_left = 0   (H = horizontal thrust, inward)
+  const H = (VA2 * (L/2) - sumMC_left) / (h + f);
+
+  // ── Internal forces along 4 members ───────────────
+  // We sample each member; store as polylines with M, Q, N + geometry
+  const members = [];
+
+  // Helper: vertical load resultant left of position x (plan), and its moment about x
+  function loadsLeftOf(x){
+    let V = 0, M = 0;
+    pts.forEach(p => { if(p.a < x){ V += p.F; M += p.F*(x - p.a); } });
+    dsts.forEach(dl => {
+      const { qa, qb } = dl.values;
+      if(x > 0){
+        const xe = Math.min(x, L);
+        const qx = qa + (qb-qa)*(xe/L);
+        const Ft = (qa + qx)/2 * xe;
+        const xc = xe * (qa + 2*qx)/(3*(qa+qx)||1);
+        V += Ft; M += Ft*(x - xc);
+      }
+    });
+    return { V, M };
+  }
+
+  // Member sampler — walks from node1 to node2
+  // For each sample point we know global (x,y); section forces from LEFT free body.
+  function sampleMember(x1,y1,x2,y2,NP){
+    const Mv=[],Qv=[],Nv=[],pts3=[];
+    const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
+    const tx=dx/len, ty=dy/len;           // tangent
+    for(let k=0;k<=NP;k++){
+      const t=k/NP;
+      const gx=x1+dx*t, gy=y1+dy*t;
+      // Section forces from left free body at horizontal position gx:
+      const { V:Vl, M:Ml } = loadsLeftOf(gx);
+      // Internal: from left part — reactions VA (up), H (inward = +x)
+      const Vsec = VA2 - Vl;               // net vertical shear contribution
+      const Hsec = H;                      // horizontal thrust (constant, no horiz loads)
+      // Bending moment about section point (x,y):
+      // M = VA·gx − H·gy − Ml
+      const M = VA2*gx - H*gy - Ml;
+      // Local axes: tangent t, normal n (rotate t by +90°: n=(-ty,tx))
+      const nx=-ty, ny=tx;
+      // Resolve global force (Hsec in +x, Vsec in +y) into local:
+      // N = force along tangent (compression negative)
+      // global section force vector on left part acting at cut = (Hsec, Vsec)
+      const N = -(Hsec*tx + Vsec*ty);      // compression negative
+      const Q =  (Hsec*nx + Vsec*ny);
+      Mv.push(+M.toFixed(4));
+      Qv.push(+Q.toFixed(4));
+      Nv.push(+N.toFixed(4));
+      pts3.push([gx,gy]);
+    }
+    return { Mv, Qv, Nv, pts:pts3, tx, ty };
+  }
+
+  const yC = h + f;
+  members.push({ name:'col-left',  ...sampleMember(0,0, 0,h, 40) });
+  members.push({ name:'raf-left',  ...sampleMember(0,h, L/2,yC, 60) });
+  members.push({ name:'raf-right', ...sampleMember(L/2,yC, L,h, 60) });
+  members.push({ name:'col-right', ...sampleMember(L,h, L,0, 40) });
+
+  window._gableData = { L, h, f, VA:VA2, VB, H, members,
+    pts: pts.map(p=>({...p})), dsts: dsts.map(d=>({...d.values})) };
+  document.getElementById('gable-results').classList.remove('hidden');
+  renderGableDiagram();
+}
+
+// ── Gable diagram renderer ─────────────────────────
+function renderGableDiagram(){
+  const d = window._gableData;
+  if(!d) return;
+  const { L, h, f, members } = d;
+  const mode = diagMode['gable'] || 'M';
+  const color = diagColors[mode];
+  const fill = diagFill[mode];
+
+  const W = 320, Hh = 240, PAD = 30;
+  const xL = PAD, xR = W - PAD, drawL = xR - xL;
+  const yTot = h + f;
+  const yScale = (Hh - 70) / (yTot || 1);
+  const yBase = Hh - 26;
+  const sx = x => xL + x / L * drawL;
+  const sy = y => yBase - y * yScale;
+
+  // Max value across all members for scaling
+  let maxV = 0.001;
+  members.forEach(m => {
+    const arr = { M:m.Mv, Q:m.Qv, N:m.Nv }[mode];
+    arr.forEach(v => { if(Math.abs(v) > maxV) maxV = Math.abs(v); });
+  });
+  const SCALE = Math.min(46 / maxV, 6);
+
+  let out = '';
+  // Structure outline
+  let structPath = `M${sx(0)},${sy(0)} L${sx(0)},${sy(h)} L${sx(L/2)},${sy(h+f)} L${sx(L)},${sy(h)} L${sx(L)},${sy(0)}`;
+  out += `<path d="${structPath}" fill="none" stroke="#1a1a18" stroke-width="2.5" stroke-linejoin="round"/>`;
+
+  // Diagram per member
+  members.forEach(m => {
+    const arr = { M:m.Mv, Q:m.Qv, N:m.Nv }[mode];
+    const NP = arr.length - 1;
+    const nx = -m.ty, ny = m.tx; // normal
+    let baseLine = '', offLine = '';
+    for(let k=0;k<=NP;k++){
+      const [gx,gy] = m.pts[k];
+      const bx = sx(gx), by = sy(gy);
+      const off = arr[k] * SCALE;
+      const px = bx + nx * off;
+      const py = by - ny * off; // SVG y-flip
+      baseLine += (k===0?'M':'L') + bx.toFixed(1) + ',' + by.toFixed(1) + ' ';
+      offLine  += (k===0?'M':'L') + px.toFixed(1) + ',' + py.toFixed(1) + ' ';
+    }
+    // Fill between base and offset
+    const offRev = offLine.trim().split(/M|L/).filter(Boolean).reverse().map(p=>'L'+p.trim()).join(' ');
+    out += `<path d="${baseLine}${offRev} Z" fill="${fill}" stroke="none"/>`;
+    out += `<path d="${offLine}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+  });
+
+  // Re-draw structure on top
+  out += `<path d="${structPath}" fill="none" stroke="#1a1a18" stroke-width="2.5" stroke-linejoin="round"/>`;
+
+  // Supports + crown hinge
+  [[0,'A'],[L,'B']].forEach(([xv,lbl])=>{
+    const px=sx(xv), py=sy(0);
+    out += `<polygon points="${px},${py} ${px-6},${py+12} ${px+6},${py+12}" fill="#1a1a18"/>`;
+    out += `<line x1="${px-8}" y1="${py+14}" x2="${px+8}" y2="${py+14}" stroke="#1a1a18" stroke-width="1.5"/>`;
+    out += `<text x="${px}" y="${py+25}" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="#374151">${lbl}</text>`;
+  });
+  const cx=sx(L/2), cy=sy(h+f);
+  out += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="white" stroke="#1a1a18" stroke-width="1.5"/>`;
+
+  out += `<text x="${W/2}" y="13" text-anchor="middle" font-size="9" font-family="DM Mono,monospace" fill="${color}">${mode} — l=${L}m, h=${h}m, f=${f}m</text>`;
+
+  const svg = document.getElementById('diag-svg-gable');
+  svg.setAttribute('viewBox', `0 0 ${W} ${Hh}`);
+  svg.innerHTML = out;
+
+  const labels = { M:'Bending Moment M — kNm', Q:'Shear Force Q — kN', N:'Normal Force N — kN' };
+  const lbl = document.getElementById('diag-label-gable');
+  if(lbl) lbl.textContent = labels[mode] || '';
+
+  updateGableNodeTable(mode);
+}
+
+// ── Gable node table ───────────────────────────────
+function updateGableNodeTable(mode){
+  const d = window._gableData;
+  if(!d) return;
+  const { members, VA, VB, H } = d;
+  const fmt = v => (Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2));
+
+  const colL = members[0], rafL = members[1], rafR = members[2], colR = members[3];
+  const last = a => a[a.length-1];
+
+  // Mmax on left rafter
+  let iML = 0;
+  for(let i=1;i<rafL.Mv.length;i++) if(Math.abs(rafL.Mv[i])>Math.abs(rafL.Mv[iML])) iML=i;
+
+  const rows = [
+    { lbl:'① A (Fuß)',      M: colL.Mv[0],  Q: colL.Qv[0],  N: colL.Nv[0],  isSup:true, sub:`H=${fmt(H)} · V=${fmt(VA)}` },
+    { lbl:'② Traufe links', M: last(colL.Mv), Q: last(colL.Qv), N: last(colL.Nv) },
+    { lbl:'Mmax Dach links', M: rafL.Mv[iML], Q: rafL.Qv[iML], N: rafL.Nv[iML], sub:'auf linkem Dachschenkel' },
+    { lbl:'③ First C',      M: last(rafL.Mv), Q: last(rafL.Qv), N: last(rafL.Nv), isSup:true, sub:'Gelenk → M ≈ 0' },
+    { lbl:'④ Traufe rechts', M: rafR.Mv[rafR.Mv.length-1], Q: last(rafR.Qv), N: last(rafR.Nv) },
+    { lbl:'⑤ B (Fuß)',      M: last(colR.Mv), Q: last(colR.Qv), N: last(colR.Nv), isSup:true, sub:`H=${fmt(H)} · V=${fmt(VB)}` },
+  ];
+
+  const cols = { M:['M','Q','N'], Q:['Q','M','N'], N:['N','M','Q'] }[mode] || ['M','Q','N'];
+  const units = { M:'kNm', Q:'kN', N:'kN' };
+  const getV = (row,col) => fmt({ M:row.M, Q:row.Q, N:row.N }[col]);
+
+  const thead = document.getElementById('gable-node-thead');
+  if(thead) thead.innerHTML = `<tr>
+    <th>Knoten</th>
+    <th>${cols[0]} (${units[mode]})</th>
+    <th style="color:var(--text3)">${cols[1]}</th>
+    <th style="color:var(--text3)">${cols[2]}</th>
+  </tr>`;
+
+  const tbody = document.getElementById('gable-forces-body');
+  if(!tbody) return;
+  tbody.innerHTML = rows.map(row => {
+    const rowStyle = row.isSup ? 'background:var(--surface2)' : '';
+    const lblHtml = row.sub
+      ? `${row.lbl}<br><span style="font-size:10px;color:var(--text3);font-weight:normal">${row.sub}</span>`
+      : row.lbl;
+    return `<tr style="${rowStyle}">
+      <td style="font-family:DM Mono,monospace;font-size:12px;line-height:1.4">${lblHtml}</td>
+      <td style="font-weight:600">${getV(row,cols[0])}</td>
+      <td style="color:var(--text3);font-size:12px">${getV(row,cols[1])}</td>
+      <td style="color:var(--text3);font-size:12px">${getV(row,cols[2])}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Gable steps modal ──────────────────────────────
+function openGableSteps(){
+  const d = window._gableData;
+  if(!d){ alert('Bitte zuerst auf "Calculate" drücken.'); return; }
+  const { L, h, f, VA, VB, H, pts, dsts } = d;
+  const fmt = v => (Math.abs(v)<0.005?'0.00':v.toFixed(2));
+
+  let loadDesc = '';
+  pts.forEach(p => loadDesc += `F = ${p.F} kN bei x = ${p.a} m<br>`);
+  dsts.forEach(dl => loadDesc += (dl.qa===dl.qb ? `q = ${dl.qa} kN/m` : `q: ${dl.qa}→${dl.qb} kN/m`) + ' über volle Spannweite<br>');
+  if(!loadDesc) loadDesc = '<em style="color:var(--text3)">Keine Lasten definiert.</em>';
+
+  document.getElementById('gable-steps-content').innerHTML = `
+    <div class="modal-section">
+      <h3>📐 System &amp; Belastung</h3>
+      <p>Symmetrischer Satteldachrahmen als Dreigelenksystem: zwei Stützen, zwei geneigte Dachschenkel, drei Gelenke (A, B, First C). Statisch bestimmt.</p>
+      <div class="formula-box">
+        Spannweite l = ${L} m, Stützenhöhe h = ${h} m, Firstüberhöhe f = ${f} m<br>
+        Firsthöhe gesamt: h + f = ${fmt(h+f)} m<br><br>
+        ${loadDesc}
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>🎯 Schritt 1 — Vertikale Auflagerreaktionen</h3>
+      <p>Aus dem globalen Gleichgewicht (wie beim Einfeldträger):</p>
+      <div class="formula-box">
+        ΣM<sub>A</sub> = 0:&nbsp;&nbsp; V<sub>B</sub>·l = Σ(Last·Hebelarm)<br>
+        → V<sub>B</sub> = <b>${fmt(VB)} kN</b><br><br>
+        ΣF<sub>y</sub> = 0:&nbsp;&nbsp; V<sub>A</sub> = ΣF − V<sub>B</sub> = <b>${fmt(VA)} kN</b>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>⚖️ Schritt 2 — Horizontalschub H (Firstgelenk)</h3>
+      <p>Das Gelenk im First überträgt kein Moment. Wir betrachten die <b>linke Rahmenhälfte</b> und setzen ΣM um C = 0:</p>
+      <div class="formula-box">
+        ΣM<sub>C,links</sub> = 0:&nbsp;&nbsp; V<sub>A</sub>·(l/2) − H·(h+f) − ΣM<sub>Last,links</sub> = 0<br><br>
+        H = (V<sub>A</sub>·l/2 − ΣM<sub>Last,links</sub>) / (h+f)<br>
+        H = <b>${fmt(H)} kN</b>
+        <div class="comment">H ist der Horizontalschub — er „drückt" die Stützenfüße nach außen.</div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>✂️ Schritt 3 — Schnittgrößen Stab für Stab</h3>
+      <p>Der Rahmen wird in 4 Stäbe zerlegt: linke Stütze, linker Dachschenkel, rechter Dachschenkel, rechte Stütze. An jedem Schnitt:</p>
+      <div class="formula-box">
+        M(x) = V<sub>A</sub>·x − H·y − ΣM<sub>Last,links</sub><br>
+        N, Q durch Transformation in die lokale Stabrichtung (Tangente/Normale)
+        <div class="comment">Am geneigten Dach: N und Q hängen vom Dachneigungswinkel ab. Werte siehe Knotentabelle.</div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>✓ Schritt 4 — Kontrolle</h3>
+      <div class="formula-box">
+        Am Firstgelenk C muss M = 0 sein ✓<br>
+        An den Gelenklagern A und B muss M = 0 sein ✓<br>
+        ΣF<sub>x</sub>: H<sub>A</sub> = H<sub>B</sub> = ${fmt(H)} kN (entgegengesetzt) ✓
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-gable-steps').classList.add('open');
 }
 
 // ══════════════════════════════════════════════════
