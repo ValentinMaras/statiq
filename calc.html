@@ -368,6 +368,9 @@
     <button onclick="closeNavMenu();showTab('frame')" class="nd-item" id="nm-frame">
       <span class="nd-sys-icon" style="font-size:17px;transform:scaleX(1.4);display:inline-block">⊓</span><span class="nd-sys-label">Rahmen</span>
     </button>
+    <button onclick="closeNavMenu();showTab('arch')" class="nd-item" id="nm-arch">
+      <span class="nd-sys-icon" style="font-size:17px">⌒</span><span class="nd-sys-label">Dreigelenkbogen</span>
+    </button>
   </div>
 
 
@@ -445,8 +448,11 @@
 
     <!-- Diagram on structure -->
     <div class="card">
-      <div class="card-title" style="margin-bottom:10px">Diagram on Structure</div>
-      <div class="diagram-toggle-row">
+      <div class="card-title-row">
+        <div class="card-title">Diagram on Structure</div>
+        <button class="info-btn" onclick="openSteps('beam')" title="Rechenweg anzeigen">i</button>
+      </div>
+      <div class="diagram-toggle-row" style="margin-top:10px">
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-beam" onclick="setDiagMode('beam','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-beam" onclick="setDiagMode('beam','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-beam" onclick="setDiagMode('beam','N')">N</button>
@@ -517,8 +523,11 @@
 
     <!-- Diagram on structure -->
     <div class="card">
-      <div class="card-title" style="margin-bottom:10px">Diagram on Structure</div>
-      <div class="diagram-toggle-row">
+      <div class="card-title-row">
+        <div class="card-title">Diagram on Structure</div>
+        <button class="info-btn" onclick="openSteps('cant')" title="Rechenweg anzeigen">i</button>
+      </div>
+      <div class="diagram-toggle-row" style="margin-top:10px">
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-cant" onclick="setDiagMode('cant','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-cant" onclick="setDiagMode('cant','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-cant" onclick="setDiagMode('cant','N')">N</button>
@@ -583,8 +592,11 @@
 
     <!-- Diagram on structure -->
     <div class="card">
-      <div class="card-title" style="margin-bottom:10px">Diagram on Structure</div>
-      <div class="diagram-toggle-row">
+      <div class="card-title-row">
+        <div class="card-title">Diagram on Structure</div>
+        <button class="info-btn" onclick="openSteps('cont')" title="Rechenweg anzeigen">i</button>
+      </div>
+      <div class="diagram-toggle-row" style="margin-top:10px">
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-cont" onclick="setDiagMode('cont','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-cont" onclick="setDiagMode('cont','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-cont" onclick="setDiagMode('cont','N')">N</button>
@@ -636,6 +648,15 @@
         <input type="number" id="fHA" value="4" step="0.1" min="0.5" oninput="syncFrameHeights('A')"></div>
       <div class="field"><label>h<sub>B</sub> <span class="unit">m</span></label>
         <input type="number" id="fHB" value="4" step="0.1" min="0.5" oninput="syncFrameHeights('B')"></div>
+    </div>
+
+    <!-- Quick presets -->
+    <div style="margin-top:12px">
+      <div class="card-title" style="margin-bottom:8px">Schnellauswahl</div>
+      <div class="toggle-row">
+        <button class="toggle-btn" onclick="applyFramePreset('default')">Standard</button>
+        <button class="toggle-btn" onclick="applyFramePreset('3hinge')">Dreigelenkrahmen</button>
+      </div>
     </div>
 
     <!-- Individual support conditions -->
@@ -718,8 +739,11 @@
 
     <!-- Diagram on structure -->
     <div class="card">
-      <div class="card-title" style="margin-bottom:10px">Diagram on Structure</div>
-      <div class="diagram-toggle-row">
+      <div class="card-title-row">
+        <div class="card-title">Diagram on Structure</div>
+        <button class="info-btn" onclick="openSteps('frame')" title="Rechenweg anzeigen">i</button>
+      </div>
+      <div class="diagram-toggle-row" style="margin-top:10px">
         <button class="diagram-toggle-btn active-M" id="diag-btn-M-frame" onclick="setDiagMode('frame','M')">M</button>
         <button class="diagram-toggle-btn" id="diag-btn-Q-frame" onclick="setDiagMode('frame','Q')">Q</button>
         <button class="diagram-toggle-btn" id="diag-btn-N-frame" onclick="setDiagMode('frame','N')">N</button>
@@ -761,6 +785,98 @@
   <div class="footnote">Statiq v0.5.8 · Frame</div>
 </main>
 
+<!-- ═══════════════ ARCH TAB ═══════════════ -->
+<main class="main hidden" id="tab-arch">
+
+  <div class="card">
+    <div class="card-title-row">
+      <div class="card-title">System</div>
+      <button class="info-btn" onclick="openModal('arch')">i</button>
+    </div>
+
+    <!-- Arch SVG preview -->
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px">
+      <svg id="arch-system-svg" viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto"></svg>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Spannweite l <span class="unit">m</span></label>
+        <input type="number" id="arch-L" value="10" step="0.5" min="1" oninput="drawArch()"></div>
+      <div class="field"><label>Pfeilhöhe f <span class="unit">m</span></label>
+        <input type="number" id="arch-f" value="3" step="0.1" min="0.1" oninput="drawArch()"></div>
+    </div>
+    <div class="field-row" style="margin-top:4px">
+      <div class="field"><label>Kämpferhöhe h<sub>A</sub> <span class="unit">m</span></label>
+        <input type="number" id="arch-hA" value="0" step="0.1" min="0" oninput="drawArch()"></div>
+      <div class="field"><label>Kämpferhöhe h<sub>B</sub> <span class="unit">m</span></label>
+        <input type="number" id="arch-hB" value="0" step="0.1" min="0" oninput="drawArch()"></div>
+    </div>
+  </div>
+
+  <!-- Loads -->
+  <div class="card">
+    <div class="card-title">Point Loads</div>
+    <div class="load-list" id="arch-point-list"></div>
+    <button class="add-load-btn" onclick="addArchLoad('point')">＋ Add Point Load</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Distributed Loads</div>
+    <div class="load-list" id="arch-dist-list"></div>
+    <button class="add-load-btn" onclick="addArchLoad('dist')">＋ Add Distributed Load</button>
+  </div>
+
+  <button class="calc-btn" onclick="calculateArch()">Calculate</button>
+
+  <div id="arch-results" class="hidden">
+    <!-- Diagram on structure -->
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title">Diagram on Structure</div>
+        <button class="info-btn" onclick="openArchSteps()" title="Rechenweg anzeigen">i</button>
+      </div>
+      <div class="diagram-toggle-row" style="margin-top:10px">
+        <button class="diagram-toggle-btn active-M" id="diag-btn-M-arch" onclick="setDiagMode('arch','M')">M</button>
+        <button class="diagram-toggle-btn" id="diag-btn-Q-arch" onclick="setDiagMode('arch','Q')">Q</button>
+        <button class="diagram-toggle-btn" id="diag-btn-N-arch" onclick="setDiagMode('arch','N')">N</button>
+      </div>
+      <div class="diagram-svg-wrap">
+        <svg id="diag-svg-arch" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;min-height:180px"></svg>
+      </div>
+      <div class="diagram-label" id="diag-label-arch">Bending Moment M — kNm</div>
+
+      <div id="arch-node-table" style="margin-top:12px">
+        <table class="reactions-table" style="margin-bottom:0">
+          <thead id="arch-node-thead"></thead>
+          <tbody id="arch-forces-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">Statiq v0.5.8 · Dreigelenkbogen</div>
+</main>
+
+<!-- Steps modals (outside any tab so they work globally) -->
+<div class="modal-overlay" id="modal-arch-steps" onclick="closeModal('arch-steps')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Rechenweg — Dreigelenkbogen</div>
+      <button class="modal-close" onclick="closeModal('arch-steps')">×</button>
+    </div>
+    <div id="arch-steps-content"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-steps" onclick="closeModal('steps')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="steps-title">Rechenweg</div>
+      <button class="modal-close" onclick="closeModal('steps')">×</button>
+    </div>
+    <div id="steps-content"></div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════
 // GLOBAL STATE
@@ -768,6 +884,7 @@
 const DEG = Math.PI / 180;
 const loads = { beam:{point:[],dist:[],horiz:[]}, cant:{point:[],dist:[],horiz:[]} };
 let uid = 0;
+const archLoads = { point:[], dist:[] };
 
 // Continuous beam state
 let numSpans = 2;
@@ -827,35 +944,33 @@ function navMenuBack(){
 }
 
 function showTab(name) {
-  ['beam','cantilever','cont','frame','saved'].forEach(t =>
+  ['beam','cantilever','cont','frame','arch','saved'].forEach(t =>
     document.getElementById('tab-'+t).classList.toggle('hidden', t !== name));
 
-  // Update drawer active state
-  // Use i18n tab names if available, else fallback
   const i18nTabs = window._i18n?.tabs || ['Simply Supported','Cantilever','Continuous Beam','Frame'];
   const labels = {
     beam: i18nTabs[0]||'Einfeldträger',
     cantilever: i18nTabs[1]||'Kragarm',
     cont: i18nTabs[2]||'Durchlaufträger',
     frame: i18nTabs[3]||'Rahmen',
+    arch: 'Dreigelenkbogen',
     saved: window._i18n?.saved||'Gespeichert'
   };
   document.querySelectorAll('.nd-item').forEach(b=>b.classList.remove('active'));
   const activeBtn=document.getElementById('nm-'+name);
   if(activeBtn) activeBtn.classList.add('active');
 
-  // Update top bar label
   const lbl=document.getElementById('nav-current-label');
   if(lbl) lbl.textContent=labels[name]||name;
 
-  // Show save button only on frame tab
   const saveBtn=document.getElementById('nav-save-btn');
-  if(saveBtn) saveBtn.style.display=['beam','cantilever','cont','frame'].includes(name)?'block':'none';
+  if(saveBtn) saveBtn.style.display=['beam','cantilever','cont','frame','arch'].includes(name)?'block':'none';
 
   if(name==='beam') drawBeam();
   if(name==='cantilever') setTimeout(drawCantilever, 30);
   if(name==='cont') { renderContUI(); setTimeout(drawContinuous, 30); }
   if(name==='frame') { renderFrameUI(); setTimeout(drawFrame, 30); }
+  if(name==='arch') setTimeout(drawArch, 30);
   if(name==='saved') renderSavedTab();
 }
 
@@ -1366,6 +1481,7 @@ function calculateBeam() {
   document.getElementById('b-res-Qmax').textContent=Qmax.toFixed(2);
   document.getElementById('b-res-Nmax').textContent=Nmax.toFixed(2);
   document.getElementById('beam-results').classList.remove('hidden');
+  window._beamData = { L, A, B, HA: HA_b, pts: pts.map(p=>p.values), dsts: dsts.map(d=>d.values), Mv, Qv, xs };
   renderBeamDiagram(L, Qv, Mv, xs, Nv, {VA:A, VB:B, HA:HA_b});
 }
 
@@ -1410,6 +1526,7 @@ function calculateCantilever() {
   document.getElementById('c-res-Qmax').textContent=Qmax.toFixed(2);
   document.getElementById('c-res-Nmax').textContent=Nmax.toFixed(2);
   document.getElementById('cant-results').classList.remove('hidden');
+  window._cantData = { L, VA, MA, HA: HA_c, pts: pts.map(p=>p.values), dsts: dsts.map(d=>d.values), Mv, Qv, xs };
   renderCantDiagram(L, Qv, Mv, Nv, {VA, MA, HA:HA_c});
 }
 
@@ -1572,7 +1689,8 @@ function calculateContinuous() {
   }).join('');
 
   document.getElementById('cont-results').classList.remove('hidden');
-  renderContDiagram(spanData.map(s=>s.L), Qv_all, Mv_all, R, M_sup);
+  window._contData = { Ls, R, M_sup, A_mat, rhs, Ms_inner, terms, spanData: spanData.map(sp=>({L:sp.L, point:sp.point.filter(l=>l.enabled).map(p=>p.values), dist:sp.dist.filter(l=>l.enabled).map(d=>d.values)})) };
+  renderContDiagram(spanData.map(s=>s.L), Qv_all, Mv_all, R, M_sup, xs_all);
 }
 
 // ── Gaussian elimination ───────────────────────────
@@ -1674,8 +1792,29 @@ function setSupportB(type){
 }
 function addFrameHinge(){
   const id = ++uid;
-  frameHinges.push({ id, member:'rafter', pos:0.5 });
+  const b = parseFloat(document.getElementById('fB').value) || 5;
+  frameHinges.push({ id, member:'rafter', pos: b/2 });
   renderFrameHinges(); updateIndetInfo(); drawFrame();
+}
+
+function applyFramePreset(preset){
+  if(preset === 'default'){
+    // Standard: both feet fixed, no internal hinges
+    setSupportA('fixed');
+    setSupportB('fixed');
+    setHeadSupport('pos','none');
+    frameHinges = [];
+  } else if(preset === '3hinge'){
+    // Dreigelenkrahmen: both feet pinned + one hinge in rafter centre
+    const b = parseFloat(document.getElementById('fB').value) || 5;
+    setSupportA('pin');
+    setSupportB('pin');
+    setHeadSupport('pos','none');
+    frameHinges = [{ id: ++uid, member:'rafter', pos: b/2 }];
+  }
+  renderFrameHinges();
+  updateIndetInfo();
+  drawFrame();
 }
 function removeFrameHinge(id){
   frameHinges = frameHinges.filter(h=>h.id!==id);
@@ -3344,6 +3483,15 @@ function calculateFrame(){
   if(_tbl) _tbl.style.display = (_curMode==='W') ? 'none' : 'block';
   if(_curMode!=='W') updateFrameNodeTable(_curMode);
   const rafHingeIdx = rafHinge ? Math.round((parseFloat(rafHinge.pos)||b/2)/b*NP) : null;
+  window._frameData = {
+    b, hA, hB, supportA, supportB,
+    VA, VB, HA: reactions.HA, HB: reactions.HB,
+    MA_r: reactions.MA_r, MB_r: reactions.MB_r,
+    VA_real, VB_real,
+    vLoads: vLoads.map(l=>({...l})),
+    hLoads: hLoads.map(l=>({...l})),
+    isSD: reactions._sdM_A2 != null
+  };
   renderFrameDiagram(b,h,allM,allQ,allN,NP,supportA,supportB,rafHingeIdx,hA,hB,reactions.SM);
 }
 
@@ -3375,6 +3523,12 @@ function setDiagMode(sys, mode){
     const tbl = document.getElementById(sys+'-node-table');
     if(tbl) tbl.style.display = (mode==='W') ? 'none' : 'block';
     if(mode!=='W') updateSimpleNodeTable(sys, mode);
+  }
+  // Arch: re-render diagram (which also updates node table)
+  if(sys==='arch' && window._archData){
+    const d = window._archData;
+    renderArchDiagram(d.L, d.f, d.hA, d.hB, d.xs, d.Mv, d.Qv, d.Nv, d.reactions);
+    return;
   }
   // Re-render
   if(diagData[sys]) renderDiagram(sys, diagData[sys]);
@@ -3480,18 +3634,22 @@ function updateSimpleNodeTable(sys, mode){
     const primary = getVal(row, mode);
     const sec1    = getVal(row, cols[1]);
     const sec2    = getVal(row, cols[2]);
-    // Highlight support rows (A, B, C…) vs span midpoints differently
-    const isSupport = /^[A-F]$/.test(row.lbl);
-    const rowStyle = isSupport ? 'background:var(--surface2)' : '';
+    const isSupport  = /^[A-F]$/.test(row.lbl);
+    const isSecondary = row.secondary === true;
+    const rowStyle = isSupport ? 'background:var(--surface2)' : isSecondary ? 'opacity:0.65' : '';
+    const fontWeight = isSecondary ? 'normal' : '600';
+    const lblHtml = row.sublbl
+      ? `${row.lbl}<br><span style="font-size:10px;color:var(--text3);font-weight:normal">${row.sublbl}</span>`
+      : row.lbl;
     return `<tr style="${rowStyle}">
-      <td style="font-family:DM Mono,monospace;font-size:12px">${row.lbl}</td>
-      <td style="font-weight:600">${primary}</td>
+      <td style="font-family:DM Mono,monospace;font-size:12px;line-height:1.4">${lblHtml}</td>
+      <td style="font-weight:${fontWeight}">${primary}</td>
       <td style="color:var(--text3);font-size:12px">${sec1}</td>
       <td style="color:var(--text3);font-size:12px">${sec2}</td>
     </tr>`;
   }).join('');
 }
-const diagMode = { beam:'M', cant:'M', cont:'M', frame:'M' };
+const diagMode = { beam:'M', cant:'M', cont:'M', frame:'M', arch:'M' };
 const diagData = {};
 
 // Colors
@@ -3995,11 +4153,12 @@ function renderBeamDiagram(L, Qv, Mv, xs, Nv=null, reactions={}){
   // Physical values at span max (Mv is -M_phys, so negate back)
   const mSignB = -1;
   const VA = reactions.VA ?? 0, VB = reactions.VB ?? 0, HA = reactions.HA ?? 0;
+  const xMmaxB = xs[maxMidxB] != null ? `x = ${(+xs[maxMidxB]).toFixed(2)} m` : '';
   window._beamForces = {
     rows: [
-      { lbl:'A', M: fmt2b(0),                      Q: fmt2b(VA),               N: fmt2b(HA) },
-      { lbl:'Mmax Feld', M: fmt2b(mSignB*Mv[maxMidxB]), Q: fmt2b(Qv[maxMidxB]), N: fmt2b((Nv||[])[maxMidxB]||0) },
-      { lbl:'B', M: fmt2b(0),                       Q: fmt2b(-VB),              N: fmt2b(HA) },
+      { lbl:'A', M: fmt2b(0), Q: fmt2b(VA), N: fmt2b(HA) },
+      { lbl:'Mmax Feld', sublbl: xMmaxB, M: fmt2b(mSignB*Mv[maxMidxB]), Q: fmt2b(Qv[maxMidxB]), N: fmt2b((Nv||[])[maxMidxB]||0) },
+      { lbl:'B', M: fmt2b(0), Q: fmt2b(-VB), N: fmt2b(HA) },
     ]
   };
   const _curModeB = diagMode['beam']||'M';
@@ -4038,11 +4197,12 @@ function renderCantDiagram(L, Qv, Mv, Nv=null, reactions={}){
   const n_c = Mv.length-1;
   let maxMidxC = 0;
   for(let i=1; i<=n_c; i++) if(Math.abs(Mv[i])>Math.abs(Mv[maxMidxC])) maxMidxC=i;
+  const xMmaxC = `x = ${(maxMidxC / n_c * L).toFixed(2)} m`;
   window._cantForces = {
     rows: [
-      { lbl:'A (Einspannung)', M: fmt2c(-MA_c),          Q: fmt2c(VA_c),          N: fmt2c(HA_c) },
-      { lbl:'Mmax',   M: fmt2c(Mv[maxMidxC]),    Q: fmt2c(Qv[maxMidxC]),  N: fmt2c((Nv||[])[maxMidxC]||0) },
-      { lbl:'B (frei)',        M: fmt2c(0),               Q: fmt2c(0),             N: fmt2c(0) },
+      { lbl:'A (Einspannung)', M: fmt2c(-MA_c),       Q: fmt2c(VA_c),         N: fmt2c(HA_c) },
+      { lbl:'Mmax', sublbl: xMmaxC, M: fmt2c(Mv[maxMidxC]), Q: fmt2c(Qv[maxMidxC]), N: fmt2c((Nv||[])[maxMidxC]||0) },
+      { lbl:'B (frei)',        M: fmt2c(0),            Q: fmt2c(0),            N: fmt2c(0) },
     ]
   };
   const _curModeC = diagMode['cant']||'M';
@@ -4053,7 +4213,7 @@ function renderCantDiagram(L, Qv, Mv, Nv=null, reactions={}){
 }
 
 // ── Continuous beam diagram ────────────────────────
-function renderContDiagram(Ls, Qv_all, Mv_all, R=[], M_sup=[]){
+function renderContDiagram(Ls, Qv_all, Mv_all, R=[], M_sup=[], xs_all=[]){
   const SVG_W=300, SVG_H=140, PAD=20, bY=75, x0=PAD, x1=SVG_W-PAD, bW=x1-x0;
   const Ltot = Ls.reduce((a,b)=>a+b,0);
   let ov = '', cumX=0;
@@ -4111,16 +4271,21 @@ function renderContDiagram(Ls, Qv_all, Mv_all, R=[], M_sup=[]){
     // True inner maximum (support points excluded)
     const slice_Mv = Mv_all.slice(idxLeft+1, idxRight);
     const slice_Qv = Qv_all.slice(idxLeft+1, idxRight);
-    let spanM, spanQ;
+    let spanM, spanQ, spanX;
     if(slice_Mv.length === 0){
-      spanM = 0; spanQ = 0;
+      spanM = 0; spanQ = 0; spanX = null;
     } else {
       let maxIdx = 0;
       for(let k=1; k<slice_Mv.length; k++) if(Math.abs(slice_Mv[k]) > Math.abs(slice_Mv[maxIdx])) maxIdx=k;
       spanM = -slice_Mv[maxIdx];
       spanQ = -slice_Qv[maxIdx];
+      spanX = xs_all[idxLeft+1+maxIdx] ?? null;
     }
-    rows_co.push({ lbl:`M Feld ${si+1}`, M: fmt2co(spanM), Q: fmt2co(spanQ), N:'—' });
+    const xLabel = spanX !== null ? ` (x=${(+spanX).toFixed(2)}m)` : '';
+    rows_co.push({ lbl:`Mmax Feld ${si+1}`, sublbl: spanX !== null ? `x = ${(+spanX).toFixed(2)} m` : '', M: fmt2co(spanM), Q: fmt2co(spanQ), N:'—' });
+    // Midspan value
+    const idxMid = Math.round((idxLeft + idxRight) / 2);
+    rows_co.push({ lbl:`M Mitte ${si+1}`, M: fmt2co(-Mv_all[idxMid]), Q: fmt2co(-Qv_all[idxMid]), N:'—', secondary:true });
   });
 
   // Last support
@@ -4647,7 +4812,1141 @@ function applyCalcTranslations(){
   });
 }
 
-// ── Init language ──────────────────────────────────
+// ══════════════════════════════════════════════════
+// DREIGELENKBOGEN (Three-Hinged Arch)
+// ══════════════════════════════════════════════════
+
+// ── Arch geometry ──────────────────────────────────
+// Parabolic arch: y(x) = hA + (hB-hA)*x/L + 4*f*x*(L-x)/L²
+// Hinges at A(0,hA), C(L/2, hA+(hB-hA)/2+f), B(L,hB)
+function archY(x, L, f, hA, hB) {
+  return hA + (hB - hA) * x / L + 4 * f * x * (L - x) / (L * L);
+}
+function archDy(x, L, f, hA, hB) {
+  return (hB - hA) / L + 4 * f * (L - 2 * x) / (L * L);
+}
+
+// ── Draw arch system preview ───────────────────────
+function drawArch() {
+  const L  = parseFloat(document.getElementById('arch-L').value) || 10;
+  const f  = parseFloat(document.getElementById('arch-f').value) || 3;
+  const hA = parseFloat(document.getElementById('arch-hA').value) || 0;
+  const hB = parseFloat(document.getElementById('arch-hB').value) || 0;
+  const svg = document.getElementById('arch-system-svg');
+  if (!svg) return;
+
+  const W = 300, H = 160, PAD = 30;
+  const xA = PAD, xB = W - PAD;
+  const drawL = xB - xA;
+  const yMax = Math.max(hA, hB) + f;
+  const yScale = (H - 50) / (yMax || 1);
+  const yBase = H - 20; // baseline (support level = y=0)
+
+  const toSvgX = x => xA + x / L * drawL;
+  const toSvgY = y => yBase - y * yScale;
+
+  // Arch curve path
+  const NP = 80;
+  let pathD = '';
+  for (let i = 0; i <= NP; i++) {
+    const x = i / NP * L;
+    const y = archY(x, L, f, hA, hB);
+    pathD += (i === 0 ? 'M' : 'L') + toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1) + ' ';
+  }
+
+  // Crown C
+  const xC = L / 2, yC = archY(xC, L, f, hA, hB);
+
+  let out = '';
+  // Arch fill
+  out += `<path d="${pathD}L${toSvgX(L)},${yBase} L${toSvgX(0)},${yBase} Z" fill="rgba(15,110,86,0.06)" stroke="none"/>`;
+  // Arch line (thick)
+  out += `<path d="${pathD}" fill="none" stroke="#1a1a18" stroke-width="3" stroke-linecap="round"/>`;
+
+  // Supports A and B (pin)
+  [[0, hA, 'A'], [L, hB, 'B']].forEach(([xv, yv, lbl]) => {
+    const sx = toSvgX(xv), sy = toSvgY(yv);
+    out += `<polygon points="${sx},${sy} ${sx-7},${sy+14} ${sx+7},${sy+14}" fill="#1a1a18"/>`;
+    out += `<line x1="${sx-9}" y1="${sy+16}" x2="${sx+9}" y2="${sy+16}" stroke="#1a1a18" stroke-width="1.5"/>`;
+    out += `<text x="${sx}" y="${sy+28}" text-anchor="middle" font-size="11" font-family="DM Mono,monospace" fill="#374151">${lbl}</text>`;
+  });
+
+  // Crown hinge C
+  const cSx = toSvgX(xC), cSy = toSvgY(yC);
+  out += `<circle cx="${cSx}" cy="${cSy}" r="4" fill="white" stroke="#1a1a18" stroke-width="1.5"/>`;
+  out += `<text x="${cSx+8}" y="${cSy-6}" font-size="10" font-family="DM Mono,monospace" fill="#374151">C</text>`;
+
+  // Dimension labels
+  out += `<text x="${(toSvgX(0)+toSvgX(L))/2}" y="${yBase+14}" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="#9ca3af">l = ${L} m</text>`;
+  out += `<text x="${cSx+10}" y="${(toSvgY(yC)+toSvgY(hA+(hB-hA)/2))/2}" font-size="10" font-family="DM Mono,monospace" fill="#9ca3af">f=${f}m</text>`;
+
+  // Draw loads (visual only)
+  archLoads.dist.filter(ld=>ld.enabled).forEach(ld => {
+    const {qa, qb, a, b} = ld.values;
+    const steps = 6;
+    for (let i = 0; i <= steps; i++) {
+      const xi = a + (b - a) * i / steps;
+      const q_i = qa + (qb - qa) * i / steps;
+      const yi = archY(xi, L, f, hA, hB);
+      const sx = toSvgX(xi), sy = toSvgY(yi);
+      const arrowLen = Math.min(20, Math.abs(q_i) * 2);
+      if (Math.abs(q_i) > 0.01)
+        out += `<line x1="${sx}" y1="${sy - arrowLen}" x2="${sx}" y2="${sy}" stroke="#2563eb" stroke-width="1.2" marker-end="url(#arr-blue)"/>`;
+    }
+    const qLabel = qa === qb ? `q=${qa}kN/m` : `q:${qa}→${qb}kN/m`;
+    out += `<text x="${toSvgX((a+b)/2)}" y="${toSvgY(archY((a+b)/2,L,f,hA,hB))-24}" text-anchor="middle" font-size="9" font-family="DM Mono,monospace" fill="#2563eb">${qLabel}</text>`;
+  });
+  archLoads.point.filter(ld=>ld.enabled).forEach(ld => {
+    const {F, a} = ld.values;
+    const yi = archY(a, L, f, hA, hB);
+    const sx = toSvgX(a), sy = toSvgY(yi);
+    out += `<line x1="${sx}" y1="${sy-20}" x2="${sx}" y2="${sy}" stroke="#d85a30" stroke-width="1.5" stroke-dasharray="3,2"/>`;
+    out += `<text x="${sx+4}" y="${sy-10}" font-size="9" font-family="DM Mono,monospace" fill="#d85a30">F=${F}kN</text>`;
+  });
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `<defs><marker id="arr-blue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563eb"/></marker></defs>` + out;
+}
+
+// ── Arch load CRUD ─────────────────────────────────
+function addArchLoad(type) {
+  const id = ++uid;
+  const L = parseFloat(document.getElementById('arch-L').value) || 10;
+  if (type === 'point') {
+    archLoads.point.push({ id, enabled: true, values: { F: 10, a: +(L/2).toFixed(1) } });
+  } else {
+    archLoads.dist.push({ id, enabled: true, values: { qa: 10, qb: 10, a: 0, b: L } });
+  }
+  renderArchLoads();
+  drawArch();
+}
+
+function removeArchLoad(type, id) {
+  archLoads[type] = archLoads[type].filter(l => l.id !== id);
+  renderArchLoads();
+  drawArch();
+}
+
+function toggleArchLoad(type, id) {
+  const l = archLoads[type].find(l => l.id === id);
+  if (l) l.enabled = !l.enabled;
+  renderArchLoads();
+  drawArch();
+}
+
+function renderArchLoads() {
+  const fmt = (type, ld) => {
+    if (type === 'point') {
+      return `<div class="field-row">
+        <div class="field"><label>F <span class="unit">kN</span></label><input type="number" value="${ld.values.F}" step="0.5" oninput="archLoads.point.find(l=>l.id==${ld.id}).values.F=+this.value;drawArch()"></div>
+        <div class="field"><label>a <span class="unit">m</span></label><input type="number" value="${ld.values.a}" step="0.1" min="0" oninput="archLoads.point.find(l=>l.id==${ld.id}).values.a=+this.value;drawArch()"></div>
+      </div>`;
+    } else {
+      return `<div class="field-row-4">
+        <div class="field"><label>q<sub>a</sub></label><input type="number" value="${ld.values.qa}" step="0.5" oninput="archLoads.dist.find(l=>l.id==${ld.id}).values.qa=+this.value;drawArch()"></div>
+        <div class="field"><label>q<sub>b</sub></label><input type="number" value="${ld.values.qb}" step="0.5" oninput="archLoads.dist.find(l=>l.id==${ld.id}).values.qb=+this.value;drawArch()"></div>
+        <div class="field"><label>von</label><input type="number" value="${ld.values.a}" step="0.1" min="0" oninput="archLoads.dist.find(l=>l.id==${ld.id}).values.a=+this.value;drawArch()"></div>
+        <div class="field"><label>bis</label><input type="number" value="${ld.values.b}" step="0.1" oninput="archLoads.dist.find(l=>l.id==${ld.id}).values.b=+this.value;drawArch()"></div>
+      </div>`;
+    }
+  };
+
+  ['point','dist'].forEach(type => {
+    const list = document.getElementById('arch-'+type+'-list');
+    if (!list) return;
+    const labels = { point:'p', dist:'q' };
+    let i = 1;
+    list.innerHTML = archLoads[type].map(ld => `
+      <div class="load-item${ld.enabled?'':' disabled'}">
+        <div class="load-item-header">
+          <span class="load-item-label">${labels[type]}${i++}</span>
+          <div class="load-item-actions">
+            <button class="load-action-btn" onclick="toggleArchLoad('${type}',${ld.id})">${ld.enabled?'👁':'○'}</button>
+            <button class="load-action-btn delete" onclick="removeArchLoad('${type}',${ld.id})">✕</button>
+          </div>
+        </div>
+        <div class="load-item-body">${fmt(type, ld)}</div>
+      </div>`).join('');
+  });
+}
+
+// ── Arch solver ─────────────────────────────────────
+function calculateArch() {
+  const L  = parseFloat(document.getElementById('arch-L').value) || 10;
+  const f  = parseFloat(document.getElementById('arch-f').value) || 3;
+  const hA = parseFloat(document.getElementById('arch-hA').value) || 0;
+  const hB = parseFloat(document.getElementById('arch-hB').value) || 0;
+
+  // Three-hinged arch: statically determinate
+  // Unknowns: VA, VB (vertical), H (horizontal thrust, HA=HB=H for no horiz loads)
+  // Equilibrium:
+  //   ΣFy=0: VA + VB = Fv_tot
+  //   ΣMA=0: VB*L - ΣFi*(L-ai) - Σqi*... = 0  → VB, VA
+  //   Hinge at C (x=L/2): ΣM_left_of_C = 0 → H
+
+  let Fv_tot = 0, sum_MB = 0, sum_MC_left = 0;
+
+  // Point loads (vertical only for now)
+  archLoads.point.filter(ld => ld.enabled).forEach(ld => {
+    const { F, a } = ld.values;
+    Fv_tot += F;
+    sum_MB += F * (L - a);
+    if (a <= L / 2) sum_MC_left += F * (L / 2 - a);
+  });
+
+  // Distributed loads
+  archLoads.dist.filter(ld => ld.enabled).forEach(ld => {
+    const { qa, qb, a, b } = ld.values;
+    const bClamp = Math.min(b, L), aClamp = Math.max(a, 0);
+    if (bClamp <= aClamp) return;
+    const span = bClamp - aClamp;
+    // Trapezoidal: resultant = (qa+qb)/2 * span at centroid
+    const Ftot = (qa + qb) / 2 * span;
+    const xc = aClamp + span * (qa + 2 * qb) / (3 * (qa + qb) || 1); // centroid
+    Fv_tot += Ftot;
+    sum_MB += Ftot * (L - xc);
+    // Contribution to crown moment (left half only)
+    const bHalf = Math.min(bClamp, L / 2), aHalf = Math.max(aClamp, 0);
+    if (bHalf > aHalf) {
+      const spanH = bHalf - aHalf;
+      const qaH = qa + (qb - qa) * (aHalf - aClamp) / (span || 1);
+      const qbH = qa + (qb - qa) * (bHalf - aClamp) / (span || 1);
+      const FtotH = (qaH + qbH) / 2 * spanH;
+      const xcH = aHalf + spanH * (qaH + 2 * qbH) / (3 * (qaH + qbH) || 1);
+      sum_MC_left += FtotH * (L / 2 - xcH);
+    }
+  });
+
+  const VA = sum_MB / L;
+  const VB = Fv_tot - VA;
+
+  // Crown hinge condition: ΣM about C from left = 0
+  // VA * L/2 - H * (yC - yA) - sum_MC_left = 0
+  const yC = archY(L / 2, L, f, hA, hB);
+  const yA = hA;
+  const H = (VA * L / 2 - sum_MC_left) / (yC - yA || 1);
+
+  // ── Internal forces along arch ──────────────────
+  const NPT = 120;
+  const Mv = [], Qv = [], Nv = [], xs = [];
+
+  for (let i = 0; i <= NPT; i++) {
+    const x = i / NPT * L;
+    const y = archY(x, L, f, hA, hB);
+    const dy = archDy(x, L, f, hA, hB);
+    const alpha = Math.atan(dy); // tangent angle
+    const cosA = Math.cos(alpha), sinA = Math.sin(alpha);
+
+    // Section forces from left (sum up to x)
+    let Vx = VA, Hx = -H; // left reactions (H acts inward = to the right at A)
+    archLoads.point.filter(ld => ld.enabled).forEach(ld => {
+      if (ld.values.a < x) Vx -= ld.values.F;
+    });
+    archLoads.dist.filter(ld => ld.enabled).forEach(ld => {
+      const { qa, qb, a, b } = ld.values;
+      if (a < x) {
+        const bx = Math.min(b, x);
+        const span = bx - a;
+        const qx = qa + (qb - qa) * (bx - a) / ((b - a) || 1);
+        Vx -= (qa + qx) / 2 * span;
+      }
+    });
+
+    // Moment about section point (from left)
+    let Mx = VA * x - H * (y - yA);
+    archLoads.point.filter(ld => ld.enabled).forEach(ld => {
+      if (ld.values.a < x) Mx -= ld.values.F * (x - ld.values.a);
+    });
+    archLoads.dist.filter(ld => ld.enabled).forEach(ld => {
+      const { qa, qb, a, b } = ld.values;
+      if (a < x) {
+        const bx = Math.min(b, x);
+        const span = bx - a;
+        const qx = qa + (qb - qa) * (bx - a) / ((b - a) || 1);
+        const Fres = (qa + qx) / 2 * span;
+        const xc_res = a + span * (qa + 2 * qx) / (3 * (qa + qx) || 1);
+        Mx -= Fres * (x - xc_res);
+      }
+    });
+
+    // Transform to local arch coordinates
+    // Section: cut perpendicular to arch axis, look at LEFT side.
+    // Reaction at A: V acts upward, H acts inward (= to the right, pushing arch)
+    // At section, tangent = (cosA, sinA) pointing from A toward B.
+    // N: along tangent. V*sinA (upward V projected on tangent) reduces N,
+    //    H*cosA (rightward H projected on tangent) creates compression along arch.
+    // For a parabolic arch under uniform load: pure compression everywhere.
+    // Standard formulas (sagging arch, x increases left→right):
+    //   N(x) = -(H*cosA + V_eff*sinA)   [compression negative]
+    //   Q(x) =  V_eff*cosA - H*sinA
+    // where V_eff = VA - downward loads to the left of x (= Vx in our convention)
+    const N_loc = -(H * cosA + Vx * sinA);
+    const Q_loc =   Vx * cosA - H * sinA;
+
+    xs.push(x);
+    Mv.push(+Mx.toFixed(4));
+    Qv.push(+Q_loc.toFixed(4));
+    Nv.push(+N_loc.toFixed(4));
+  }
+
+  document.getElementById('arch-results').classList.remove('hidden');
+  const reactions = { VA, VB, H };
+  window._archData = { L, f, hA, hB, xs, Mv, Qv, Nv, reactions };
+  renderArchDiagram(L, f, hA, hB, xs, Mv, Qv, Nv, reactions);
+}
+
+// ── Arch diagram renderer ──────────────────────────
+function renderArchDiagram(L, f, hA, hB, xs, Mv, Qv, Nv, reactions) {
+  const mode = diagMode['arch'] || 'M';
+  const vals = { M: Mv, Q: Qv, N: Nv }[mode] || Mv;
+  const color = diagColors[mode];
+  const fill  = diagFill[mode];
+
+  const W = 300, H = 220, PAD = 28;
+  const xA = PAD, xB = W - PAD;
+  const drawL = xB - xA;
+  const yMax = Math.max(hA, hB) + f;
+  const yScale = (H - 60) / (yMax || 1);
+  const yBase = H - 20;
+
+  const toSvgX = x => xA + x / L * drawL;
+  const toSvgY = y => yBase - y * yScale;
+
+  // Scale for diagram offset
+  const maxVal = Math.max(...vals.map(Math.abs), 0.001);
+  const SCALE = Math.min(50 / maxVal, 8);
+
+  // Build diagram path (offset perpendicular to arch = vertical simplification)
+  // For clarity, draw offsets vertically (like a beam diagram on the arch)
+  let fillPath = '', linePath = '';
+  const NP = xs.length - 1;
+  for (let i = 0; i <= NP; i++) {
+    const x = xs[i];
+    const y = archY(x, L, f, hA, hB);
+    const dy = archDy(x, L, f, hA, hB);
+    const alpha = Math.atan(dy);
+    const cosA = Math.cos(alpha), sinA = Math.sin(alpha);
+    // Normal direction (perpendicular, pointing inward = upward for arch)
+    const nx = -sinA, ny = -cosA;
+    const offset = vals[i] * SCALE;
+    const px = toSvgX(x) + nx * offset;
+    const py = toSvgY(y) + ny * (-offset); // SVG y-flip
+    if (i === 0) { fillPath = `M${toSvgX(x).toFixed(1)},${toSvgY(y).toFixed(1)}`; linePath = `M${px.toFixed(1)},${py.toFixed(1)}`; }
+    else { fillPath += ` L${toSvgX(x).toFixed(1)},${toSvgY(y).toFixed(1)}`; linePath += ` L${px.toFixed(1)},${py.toFixed(1)}`; }
+  }
+
+  // Full fill polygon: arch line + reversed diagram line
+  const revLine = linePath.replace('M','').split(' L').reverse().map((p,i)=>i===0?'L'+p:'L'+p).join(' ');
+  const fillD = fillPath + ' ' + revLine + ' Z';
+
+  let out = '';
+  out += `<path d="${fillD}" fill="${fill}" stroke="none"/>`;
+  out += `<path d="${linePath}" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+  // Arch structure line
+  let archPath = '';
+  for (let i = 0; i <= NP; i++) {
+    const x = xs[i], y = archY(x, L, f, hA, hB);
+    archPath += (i===0?'M':'L') + toSvgX(x).toFixed(1) + ',' + toSvgY(y).toFixed(1) + ' ';
+  }
+  out += `<path d="${archPath}" fill="none" stroke="#1a1a18" stroke-width="2.5"/>`;
+
+  // Supports
+  [[0, hA, 'A'], [L, hB, 'B']].forEach(([xv, yv, lbl]) => {
+    const sx = toSvgX(xv), sy = toSvgY(yv);
+    out += `<polygon points="${sx},${sy} ${sx-6},${sy+12} ${sx+6},${sy+12}" fill="#1a1a18"/>`;
+    out += `<line x1="${sx-8}" y1="${sy+14}" x2="${sx+8}" y2="${sy+14}" stroke="#1a1a18" stroke-width="1.5"/>`;
+    out += `<text x="${sx}" y="${sy+25}" text-anchor="middle" font-size="10" font-family="DM Mono,monospace" fill="#374151">${lbl}</text>`;
+  });
+
+  // Crown hinge
+  const cSx = toSvgX(L/2), cSy = toSvgY(archY(L/2,L,f,hA,hB));
+  out += `<circle cx="${cSx}" cy="${cSy}" r="3.5" fill="white" stroke="#1a1a18" stroke-width="1.5"/>`;
+
+  // Legend
+  const legendY = 12;
+  out += `<text x="${W/2}" y="${legendY}" text-anchor="middle" font-size="9" font-family="DM Mono,monospace" fill="${color}">${mode} — l=${L}m, f=${f}m</text>`;
+
+  const svg = document.getElementById('diag-svg-arch');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = out;
+
+  // Label
+  const labels = { M:'Bending Moment M — kNm', Q:'Shear Force Q — kN', N:'Normal Force N — kN' };
+  const lbl = document.getElementById('diag-label-arch');
+  if (lbl) lbl.textContent = labels[mode] || '';
+
+  // Node table
+  updateArchNodeTable(mode, xs, Mv, Qv, Nv, reactions, L, f, hA, hB);
+}
+
+// ── Arch node table ────────────────────────────────
+function updateArchNodeTable(mode, xs, Mv, Qv, Nv, reactions, L, f, hA, hB) {
+  const fmt = v => (Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2));
+  const NP = xs.length - 1;
+  const iC = Math.round(NP / 2); // crown index
+
+  // Mmax in left half
+  let iMaxL = 0;
+  for (let i = 1; i <= iC; i++) if (Math.abs(Mv[i]) > Math.abs(Mv[iMaxL])) iMaxL = i;
+  // Mmax in right half
+  let iMaxR = iC;
+  for (let i = iC+1; i <= NP; i++) if (Math.abs(Mv[i]) > Math.abs(Mv[iMaxR])) iMaxR = i;
+
+  const cols = { M:['M','Q','N'], Q:['Q','M','N'], N:['N','M','Q'] }[mode] || ['M','Q','N'];
+  const units = { M:'kNm', Q:'kN', N:'kN' };
+  const getV = (row, col) => ({ M: fmt(row.M), Q: fmt(row.Q), N: fmt(row.N) }[col] ?? '—');
+
+  const rows = [
+    { lbl:'A', M: 0, Q: Qv[0], N: Nv[0], isSupport:true,
+      sub:`H=${fmt(reactions.H)} · V=${fmt(reactions.VA)}` },
+    { lbl:'Mmax links', M: Mv[iMaxL], Q: Qv[iMaxL], N: Nv[iMaxL],
+      sub:`x = ${fmt(xs[iMaxL])} m` },
+    { lbl:'C (Scheitel)', M: Mv[iC], Q: Qv[iC], N: Nv[iC], isSupport:true,
+      sub:`y = ${fmt(archY(L/2,L,f,hA,hB))} m` },
+    { lbl:'Mmax rechts', M: Mv[iMaxR], Q: Qv[iMaxR], N: Nv[iMaxR],
+      sub:`x = ${fmt(xs[iMaxR])} m` },
+    { lbl:'B', M: 0, Q: Qv[NP], N: Nv[NP], isSupport:true,
+      sub:`H=${fmt(reactions.H)} · V=${fmt(reactions.VB)}` },
+  ];
+
+  const thead = document.getElementById('arch-node-thead');
+  if (thead) thead.innerHTML = `<tr>
+    <th>Stelle</th>
+    <th>${cols[0]} (${units[mode]})</th>
+    <th style="color:var(--text3)">${cols[1]}</th>
+    <th style="color:var(--text3)">${cols[2]}</th>
+  </tr>`;
+
+  const tbody = document.getElementById('arch-forces-body');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(row => {
+    const rowStyle = row.isSupport ? 'background:var(--surface2)' : '';
+    const lblHtml = row.sub
+      ? `${row.lbl}<br><span style="font-size:10px;color:var(--text3);font-weight:normal">${row.sub}</span>`
+      : row.lbl;
+    return `<tr style="${rowStyle}">
+      <td style="font-family:DM Mono,monospace;font-size:12px;line-height:1.4">${lblHtml}</td>
+      <td style="font-weight:600">${getV(row, cols[0])}</td>
+      <td style="color:var(--text3);font-size:12px">${getV(row, cols[1])}</td>
+      <td style="color:var(--text3);font-size:12px">${getV(row, cols[2])}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Steps modal — explains current calculation ─────
+function openArchSteps() {
+  const d = window._archData;
+  if (!d) {
+    alert('Bitte zuerst auf "Calculate" drücken.');
+    return;
+  }
+  const { L, f, hA, hB, xs, Mv, Qv, Nv, reactions } = d;
+  const { VA, VB, H } = reactions;
+  const fmt = v => (Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2));
+
+  const pts = archLoads.point.filter(l => l.enabled);
+  const dst = archLoads.dist.filter(l => l.enabled);
+
+  let Ftot = 0, sumMA = 0;
+  pts.forEach(p => { Ftot += p.values.F; sumMA += p.values.F * p.values.a; });
+  dst.forEach(dl => {
+    const { qa, qb, a, b } = dl.values;
+    const bC = Math.min(b, L), aC = Math.max(a, 0);
+    const span = bC - aC;
+    if (span <= 0) return;
+    const Ft = (qa + qb) / 2 * span;
+    const xc = aC + span * (qa + 2 * qb) / (3 * (qa + qb) || 1);
+    Ftot += Ft;
+    sumMA += Ft * xc;
+  });
+
+  let loadDesc = '';
+  pts.forEach(p => { loadDesc += `F = ${p.values.F} kN bei x = ${p.values.a} m<br>`; });
+  dst.forEach(dl => {
+    const { qa, qb, a, b } = dl.values;
+    loadDesc += qa === qb
+      ? `q = ${qa} kN/m von x=${a} bis x=${b} m<br>`
+      : `q: ${qa}→${qb} kN/m von x=${a} bis x=${b} m<br>`;
+  });
+  if (!loadDesc) loadDesc = '<em style="color:var(--text3)">Keine Lasten definiert.</em>';
+
+  let sumMC_left = 0;
+  pts.forEach(p => {
+    if (p.values.a <= L / 2) sumMC_left += p.values.F * (L / 2 - p.values.a);
+  });
+  dst.forEach(dl => {
+    const { qa, qb, a, b } = dl.values;
+    const bClamp = Math.min(b, L), aClamp = Math.max(a, 0);
+    const bHalf = Math.min(bClamp, L / 2), aHalf = Math.max(aClamp, 0);
+    if (bHalf <= aHalf) return;
+    const spanFull = bClamp - aClamp;
+    const spanH = bHalf - aHalf;
+    const qaH = qa + (qb - qa) * (aHalf - aClamp) / (spanFull || 1);
+    const qbH = qa + (qb - qa) * (bHalf - aClamp) / (spanFull || 1);
+    const Ft = (qaH + qbH) / 2 * spanH;
+    const xc = aHalf + spanH * (qaH + 2 * qbH) / (3 * (qaH + qbH) || 1);
+    sumMC_left += Ft * (L / 2 - xc);
+  });
+
+  const yC = archY(L / 2, L, f, hA, hB);
+
+  const NP = xs.length - 1, iC = Math.round(NP / 2);
+  let iMaxL = 0;
+  for (let i = 1; i <= iC; i++) if (Math.abs(Mv[i]) > Math.abs(Mv[iMaxL])) iMaxL = i;
+
+  const iDemo = iMaxL > 0 ? iMaxL : Math.round(NP / 4);
+  const xDemo = xs[iDemo];
+  const yDemo = archY(xDemo, L, f, hA, hB);
+  const dyDemo = archDy(xDemo, L, f, hA, hB);
+  const alphaDemo = Math.atan(dyDemo);
+  const cosD = Math.cos(alphaDemo), sinD = Math.sin(alphaDemo);
+
+  let Vx_demo = VA, loadM_demo = 0;
+  pts.forEach(p => {
+    if (p.values.a < xDemo) {
+      Vx_demo -= p.values.F;
+      loadM_demo += p.values.F * (xDemo - p.values.a);
+    }
+  });
+  dst.forEach(dl => {
+    const { qa, qb, a, b } = dl.values;
+    if (a < xDemo) {
+      const bx = Math.min(b, xDemo);
+      const span = bx - a;
+      const qx = qa + (qb - qa) * (bx - a) / ((b - a) || 1);
+      const Ft = (qa + qx) / 2 * span;
+      const xc = a + span * (qa + 2 * qx) / (3 * (qa + qx) || 1);
+      Vx_demo -= Ft;
+      loadM_demo += Ft * (xDemo - xc);
+    }
+  });
+
+  const content = `
+    <div class="modal-section">
+      <h3>System &amp; Belastung</h3>
+      <p>Parabolischer Dreigelenkbogen mit:</p>
+      <div class="formula-box">
+        Spannweite l = ${L} m<br>
+        Pfeilhöhe f = ${f} m<br>
+        Kämpferhöhen: h<sub>A</sub> = ${hA} m, h<sub>B</sub> = ${hB} m<br><br>
+        ${loadDesc}
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin-top:6px">Parabelgleichung: y(x) = h<sub>A</sub> + (h<sub>B</sub>−h<sub>A</sub>)·x/l + 4f·x(l−x)/l²</p>
+    </div>
+
+    <div class="modal-section">
+      <h3>1. Auflagerreaktionen V<sub>A</sub>, V<sub>B</sub></h3>
+      <p>Aus den globalen Gleichgewichtsbedingungen:</p>
+      <div class="formula-box">
+        ΣM<sub>A</sub> = 0:&nbsp;&nbsp; V<sub>B</sub> · l = Σ(F<sub>i</sub> · a<sub>i</sub>)<br>
+        V<sub>B</sub> = ${fmt(sumMA)} / ${L} = <b>${fmt(VB)} kN</b><br><br>
+        ΣF<sub>y</sub> = 0:&nbsp;&nbsp; V<sub>A</sub> = ΣF<sub>i</sub> − V<sub>B</sub><br>
+        V<sub>A</sub> = ${fmt(Ftot)} − ${fmt(VB)} = <b>${fmt(VA)} kN</b>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>2. Horizontalschub H (Scheitelgelenk)</h3>
+      <p>Das Gelenk C bei x = l/2 überträgt kein Moment. ΣM um C, nur linke Seite betrachtet:</p>
+      <div class="formula-box">
+        ΣM<sub>C,links</sub> = 0:&nbsp;&nbsp; V<sub>A</sub> · l/2 − H · (y<sub>C</sub> − h<sub>A</sub>) − ΣM<sub>Last,links</sub> = 0<br><br>
+        y<sub>C</sub> = y(l/2) = ${fmt(yC)} m<br>
+        ΣM<sub>Last,links</sub> = ${fmt(sumMC_left)} kNm<br><br>
+        H = (V<sub>A</sub>·l/2 − ΣM<sub>Last,links</sub>) / (y<sub>C</sub> − h<sub>A</sub>)<br>
+        H = (${fmt(VA)}·${L/2} − ${fmt(sumMC_left)}) / ${fmt(yC - hA)}<br>
+        H = <b>${fmt(H)} kN</b>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>3. Schnittgrößen an beliebiger Stelle x</h3>
+      <p>Schnittufer von links. Erst Moment, dann Transformation N und Q in lokale Bogenkoordinaten:</p>
+      <div class="formula-box">
+        M(x) = V<sub>A</sub>·x − H·(y(x) − h<sub>A</sub>) − ΣM<sub>Last,links</sub>(x)<br>
+        N(x) = −(H·cos α + V*(x)·sin α)&nbsp;&nbsp;[Druck negativ]<br>
+        Q(x) = V*(x)·cos α − H·sin α<br><br>
+        <span style="color:var(--text3);font-size:12px">α = Tangentenwinkel: tan α = dy/dx<br>
+        V*(x) = V<sub>A</sub> − Lasten links von x</span>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>4. Beispiel: Schnitt bei x = ${fmt(xDemo)} m</h3>
+      <div class="formula-box">
+        y(x) = ${fmt(yDemo)} m<br>
+        dy/dx = ${fmt(dyDemo)}&nbsp;&nbsp;→&nbsp;&nbsp; α = ${fmt(alphaDemo * 180 / Math.PI)}°<br>
+        cos α = ${fmt(cosD)},&nbsp;&nbsp; sin α = ${fmt(sinD)}<br><br>
+        V*(x) = ${fmt(VA)} − ${fmt(VA - Vx_demo)} = ${fmt(Vx_demo)} kN<br><br>
+        M = ${fmt(VA)}·${fmt(xDemo)} − ${fmt(H)}·${fmt(yDemo - hA)} − ${fmt(loadM_demo)}<br>
+        M = <b>${fmt(Mv[iDemo])} kNm</b><br><br>
+        N = −(${fmt(H)}·${fmt(cosD)} + ${fmt(Vx_demo)}·${fmt(sinD)})<br>
+        N = <b>${fmt(Nv[iDemo])} kN</b><br><br>
+        Q = ${fmt(Vx_demo)}·${fmt(cosD)} − ${fmt(H)}·${fmt(sinD)}<br>
+        Q = <b>${fmt(Qv[iDemo])} kN</b>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>Bemerkung</h3>
+      <p style="font-size:12px;color:var(--text2)">Wenn die Bogenform der Stützlinie der Belastung entspricht (z.B. Parabelbogen unter Gleichlast), wird M = 0 überall — der Bogen trägt rein durch Normalkraft (Druck). Das ist das Prinzip historischer Steinbögen.</p>
+    </div>
+  `;
+
+  document.getElementById('arch-steps-content').innerHTML = content;
+  document.getElementById('modal-arch-steps').classList.add('open');
+}
+
+// ══════════════════════════════════════════════════
+// STEPS — Beam / Cant / Cont / Frame
+// ══════════════════════════════════════════════════
+function openSteps(sys){
+  const d = window['_'+sys+'Data'];
+  if(!d){ alert('Bitte zuerst auf "Calculate" drücken.'); return; }
+  const titles = {
+    beam:'Rechenweg — Einfeldträger',
+    cant:'Rechenweg — Kragarm',
+    cont:'Rechenweg — Durchlaufträger',
+    frame:'Rechenweg — Rahmen'
+  };
+  const builders = { beam: buildBeamSteps, cant: buildCantSteps, cont: buildContSteps, frame: buildFrameSteps };
+  document.getElementById('steps-title').textContent = titles[sys] || 'Rechenweg';
+  document.getElementById('steps-content').innerHTML = builders[sys](d);
+  document.getElementById('modal-steps').classList.add('open');
+}
+
+function _fmt(v){ return (Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2)); }
+
+function _loadDesc(pts, dsts){
+  let s = '';
+  pts.forEach(p => { s += `F = ${p.F} kN bei x = ${p.a} m${p.alpha?` (α=${p.alpha}°)`:''}<br>`; });
+  dsts.forEach(d => {
+    s += d.qa === d.qb
+      ? `q = ${d.qa} kN/m von x=${d.a} bis x=${d.b} m<br>`
+      : `q: ${d.qa}→${d.qb} kN/m von x=${d.a} bis x=${d.b} m<br>`;
+  });
+  return s || '<em style="color:var(--text3)">Keine Lasten definiert.</em>';
+}
+
+// ── BEAM steps ─────────────────────────────────────
+function buildBeamSteps(d){
+  const { L, A, B, HA, pts, dsts, Mv, Qv, xs } = d;
+
+  // Build per-load contributions for ΣMA = 0
+  let mLines = [];
+  let ftotLines = [];
+  let totalFy = 0, totalMA = 0;
+  pts.forEach((p, i) => {
+    const Fy = p.F * Math.cos((p.alpha||0)*DEG);
+    totalFy += Fy;
+    totalMA += Fy * p.a;
+    ftotLines.push(`F<sub>${i+1}</sub> = ${_fmt(Fy)} kN`);
+    mLines.push(`F<sub>${i+1}</sub> · a<sub>${i+1}</sub> = ${_fmt(Fy)} · ${p.a} = <b>${_fmt(Fy*p.a)}</b> kNm`);
+  });
+  dsts.forEach((dl, i) => {
+    const a=dl.a, b=Math.min(dl.b,L), len=b-a; if(len<=0) return;
+    const Ft = (dl.qa+dl.qb)/2 * len;
+    const xc = a + len*(dl.qa+2*dl.qb)/(3*(dl.qa+dl.qb)||1);
+    totalFy += Ft;
+    totalMA += Ft*xc;
+    const isUni = dl.qa === dl.qb;
+    ftotLines.push(`R<sub>q${i+1}</sub> = ${isUni ? `q · ℓ = ${dl.qa} · ${_fmt(len)}` : `(q<sub>a</sub>+q<sub>b</sub>)/2 · ℓ`} = <b>${_fmt(Ft)} kN</b>`);
+    mLines.push(`R<sub>q${i+1}</sub> · x<sub>S</sub> = ${_fmt(Ft)} · ${_fmt(xc)} = <b>${_fmt(Ft*xc)}</b> kNm`);
+  });
+  const noLoads = pts.length === 0 && dsts.length === 0;
+
+  // Find Mmax position (skip synthetic index 0)
+  let iMax = 1;
+  for(let i=2;i<Mv.length;i++) if(Math.abs(Mv[i]) > Math.abs(Mv[iMax])) iMax = i;
+  const xMax = xs[iMax];
+  const Mmax_phys = -Mv[iMax];
+  const Qmax_phys = -Qv[iMax];
+
+  // Demo Schnitt: at Mmax position. Compute step by step
+  let demoQ_terms = `V<sub>A</sub> = ${_fmt(A)}`;
+  let demoM_terms = `V<sub>A</sub>·x = ${_fmt(A)} · ${_fmt(xMax)} = ${_fmt(A*xMax)}`;
+  let Q_x = A, M_x = A * xMax;
+  pts.forEach((p, i) => {
+    if(p.a < xMax){
+      const Fy = p.F * Math.cos((p.alpha||0)*DEG);
+      Q_x -= Fy;
+      M_x -= Fy*(xMax-p.a);
+      demoQ_terms += ` − ${_fmt(Fy)}`;
+      demoM_terms += ` − ${_fmt(Fy)}·${_fmt(xMax-p.a)}`;
+    }
+  });
+  dsts.forEach((dl, i) => {
+    if(dl.a < xMax){
+      const a=dl.a, b=Math.min(dl.b, xMax), len=b-a;
+      const qmid = dl.qa + (dl.qb-dl.qa)*((xMax-dl.a)/((dl.b-dl.a)||1))/2;
+      const Ft = (dl.qa+qmid)/2 * len; // approximate for display
+      Q_x -= Ft;
+      const lever = xMax - (a+len/2);
+      M_x -= Ft * lever;
+      demoQ_terms += ` − ${_fmt(Ft)}`;
+      demoM_terms += ` − ${_fmt(Ft)}·${_fmt(lever)}`;
+    }
+  });
+
+  // Plausibility check
+  const checkFy = A + B - totalFy;
+  const checkM_aboutA = totalMA - B*L;
+
+  return `
+    <div class="modal-section">
+      <h3>📐 System &amp; Belastung</h3>
+      <p>Einfeldträger auf zwei Auflagern (Festlager A links, Gleitlager B rechts). Statisch bestimmt — die 3 Gleichgewichtsbedingungen (ΣF<sub>x</sub>=0, ΣF<sub>y</sub>=0, ΣM=0) reichen aus.</p>
+      <div class="formula-box">
+        <b>Gegeben:</b><br>
+        Spannweite L = ${L} m<br><br>
+        <b>Belastung:</b><br>
+        ${_loadDesc(pts, dsts)}
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>🎯 Schritt 1 — Auflagerreaktionen bestimmen</h3>
+      <p>Wir suchen V<sub>A</sub> und V<sub>B</sub>. Trick: das Momentengleichgewicht um A liefert direkt V<sub>B</sub>, weil V<sub>A</sub> in dieser Gleichung wegfällt (Hebelarm = 0).</p>
+
+      <p><b>Vorzeichenregel:</b> Drehmoment im Uhrzeigersinn positiv. Lasten zeigen nach unten, Auflager nach oben.</p>
+
+      <div class="formula-box">
+        <b>1a) ΣM<sub>A</sub> = 0</b>&nbsp;&nbsp;(Momentengleichgewicht um Punkt A)<br><br>
+        ${noLoads ? '<em style="color:var(--text3)">Keine Lasten — V<sub>A</sub> = V<sub>B</sub> = 0</em>' : `
+        V<sub>B</sub> · L − Σ(Last<sub>i</sub> · Hebelarm<sub>i</sub>) = 0<br><br>
+        Lastmomente um A:<br>
+        ${mLines.join('<br>')}<br>
+        ─────────────<br>
+        Σ = <b>${_fmt(totalMA)} kNm</b><br><br>
+        → V<sub>B</sub> · ${L} = ${_fmt(totalMA)}<br>
+        → <b>V<sub>B</sub> = ${_fmt(totalMA)} / ${L} = ${_fmt(B)} kN</b>
+        `}
+      </div>
+
+      <div class="formula-box">
+        <b>1b) ΣF<sub>y</sub> = 0</b>&nbsp;&nbsp;(Summe der vertikalen Kräfte)<br><br>
+        V<sub>A</sub> + V<sub>B</sub> − ΣF<sub>i</sub> = 0<br><br>
+        Lasten:<br>
+        ${ftotLines.length ? ftotLines.join('<br>') : '<em style="color:var(--text3)">keine</em>'}<br>
+        ─────────────<br>
+        ΣF<sub>i</sub> = <b>${_fmt(totalFy)} kN</b><br><br>
+        → <b>V<sub>A</sub> = ${_fmt(totalFy)} − ${_fmt(B)} = ${_fmt(A)} kN</b>
+      </div>
+
+      ${Math.abs(HA) > 0.01 ? `
+      <div class="formula-box">
+        <b>1c) ΣF<sub>x</sub> = 0</b>&nbsp;&nbsp;(horizontale Kräfte)<br><br>
+        H<sub>A</sub> = ${_fmt(HA)} kN
+      </div>
+      ` : ''}
+
+      <p style="font-size:12px;color:var(--text2);margin-top:8px">
+        ✅ <b>Plausibilität:</b> Wenn die Last symmetrisch wäre, würde V<sub>A</sub> = V<sub>B</sub> herauskommen. Bei asymmetrischer Last ist die näher am Auflager liegende Reaktion größer.
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>✂️ Schritt 2 — Schnittprinzip</h3>
+      <p>Um die Schnittgrößen M(x), Q(x), N(x) an einer Stelle x zu finden, schneiden wir den Träger gedanklich durch und betrachten <b>nur die linke Seite</b>.</p>
+      <p>Alles was links vom Schnitt wirkt (V<sub>A</sub> nach oben, Lasten nach unten) muss durch die inneren Kräfte am Schnittufer ausgeglichen werden.</p>
+
+      <div class="formula-box">
+        <b>Allgemeine Formeln (Schnittufer von links):</b><br><br>
+        Q(x) = V<sub>A</sub> − Σ(Lasten links von x)<br>
+        M(x) = V<sub>A</sub>·x − Σ(F<sub>i</sub>·(x−a<sub>i</sub>)) − Σ(q·ℓ·Hebelarm)
+        <div class="comment">Vorzeichenkonvention: M positiv = Zugfaser unten (Balken biegt sich durch)</div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>🔍 Schritt 3 — Beispielschnitt bei x = ${_fmt(xMax)} m (Maximalmoment)</h3>
+      <div class="formula-box">
+        <b>Querkraft:</b><br>
+        Q = ${demoQ_terms}<br>
+        Q = <b>${_fmt(Qmax_phys)} kN</b><br><br>
+        <b>Moment:</b><br>
+        M = ${demoM_terms}<br>
+        M = <b>${_fmt(Mmax_phys)} kNm</b>
+      </div>
+      <p style="font-size:12px;color:var(--text2)">
+        Die Position des Maximalmoments findet man dort, wo Q(x) = 0 wird (Vorzeichenwechsel der Querkraft).
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>✓ Schritt 4 — Probe (Plausibilitätscheck)</h3>
+      <div class="formula-box">
+        <b>ΣF<sub>y</sub> = 0:</b>&nbsp;&nbsp; V<sub>A</sub> + V<sub>B</sub> − ΣF = ${_fmt(A)} + ${_fmt(B)} − ${_fmt(totalFy)} = <b>${_fmt(checkFy)}</b> ≈ 0 ✓<br><br>
+        <b>ΣM<sub>A</sub> = 0:</b>&nbsp;&nbsp; V<sub>B</sub>·L − ΣM<sub>Last</sub> = ${_fmt(B)}·${L} − ${_fmt(totalMA)} = <b>${_fmt(-checkM_aboutA)}</b> ≈ 0 ✓<br><br>
+        <b>Randwerte:</b>&nbsp;&nbsp; M(0) = 0 ✓,&nbsp;&nbsp; M(L) = 0 ✓ (Gelenklager → Moment muss verschwinden)
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>📊 Ergebnis</h3>
+      <div class="formula-box">
+        V<sub>A</sub> = <b>${_fmt(A)} kN</b>&nbsp;&nbsp;|&nbsp;&nbsp; V<sub>B</sub> = <b>${_fmt(B)} kN</b><br>
+        M<sub>max</sub> = <b>${_fmt(Mmax_phys)} kNm</b> bei x = ${_fmt(xMax)} m<br>
+        Q<sub>max</sub> = <b>${_fmt(Math.max(...Qv.map(v=>Math.abs(v))))} kN</b>
+      </div>
+    </div>
+  `;
+}
+
+// ── CANT steps ─────────────────────────────────────
+function buildCantSteps(d){
+  const { L, VA, MA, HA, pts, dsts, Mv, Qv, xs } = d;
+
+  // Per-load contributions
+  let vLines = [], mLines = [];
+  pts.forEach((p, i) => {
+    const Fy = p.F * Math.cos((p.alpha||0)*DEG);
+    vLines.push(`F<sub>${i+1}</sub> = ${_fmt(Fy)} kN`);
+    mLines.push(`F<sub>${i+1}</sub> · a<sub>${i+1}</sub> = ${_fmt(Fy)} · ${p.a} = <b>${_fmt(Fy*p.a)}</b> kNm`);
+  });
+  dsts.forEach((dl, i) => {
+    const a=dl.a, b=Math.min(dl.b,L), len=b-a; if(len<=0) return;
+    const Ft = (dl.qa+dl.qb)/2 * len;
+    const xc = a + len*(dl.qa+2*dl.qb)/(3*(dl.qa+dl.qb)||1);
+    vLines.push(`R<sub>q${i+1}</sub> = ${_fmt(Ft)} kN`);
+    mLines.push(`R<sub>q${i+1}</sub> · x<sub>S</sub> = ${_fmt(Ft)} · ${_fmt(xc)} = <b>${_fmt(Ft*xc)}</b> kNm`);
+  });
+  const noLoads = pts.length === 0 && dsts.length === 0;
+
+  // Max location (cant: always at fixed end for monotonic loading)
+  let iMax = 0;
+  for(let i=1;i<Mv.length;i++) if(Math.abs(Mv[i]) > Math.abs(Mv[iMax])) iMax = i;
+  const Mmax = Mv[iMax];
+
+  return `
+    <div class="modal-section">
+      <h3>📐 System &amp; Belastung</h3>
+      <p>Kragarm: an einer Seite eingespannt, am anderen Ende frei. Statisch bestimmt — alle Reaktionen wirken nur an der Einspannung (3 Unbekannte: V<sub>A</sub>, H<sub>A</sub>, M<sub>A</sub>).</p>
+      <div class="formula-box">
+        <b>Gegeben:</b><br>
+        Länge L = ${L} m<br>
+        Einspannung links bei A, freies Ende rechts bei B<br><br>
+        <b>Belastung:</b><br>
+        ${_loadDesc(pts, dsts)}
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>🎯 Schritt 1 — Auflagerreaktionen an der Einspannung</h3>
+      <p>Beim Kragarm besonders einfach: <b>alle Lasten</b> müssen von der Einspannung getragen werden.</p>
+
+      <div class="formula-box">
+        <b>1a) ΣF<sub>y</sub> = 0</b>&nbsp;&nbsp;(Vertikalkräfte)<br><br>
+        ${noLoads ? '<em style="color:var(--text3)">Keine Lasten — V<sub>A</sub> = 0</em>' : `
+        V<sub>A</sub> = ΣF<sub>i</sub>&nbsp;&nbsp;(Reaktion trägt alle Lasten)<br><br>
+        ${vLines.join('<br>')}<br>
+        ─────────────<br>
+        <b>V<sub>A</sub> = ${_fmt(VA)} kN</b>
+        `}
+      </div>
+
+      <div class="formula-box">
+        <b>1b) ΣM<sub>A</sub> = 0</b>&nbsp;&nbsp;(Momentengleichgewicht um Einspannung)<br><br>
+        ${noLoads ? '<em style="color:var(--text3)">Keine Lasten — M<sub>A</sub> = 0</em>' : `
+        M<sub>A</sub> = Σ(F<sub>i</sub> · a<sub>i</sub>)&nbsp;&nbsp;(Einspannmoment hält allen Lastmomenten stand)<br><br>
+        ${mLines.join('<br>')}<br>
+        ─────────────<br>
+        <b>M<sub>A</sub> = ${_fmt(MA)} kNm</b>
+        `}
+        <div class="comment">Physikalisch wirkt M<sub>A</sub> nach oben (Zugfaser oben am Kragarm) — Vorzeichen je nach Konvention.</div>
+      </div>
+
+      ${Math.abs(HA) > 0.01 ? `
+      <div class="formula-box">
+        <b>1c) ΣF<sub>x</sub> = 0:</b>&nbsp;&nbsp; H<sub>A</sub> = ${_fmt(HA)} kN
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="modal-section">
+      <h3>✂️ Schritt 2 — Schnittprinzip beim Kragarm</h3>
+      <p>Anders als beim Einfeldträger ist es oft <b>einfacher von rechts</b> (vom freien Ende) zu schneiden — dort sind keine Reaktionen.</p>
+      <p>Wenn man von links schneidet, muss man M<sub>A</sub> und V<sub>A</sub> berücksichtigen:</p>
+
+      <div class="formula-box">
+        <b>Schnittufer von links:</b><br>
+        Q(x) = V<sub>A</sub> − Σ(Lasten links von x)<br>
+        M(x) = −M<sub>A</sub> + V<sub>A</sub>·x − Σ(F<sub>i</sub>·(x−a<sub>i</sub>))<br><br>
+        <b>Schnittufer von rechts (Tipp!):</b><br>
+        Q(x) = −Σ(Lasten rechts von x)<br>
+        M(x) = −Σ(F<sub>i</sub>·(a<sub>i</sub>−x))
+        <div class="comment">Die Kragarm-Schnittgrößen werden zur Einspannung hin immer größer.</div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>🔍 Schritt 3 — Werte an der Einspannung (x=0)</h3>
+      <div class="formula-box">
+        Q(0) = V<sub>A</sub> = <b>${_fmt(Qv[0])} kN</b><br>
+        M(0) = −M<sub>A</sub> = <b>${_fmt(Mv[0])} kNm</b>
+      </div>
+      <p style="font-size:12px;color:var(--text2)">
+        Negatives M bedeutet: Zugfaser oben (typisch für Kragarme).
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>✓ Schritt 4 — Probe</h3>
+      <div class="formula-box">
+        <b>Randwerte am freien Ende:</b><br>
+        Q(L) = ${_fmt(Qv[Qv.length-1])} ≈ 0 ✓&nbsp;&nbsp;(keine Kraft hinter L)<br>
+        M(L) = ${_fmt(Mv[Mv.length-1])} ≈ 0 ✓&nbsp;&nbsp;(freies Ende → kein Moment)
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>📊 Ergebnis</h3>
+      <div class="formula-box">
+        V<sub>A</sub> = <b>${_fmt(VA)} kN</b><br>
+        M<sub>A</sub> = <b>${_fmt(MA)} kNm</b>&nbsp;&nbsp;(Einspannmoment)<br>
+        M<sub>max</sub> = <b>${_fmt(Mmax)} kNm</b> an der Einspannung
+      </div>
+    </div>
+  `;
+}
+
+// ── CONT steps ─────────────────────────────────────
+function buildContSteps(d){
+  const { Ls, R, M_sup, A_mat, rhs, Ms_inner, spanData } = d;
+  const n = Ls.length;
+  const supportNames = ['A','B','C','D','E','F'];
+
+  // Build matrix HTML
+  let matHtml = '';
+  for(let i=0;i<A_mat.length;i++){
+    matHtml += '|&nbsp;' + A_mat[i].map(v => v.toFixed(2).padStart(8)).join(' &nbsp;') + ' &nbsp;|&nbsp;&nbsp;' + rhs[i].toFixed(2) + '<br>';
+  }
+
+  let spanLoads = '';
+  spanData.forEach((sp, si) => {
+    spanLoads += `<b>Feld ${si+1} (L=${sp.L} m):</b><br>`;
+    if(sp.point.length===0 && sp.dist.length===0) spanLoads += '<span style="color:var(--text3)">keine Lasten</span><br>';
+    else spanLoads += _loadDesc(sp.point, sp.dist);
+    spanLoads += '<br>';
+  });
+
+  let supMomHtml = '';
+  for(let i=1;i<n;i++) supMomHtml += `M<sub>${supportNames[i]}</sub> = <b>${_fmt(M_sup[i])} kNm</b>&nbsp;&nbsp;(meist negativ → Zugfaser oben)<br>`;
+  if(!supMomHtml) supMomHtml = '<em style="color:var(--text3)">Keine Innenauflager.</em>';
+
+  let reacHtml = '';
+  R.forEach((r,i) => { reacHtml += `<b>${supportNames[i]}:</b> V = <b>${_fmt(r)} kN</b><br>`; });
+
+  const Vsum = R.reduce((a,b)=>a+b,0);
+  let Ftot = 0;
+  spanData.forEach(sp => {
+    sp.point.forEach(p => Ftot += p.F);
+    sp.dist.forEach(dl => {
+      const len = Math.min(dl.b,sp.L) - dl.a;
+      if(len>0) Ftot += (dl.qa+dl.qb)/2 * len;
+    });
+  });
+
+  return `
+    <div class="modal-section">
+      <h3>📐 System &amp; Belastung</h3>
+      <p>Durchlaufträger über mehrere Felder — ein durchgehender Träger, der über mehrere Auflager geht. Statisch <b>unbestimmt</b>: bei n Feldern braucht es (n−1) zusätzliche Gleichungen.</p>
+      <div class="formula-box">
+        <b>Gegeben:</b><br>
+        ${n} Felder, Gesamtlänge ${Ls.reduce((a,b)=>a+b,0)} m<br>
+        Statische Unbestimmtheit: Grad ${n-1}<br><br>
+        <b>Belastung:</b><br>
+        ${spanLoads}
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>💡 Schritt 1 — Warum reicht das Gleichgewicht nicht?</h3>
+      <p>Bei n Feldern haben wir n+1 Auflager → <b>n+1 unbekannte Reaktionen</b>. Aber Gleichgewicht liefert nur 2 Gleichungen (ΣF<sub>y</sub>=0, ΣM=0). Es fehlen <b>n−1 Gleichungen</b>.</p>
+      <p>Lösung: <b>Verformungsbedingung</b> — über einem Innenauflager muss der Träger glatt durchgehen (kein Knick).</p>
+    </div>
+
+    <div class="modal-section">
+      <h3>📚 Schritt 2 — Dreimomenten-Gleichung (Clapeyron)</h3>
+      <p>Für jedes Innenauflager <i>i</i> stellt man eine Kompatibilitätsgleichung auf, die die Stützmomente an drei aufeinanderfolgenden Auflagern verknüpft:</p>
+
+      <div class="formula-box">
+        <b>M<sub>i−1</sub>·L<sub>i</sub> + 2·M<sub>i</sub>·(L<sub>i</sub>+L<sub>i+1</sub>) + M<sub>i+1</sub>·L<sub>i+1</sub> = − 6·(A<sub>i</sub>·b̄<sub>i</sub>/L<sub>i</sub> + A<sub>i+1</sub>·ā<sub>i+1</sub>/L<sub>i+1</sub>)</b>
+        <div class="comment">
+          M<sub>i</sub> = Stützmoment bei Auflager i (unbekannt)<br>
+          L<sub>i</sub> = Länge von Feld i<br>
+          A<sub>i</sub>·ā<sub>i</sub> = statisches Moment der M<sub>0</sub>-Fläche (Einfeldträger-Moment) von Feld i<br>
+          Randbedingung: M<sub>A</sub> = M<sub>${supportNames[n]}</sub> = 0 (Gelenklager am Rand)
+        </div>
+      </div>
+
+      <p style="font-size:12px;color:var(--text2)">
+        <b>Anschaulich:</b> Die Belastung in jedem Feld erzeugt Verdrehungen an seinen Enden. Diese müssen über dem gemeinsamen Auflager auf beiden Seiten gleich groß sein (glatter Übergang).
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>🧮 Schritt 3 — Lineares Gleichungssystem</h3>
+      <p>Aus den ${n-1} Dreimomenten-Gleichungen entsteht eine <b>tridiagonale Matrix</b> für die unbekannten Innenstützmomente:</p>
+      <div class="formula-box" style="font-size:11px;font-family:DM Mono,monospace;white-space:nowrap;overflow-x:auto">
+        <b>[A] · {M} = {b}</b><br><br>
+        ${matHtml}
+      </div>
+      <p style="font-size:12px;color:var(--text2)">
+        Linke Seite: Steifigkeitsmatrix (nur Geometrie). &nbsp;Rechte Seite: Lastterme.
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>📐 Schritt 4 — Stützmomente (durch Gauß-Elimination)</h3>
+      <div class="formula-box">
+        ${supMomHtml}
+      </div>
+      <p style="font-size:12px;color:var(--text2)">
+        Negatives Stützmoment = Zugfaser oben (typisch über Innenauflagern eines Durchlaufträgers).
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>🎯 Schritt 5 — Auflagerreaktionen</h3>
+      <p>Jetzt wird jedes Feld als <b>Einfeldträger</b> mit den nun bekannten Stützmomenten an den Enden behandelt. Aus ΣM=0 in jedem Feld bekommt man die Reaktionen:</p>
+      <div class="formula-box">
+        ${reacHtml}
+      </div>
+      <p style="font-size:12px;color:var(--text2)">
+        ✅ Plausibilität: ΣV<sub>i</sub> = <b>${_fmt(Vsum)} kN</b> sollte gleich ΣF = <b>${_fmt(Ftot)} kN</b> sein.
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <h3>📊 Schnittgrößen pro Feld</h3>
+      <p>In jedem Feld werden M(x) und Q(x) wie beim Einfeldträger berechnet — nur mit den zusätzlichen Endmomenten als äußere Lasten an den Schnittufern. Werte siehe Knotentabelle.</p>
+    </div>
+  `;
+}
+
+// ── FRAME steps ────────────────────────────────────
+function buildFrameSteps(d){
+  const { b, hA, hB, supportA, supportB, VA, VB, HA, HB, MA_r, MB_r, VA_real, VB_real, vLoads, hLoads, isSD } = d;
+  const fixA = supportA === 'fixed', fixB = supportB === 'fixed';
+  const pinA = supportA === 'pin',   pinB = supportB === 'pin';
+
+  // Load description
+  let loadDesc = '';
+  vLoads.forEach(l => {
+    if(l.type==='dist'){
+      loadDesc += `q = ${l.values.q} kN/m auf Riegel<br>`;
+    } else {
+      loadDesc += `F = ${l.values.F} kN vertikal auf Riegel bei x = ${l.values.x} m<br>`;
+    }
+  });
+  hLoads.forEach(l => {
+    loadDesc += `F = ${l.values.F} kN horizontal auf ${l.values.side==='left'?'linke':'rechte'} Stütze in h = ${l.values.h} m<br>`;
+  });
+  if(!loadDesc) loadDesc = '<em style="color:var(--text3)">Keine Lasten definiert.</em>';
+
+  // Determine system type
+  let sysType, degree;
+  if(pinA && pinB){ sysType = 'statisch bestimmt (2 Gelenklager)'; degree = 0; }
+  else if((fixA && pinB) || (pinA && fixB)){ sysType = '2-fach statisch unbestimmt'; degree = 2; }
+  else if(fixA && fixB){ sysType = '3-fach statisch unbestimmt'; degree = 3; }
+  else { sysType = 'siehe Indeterminacy-Anzeige'; degree = '?'; }
+
+  return `
+    <div class="modal-section">
+      <h3>📐 System &amp; Belastung</h3>
+      <p>Ebener Rahmen: zwei Stützen und ein Riegel, biegesteif verbunden. Die Rahmenecken übertragen Moment, Quer- und Normalkraft.</p>
+      <div class="formula-box">
+        <b>Gegeben:</b><br>
+        Breite b = ${b} m, h<sub>A</sub> = ${hA} m, h<sub>B</sub> = ${hB} m<br>
+        Lager A: ${supportA}, Lager B: ${supportB}<br>
+        → ${sysType}<br><br>
+        <b>Belastung:</b><br>
+        ${loadDesc}
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>🔢 Schritt 1 — Statische Bestimmtheit prüfen</h3>
+      <p>Bevor man rechnet: Ist das System überhaupt mit Gleichgewicht allein lösbar?</p>
+      <div class="formula-box">
+        Abzählkriterium: n = (Auflagerreaktionen) − 3·(Scheiben) ${'+'} (Gelenkbedingungen)<br><br>
+        ${pinA && pinB
+          ? 'Zwei Gelenklager → je 2 Reaktionen = 4. Ein starrer Rahmen (3 Gleichgewichte). n = 4 − 3 = <b>1</b>… aber die biegesteifen Ecken machen ihn dennoch statisch bestimmt lösbar über die Gelenke. → <b>statisch bestimmt</b>'
+          : `Dieser Rahmen ist <b>${degree}-fach statisch unbestimmt</b>. Gleichgewicht allein reicht nicht — es braucht ${degree} zusätzliche Verformungsbedingung(en).`}
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>🎯 Schritt 2 — Vertikale Auflagerreaktionen</h3>
+      <p>Aus dem Freikörperbild des Gesamtrahmens. Vertikale Lasten (auf dem Riegel) erzeugen V<sub>A</sub> und V<sub>B</sub>:</p>
+      <div class="formula-box">
+        <b>ΣM<sub>A</sub> = 0:</b>&nbsp;&nbsp; V<sub>B</sub>·b = Σ(vertikale Last · Hebelarm)<br>
+        <b>ΣF<sub>y</sub> = 0:</b>&nbsp;&nbsp; V<sub>A</sub> = ΣF<sub>v</sub> − V<sub>B</sub><br><br>
+        V<sub>A</sub> = <b>${_fmt(VA)} kN</b><br>
+        V<sub>B</sub> = <b>${_fmt(VB)} kN</b>
+        ${fixA && fixB ? `
+        <div class="comment">Bei beidseitiger Einspannung erzeugen die Einspannmomente eine Korrektur:<br>
+        V<sub>A,real</sub> = V<sub>A</sub> + (M<sub>A</sub>−M<sub>B</sub>)/b = ${_fmt(VA_real)} kN<br>
+        V<sub>B,real</sub> = ${_fmt(VB_real)} kN</div>` : ''}
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>⚖️ Schritt 3 — Horizontalschub${(fixA||fixB)?' &amp; Einspannmomente':''}</h3>
+      ${pinA && pinB ? `
+      <p>Bei zwei Gelenklagern: H<sub>A</sub> folgt aus der Bedingung, dass am Rahmenkopf (biegesteife Ecke) das Gleichgewicht der linken Teilscheibe erfüllt ist.</p>
+      <div class="formula-box">
+        <b>ΣF<sub>x</sub> = 0:</b>&nbsp;&nbsp; H<sub>A</sub> + H<sub>B</sub> = ΣF<sub>horizontal</sub><br><br>
+        H<sub>A</sub> = <b>${_fmt(HA)} kN</b><br>
+        H<sub>B</sub> = <b>${_fmt(HB)} kN</b>
+      </div>
+      ` : `
+      <p>Statisch unbestimmt → Lösung mit dem <b>Drehwinkelverfahren</b> (Verformungsmethode). Die unbekannten Knotendrehwinkel und die Rahmenverschiebung werden aus einem Gleichungssystem bestimmt.</p>
+      <div class="formula-box">
+        <b>Gleichgewicht an jedem biegesteifen Knoten:</b> ΣM<sub>Knoten</sub> = 0<br>
+        <b>Gleichgewicht der Rahmen-Verschiebung:</b> ΣH = 0<br><br>
+        Ergebnis:<br>
+        H<sub>A</sub> = <b>${_fmt(HA)} kN</b>,&nbsp;&nbsp; H<sub>B</sub> = <b>${_fmt(HB)} kN</b><br>
+        ${fixA?`M<sub>A</sub> = <b>${_fmt(MA_r)} kNm</b>&nbsp;&nbsp;(Einspannmoment Fuß A)<br>`:''}
+        ${fixB?`M<sub>B</sub> = <b>${_fmt(MB_r)} kNm</b>&nbsp;&nbsp;(Einspannmoment Fuß B)`:''}
+      </div>
+      <p style="font-size:12px;color:var(--text2)">
+        <b>Anschaulich:</b> Jeder Stab wirkt wie eine Feder. Die Knoten verdrehen sich gerade so weit, dass alle anschließenden Stäbe im Momentengleichgewicht stehen.
+      </p>
+      `}
+    </div>
+
+    <div class="modal-section">
+      <h3>✂️ Schritt 4 — Schnittgrößen Stab für Stab</h3>
+      <p>Der Rahmen wird in drei Stäbe zerlegt. Wichtig: An den biegesteifen Ecken werden M, Q, N <b>ungemindert</b> übertragen — sie sind nur in andere Richtungen orientiert.</p>
+      <div class="formula-box">
+        <b>Stützen</b> (vertikal):<br>
+        N = −V&nbsp;&nbsp;(Druck negativ),&nbsp;&nbsp; Q = H&nbsp;(konstant)<br>
+        M(x) = H·x − M<sub>Einsp</sub>&nbsp;&nbsp;(linear über Höhe)<br><br>
+        <b>Riegel</b> (horizontal):<br>
+        N = −H<sub>A</sub>&nbsp;&nbsp;(konstant),&nbsp;&nbsp; Q(x) = V<sub>A,real</sub> − q·x<br>
+        M(x) = M<sub>Ecke</sub> + V<sub>A,real</sub>·x − q·x²/2
+        <div class="comment">Konkrete Werte an Ecken und Auflagern: siehe Knotentabelle unter dem Diagramm.</div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>✓ Schritt 5 — Kontrolle</h3>
+      <div class="formula-box">
+        <b>ΣF<sub>x</sub>:</b>&nbsp; H<sub>A</sub> + H<sub>B</sub> = ${_fmt(HA)} + ${_fmt(HB)} = ${_fmt(HA+HB)} kN&nbsp;&nbsp;= ΣF<sub>horiz</sub> ✓<br>
+        <b>ΣF<sub>y</sub>:</b>&nbsp; V<sub>A</sub> + V<sub>B</sub> = ${_fmt(VA)} + ${_fmt(VB)} = ${_fmt(VA+VB)} kN&nbsp;&nbsp;= ΣF<sub>vert</sub> ✓<br>
+        <b>Eckenkontinuität:</b>&nbsp; M(Stützenkopf) = M(Riegelanfang) ✓
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <h3>📊 Hinweis zum Solver</h3>
+      <p style="font-size:12px;color:var(--text2)">Statiq entkoppelt intern die Berechnungspfade: M und w nutzen die Freikörper-Reaktionen V<sub>A</sub>/V<sub>B</sub>, Q nutzt V<sub>A,real</sub> (mit Einspannmomenten korrigiert), N nutzt die echten Auflagerreaktionen. Das stellt sicher, dass jedes Diagramm physikalisch konsistent ist.</p>
+    </div>
+  `;
+}
+
+
 window.addEventListener('DOMContentLoaded', ()=>{
   // Always apply translations (even EN) to set nav label and drawer texts
   applyCalcTranslations();
