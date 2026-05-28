@@ -6019,10 +6019,14 @@ render();
 // ── Swipe gesture: swipe right → go back one level ──
 (function setupSwipe(){
   let startX = 0, startY = 0, startT = 0, tracking = false;
+  let lastTrigger = 0;     // timestamp of the last triggered swipe
+  const COOLDOWN = 500;    // ignore further triggers for 500 ms
 
   document.addEventListener('touchstart', (e) => {
     if(e.touches.length !== 1){ tracking = false; return; }
     const t = e.touches[0];
+    // Edge-swipe: only track gestures that start near the left screen edge
+    if(t.clientX > 40){ tracking = false; return; }
     startX = t.clientX;
     startY = t.clientY;
     startT = Date.now();
@@ -6036,12 +6040,14 @@ render();
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
     const dt = Date.now() - startT;
+    const now = Date.now();
 
     // Conditions for a "back" swipe:
     // - mostly horizontal (|dx| clearly > |dy|)
-    // - rightward (dx > 0)
-    // - long enough (> 70px), not too slow (< 600ms)
-    if(dx > 70 && Math.abs(dx) > Math.abs(dy) * 2 && dt < 600){
+    // - rightward (dx > 0), long enough (> 70px), fast enough (< 600ms)
+    // - cooldown elapsed since the last trigger
+    if(dx > 70 && Math.abs(dx) > Math.abs(dy) * 2 && dt < 600 && (now - lastTrigger) > COOLDOWN){
+      lastTrigger = now;
       goBack();
     }
   }, { passive: true });

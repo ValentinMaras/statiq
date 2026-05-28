@@ -6485,10 +6485,14 @@ drawBeam();
 // ── Swipe gesture: swipe right → back to landing page ──
 (function setupSwipe(){
   let startX = 0, startY = 0, startT = 0, tracking = false;
+  let lastTrigger = 0;
+  const COOLDOWN = 500;
 
   document.addEventListener('touchstart', (e) => {
     if(e.touches.length !== 1){ tracking = false; return; }
     const t = e.touches[0];
+    // Edge-swipe: only track gestures that start near the left screen edge
+    if(t.clientX > 40){ tracking = false; return; }
     startX = t.clientX;
     startY = t.clientY;
     startT = Date.now();
@@ -6502,9 +6506,9 @@ drawBeam();
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
     const dt = Date.now() - startT;
-    // Only trigger near the left screen edge so it doesn't clash with
-    // horizontal interactions (sliders, diagrams) elsewhere on the page.
-    if(startX < 60 && dx > 70 && Math.abs(dx) > Math.abs(dy) * 2 && dt < 600){
+    const now = Date.now();
+    if(dx > 70 && Math.abs(dx) > Math.abs(dy) * 2 && dt < 600 && (now - lastTrigger) > COOLDOWN){
+      lastTrigger = now;
       window.location.href = 'index.html';
     }
   }, { passive: true });
